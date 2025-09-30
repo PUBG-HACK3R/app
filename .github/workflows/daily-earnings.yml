@@ -1,0 +1,25 @@
+name: Daily Earnings Cron
+
+on:
+  schedule:
+    - cron: "0 3 * * *"
+  workflow_dispatch: {}
+
+jobs:
+  hit-cron:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Call daily returns endpoint with token
+        env:
+          CRON_URL: ${{ secrets.CRON_URL }}
+          REVALIDATE_SECRET: ${{ secrets.REVALIDATE_SECRET }}
+        run: |
+          if [ -z "$CRON_URL" ] || [ -z "$REVALIDATE_SECRET" ]; then
+            echo "CRON_URL and/or REVALIDATE_SECRET GitHub secrets are not set."
+            echo "Set CRON_URL to e.g. https://your-app.vercel.app/api/cron/daily-returns"
+            echo "Set REVALIDATE_SECRET to the same value used in your Vercel environment."
+            exit 1
+          fi
+          echo "Hitting: $CRON_URL?token=***"
+          set -e
+          curl -sS "$CRON_URL?token=$REVALIDATE_SECRET" | tee /dev/stderr
