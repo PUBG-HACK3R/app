@@ -42,7 +42,7 @@ export default function DebugPage() {
             {Object.entries(envVars).map(([key, value]) => (
               <div key={key} className="flex justify-between py-1">
                 <span className="font-mono">{key}:</span>
-                <span>{value}</span>
+                <span>{String(value)}</span>
               </div>
             ))}
           </div>
