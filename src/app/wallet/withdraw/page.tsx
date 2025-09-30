@@ -32,6 +32,10 @@ export default function WithdrawPage() {
   const [error, setError] = React.useState<string | null>(null);
   const [balance, setBalance] = React.useState<number | null>(null);
   const [withdrawals, setWithdrawals] = React.useState<any[]>([]);
+  const [activeWithdrawal, setActiveWithdrawal] = React.useState<any>(null);
+  const [timeRemaining, setTimeRemaining] = React.useState<number>(0);
+  const [processingMessages, setProcessingMessages] = React.useState<string[]>([]);
+  const [showProcessing, setShowProcessing] = React.useState(false);
 
   React.useEffect(() => {
     (async () => {
@@ -69,9 +73,85 @@ export default function WithdrawPage() {
           .limit(10);
 
         setWithdrawals(withdrawalData || []);
+        
+        // Check for active pending withdrawal
+        const pendingWithdrawal = (withdrawalData || []).find(w => w.status === "pending" && w.expires_at);
+        if (pendingWithdrawal) {
+          setActiveWithdrawal(pendingWithdrawal);
+          setShowProcessing(true);
+        }
       } catch {}
     })();
   }, []);
+
+  // Countdown timer effect
+  React.useEffect(() => {
+    if (!activeWithdrawal || !activeWithdrawal.expires_at) return;
+    
+    const updateTimer = () => {
+      const now = new Date().getTime();
+      const expires = new Date(activeWithdrawal.expires_at).getTime();
+      const remaining = Math.max(0, expires - now);
+      setTimeRemaining(remaining);
+      
+      if (remaining === 0) {
+        handleTimeout();
+      }
+    };
+    
+    updateTimer();
+    const interval = setInterval(updateTimer, 1000);
+    return () => clearInterval(interval);
+  }, [activeWithdrawal]);
+
+  // Processing messages simulation
+  React.useEffect(() => {
+    if (!showProcessing) return;
+    
+    const messages = [
+      "Initiating blockchain transaction...",
+      "Connecting to TRC20 network...", 
+      "Validating wallet address...",
+      "Processing transaction confirmation...",
+      "Awaiting network confirmation...",
+      "Finalizing blockchain verification..."
+    ];
+    
+    let index = 0;
+    setProcessingMessages([messages[0]]);
+    
+    const interval = setInterval(() => {
+      index = (index + 1) % messages.length;
+      setProcessingMessages(prev => {
+        const newMessages = [...prev, messages[index]];
+        return newMessages.slice(-3); // Keep only last 3 messages
+      });
+    }, 3000);
+    
+    return () => clearInterval(interval);
+  }, [showProcessing]);
+
+  async function handleTimeout() {
+    if (!activeWithdrawal) return;
+    
+    try {
+      const res = await fetch("/api/withdraw/timeout", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ withdrawalId: activeWithdrawal.id }),
+      });
+      
+      if (res.ok) {
+        setActiveWithdrawal(null);
+        setShowProcessing(false);
+        setError("Blockchain processing timeout occurred. Please try your withdrawal again.");
+        // Refresh withdrawals list
+        window.location.reload();
+      }
+    } catch (err) {
+      console.error("Timeout handling error:", err);
+    }
+  }
 
   async function onSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -82,7 +162,9 @@ export default function WithdrawPage() {
     try {
       const amt = parseFloat(amount);
       if (!isFinite(amt) || amt <= 0) throw new Error("Enter a valid amount");
+      if (amt < 30) throw new Error("Minimum withdrawal amount is $30");
       if (balance !== null && amt > balance) throw new Error("Amount exceeds available balance");
+      
       const res = await fetch("/api/withdraw/request", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -90,11 +172,16 @@ export default function WithdrawPage() {
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || "Failed to submit withdrawal request");
-      setMessage("Withdrawal request submitted. You will be notified after admin review.");
+      
+      // Start processing UI
+      setActiveWithdrawal(data.withdrawal);
+      setShowProcessing(true);
+      setMessage(null);
       setAmount("");
       setAddress("");
-      // Optimistically update shown balance
-      if (balance !== null) setBalance(Math.max(0, balance - (Number(data.amount) || amt)));
+      
+      // Update balance to reflect the withdrawal
+      if (balance !== null) setBalance(Math.max(0, balance - amt));
     } catch (err: any) {
       setError(err.message || "Something went wrong");
     } finally {
@@ -108,7 +195,21 @@ export default function WithdrawPage() {
     Math.min(balance * 0.25, balance),
     Math.min(balance * 0.5, balance),
     balance
-  ].filter(amt => amt >= 10) : [];
+  ].filter(amt => amt >= 30) : [];
+
+  const formatTime = (ms: number) => {
+    const minutes = Math.floor(ms / (1000 * 60));
+    const seconds = Math.floor((ms % (1000 * 60)) / 1000);
+    return `${minutes}:${seconds.toString().padStart(2, '0')}`;
+  };
+
+  const calculateFee = (amount: number) => {
+    return Math.round(amount * 0.05 * 100) / 100;
+  };
+
+  const calculateNetAmount = (amount: number) => {
+    return Math.round((amount - calculateFee(amount)) * 100) / 100;
+  };
 
   return (
     <main className="mx-auto max-w-4xl px-4 py-8 space-y-8">
@@ -136,7 +237,69 @@ export default function WithdrawPage() {
             </span>
           </div>
         )}
+        {showProcessing && (
+          <Badge variant="outline" className="text-orange-600 border-orange-600 animate-pulse">
+            Processing Active
+          </Badge>
+        )}
       </div>
+
+      {/* Processing Status Modal */}
+      {showProcessing && activeWithdrawal && (
+        <Card className="border-0 shadow-2xl bg-gradient-to-br from-blue-50 to-blue-100 dark:from-blue-950 dark:to-blue-900 border-l-4 border-l-blue-500">
+          <CardContent className="p-6">
+            <div className="text-center space-y-4">
+              <div className="flex items-center justify-center space-x-3">
+                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+                <h3 className="text-xl font-bold text-blue-900 dark:text-blue-100">Processing Withdrawal</h3>
+              </div>
+              
+              <div className="bg-white dark:bg-gray-800 rounded-lg p-4 space-y-3">
+                <div className="flex justify-between items-center">
+                  <span className="text-sm text-gray-600 dark:text-gray-400">Amount:</span>
+                  <span className="font-semibold">${Number(activeWithdrawal.amount_usdt).toFixed(2)} USDT</span>
+                </div>
+                <div className="flex justify-between items-center">
+                  <span className="text-sm text-gray-600 dark:text-gray-400">Fee (5%):</span>
+                  <span className="font-semibold text-red-600">-${Number(activeWithdrawal.fee_usdt || 0).toFixed(2)} USDT</span>
+                </div>
+                <Separator />
+                <div className="flex justify-between items-center">
+                  <span className="text-sm text-gray-600 dark:text-gray-400">You'll Receive:</span>
+                  <span className="font-bold text-green-600">${Number(activeWithdrawal.net_amount_usdt || 0).toFixed(2)} USDT</span>
+                </div>
+              </div>
+
+              <div className="bg-yellow-50 dark:bg-yellow-950/20 rounded-lg p-4">
+                <div className="flex items-center justify-center space-x-2 mb-3">
+                  <Clock className="h-5 w-5 text-yellow-600" />
+                  <span className="text-lg font-bold text-yellow-800 dark:text-yellow-200">
+                    {formatTime(timeRemaining)}
+                  </span>
+                </div>
+                <p className="text-sm text-yellow-700 dark:text-yellow-300 mb-3">
+                  Processing will timeout if not completed within 15 minutes
+                </p>
+                
+                {/* Processing Messages */}
+                <div className="space-y-2">
+                  {processingMessages.map((msg, index) => (
+                    <div key={index} className="flex items-center space-x-2 text-sm">
+                      <div className="w-2 h-2 bg-blue-500 rounded-full animate-pulse"></div>
+                      <span className="text-gray-700 dark:text-gray-300">{msg}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+              
+              <div className="text-xs text-gray-500 dark:text-gray-400">
+                Please wait while we process your withdrawal through the blockchain network.
+                Do not close this page or refresh your browser.
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      )}
 
       <div className="grid gap-8 lg:grid-cols-3">
         {/* Main Withdrawal Form */}
@@ -155,9 +318,9 @@ export default function WithdrawPage() {
                       <div className="text-2xl font-bold text-blue-900 dark:text-blue-100">${balance.toFixed(2)} USDT</div>
                     </div>
                   </div>
-                  {balance < 10 && (
+                  {balance < 30 && (
                     <Badge variant="outline" className="text-orange-600 border-orange-600">
-                      Minimum $10 required
+                      Minimum $30 required
                     </Badge>
                   )}
                 </div>
@@ -187,14 +350,15 @@ export default function WithdrawPage() {
                       <Input
                         id="amount"
                         type="number"
-                        min="10"
+                        min="30"
                         max={balance || undefined}
                         step="0.01"
                         required
                         value={amount}
                         onChange={(e) => setAmount(e.target.value)}
-                        placeholder="Enter amount"
+                        placeholder="Enter amount (min $30)"
                         className="pl-10 text-lg h-12"
+                        disabled={showProcessing}
                       />
                     </div>
                     {balance !== null && amount && parseFloat(amount) > balance && (
@@ -203,10 +367,27 @@ export default function WithdrawPage() {
                         <span className="text-sm">Amount exceeds available balance</span>
                       </div>
                     )}
-                    {amount && parseFloat(amount) < 10 && (
+                    {amount && parseFloat(amount) < 30 && (
                       <div className="flex items-center space-x-2 text-orange-600">
                         <Info className="h-4 w-4" />
-                        <span className="text-sm">Minimum withdrawal amount is $10</span>
+                        <span className="text-sm">Minimum withdrawal amount is $30</span>
+                      </div>
+                    )}
+                    {amount && parseFloat(amount) >= 30 && (
+                      <div className="bg-blue-50 dark:bg-blue-950/20 rounded-lg p-3 space-y-2">
+                        <div className="flex justify-between text-sm">
+                          <span className="text-gray-600 dark:text-gray-400">Withdrawal Amount:</span>
+                          <span className="font-medium">${parseFloat(amount).toFixed(2)}</span>
+                        </div>
+                        <div className="flex justify-between text-sm">
+                          <span className="text-gray-600 dark:text-gray-400">Processing Fee (5%):</span>
+                          <span className="font-medium text-red-600">-${calculateFee(parseFloat(amount)).toFixed(2)}</span>
+                        </div>
+                        <Separator className="bg-blue-200 dark:bg-blue-800" />
+                        <div className="flex justify-between text-sm">
+                          <span className="text-gray-600 dark:text-gray-400">You'll Receive:</span>
+                          <span className="font-bold text-green-600">${calculateNetAmount(parseFloat(amount)).toFixed(2)}</span>
+                        </div>
                       </div>
                     )}
                   </div>
@@ -228,7 +409,7 @@ export default function WithdrawPage() {
                               size="sm"
                               onClick={() => setAmount(amt.toFixed(2))}
                               className="min-w-[60px]"
-                              disabled={amt < 10}
+                              disabled={amt < 30 || showProcessing}
                             >
                               {label}
                             </Button>
@@ -249,6 +430,7 @@ export default function WithdrawPage() {
                         onChange={(e) => setAddress(e.target.value)}
                         placeholder="T..."
                         className="pl-10 h-12"
+                        disabled={showProcessing}
                       />
                     </div>
                     <div className="text-xs text-muted-foreground">
@@ -273,7 +455,7 @@ export default function WithdrawPage() {
 
                 <Button 
                   type="submit" 
-                  disabled={loading || (balance !== null && !!amount && (parseFloat(amount) > balance || parseFloat(amount) < 10)) || !address}
+                  disabled={loading || showProcessing || (balance !== null && !!amount && (parseFloat(amount) > balance || parseFloat(amount) < 30)) || !address}
                   size="lg"
                   className="w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold"
                 >
@@ -281,6 +463,11 @@ export default function WithdrawPage() {
                     <>
                       <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
                       Submitting Request...
+                    </>
+                  ) : showProcessing ? (
+                    <>
+                      <Clock className="mr-2 h-4 w-4" />
+                      Processing Active
                     </>
                   ) : (
                     <>
@@ -382,27 +569,32 @@ export default function WithdrawPage() {
         {/* Sidebar */}
         <div className="space-y-6">
           {/* Withdrawal Summary */}
-          {amount && parseFloat(amount) >= 10 && address && (
+          {amount && parseFloat(amount) >= 30 && address && !showProcessing && (
             <Card className="border-0 shadow-lg bg-gradient-to-br from-green-50 to-green-100 dark:from-green-950 dark:to-green-900">
               <CardHeader>
                 <CardTitle className="text-lg text-green-900 dark:text-green-100">Withdrawal Summary</CardTitle>
               </CardHeader>
               <CardContent className="space-y-3">
                 <div className="flex justify-between">
-                  <span className="text-sm text-green-700 dark:text-green-300">Amount</span>
+                  <span className="text-sm text-green-700 dark:text-green-300">Withdrawal Amount</span>
                   <span className="font-medium text-green-900 dark:text-green-100">${parseFloat(amount).toFixed(2)}</span>
                 </div>
                 <div className="flex justify-between">
-                  <span className="text-sm text-green-700 dark:text-green-300">Network Fee</span>
-                  <span className="font-medium text-green-900 dark:text-green-100">$0.00</span>
+                  <span className="text-sm text-green-700 dark:text-green-300">Processing Fee (5%)</span>
+                  <span className="font-medium text-red-600">-${calculateFee(parseFloat(amount)).toFixed(2)}</span>
                 </div>
                 <Separator className="bg-green-200 dark:bg-green-800" />
                 <div className="flex justify-between">
                   <span className="text-sm text-green-700 dark:text-green-300">You'll Receive</span>
-                  <span className="font-bold text-green-900 dark:text-green-100">${parseFloat(amount).toFixed(2)}</span>
+                  <span className="font-bold text-green-900 dark:text-green-100">${calculateNetAmount(parseFloat(amount)).toFixed(2)}</span>
                 </div>
                 <div className="text-xs text-green-600 dark:text-green-400 mt-2">
                   Address: {address.slice(0, 8)}...{address.slice(-6)}
+                </div>
+                <div className="bg-yellow-50 dark:bg-yellow-950/20 rounded p-2 mt-3">
+                  <div className="text-xs text-yellow-700 dark:text-yellow-300">
+                    ⚠️ 5% processing fee will be deducted from your withdrawal amount
+                  </div>
                 </div>
               </CardContent>
             </Card>
@@ -424,15 +616,15 @@ export default function WithdrawPage() {
                 </div>
                 <div className="flex items-center space-x-2">
                   <Clock className="h-4 w-4 text-blue-500" />
-                  <span className="text-sm">24-48 hour processing</span>
+                  <span className="text-sm">15-minute processing window</span>
                 </div>
                 <div className="flex items-center space-x-2">
                   <Shield className="h-4 w-4 text-green-500" />
                   <span className="text-sm">Secure verification process</span>
                 </div>
                 <div className="flex items-center space-x-2">
-                  <DollarSign className="h-4 w-4 text-green-500" />
-                  <span className="text-sm">No network fees</span>
+                  <DollarSign className="h-4 w-4 text-orange-500" />
+                  <span className="text-sm">5% processing fee applies</span>
                 </div>
               </div>
               
@@ -453,7 +645,8 @@ export default function WithdrawPage() {
                   <div className="text-sm font-medium">Important Notice</div>
                   <div className="text-xs text-muted-foreground space-y-1">
                     <p>• Double-check your wallet address before submitting</p>
-                    <p>• Minimum withdrawal amount is $10 USDT</p>
+                    <p>• Minimum withdrawal amount is $30 USDT</p>
+                    <p>• 5% processing fee is deducted from all withdrawals</p>
                     <p>• Withdrawals to incorrect addresses cannot be recovered</p>
                     <p>• Processing time may vary during high volume periods</p>
                   </div>
