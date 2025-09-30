@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 
 export default function DebugPage() {
-  const [envVars, setEnvVars] = useState<any>({});
+  const [envVars, setEnvVars] = useState<Record<string, string>>({});
   const [dbTest, setDbTest] = useState<string>("Testing...");
 
   useEffect(() => {
@@ -42,7 +42,7 @@ export default function DebugPage() {
             {Object.entries(envVars).map(([key, value]) => (
               <div key={key} className="flex justify-between py-1">
                 <span className="font-mono">{key}:</span>
-                <span>{String(value)}</span>
+                <span>{value}</span>
               </div>
             ))}
           </div>
