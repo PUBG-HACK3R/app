@@ -6,8 +6,9 @@ import { useSearchParams } from "next/navigation";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
+import { Suspense } from "react";
 
-export default function SimpleLoginPage() {
+function SimpleLoginContent() {
   const search = useSearchParams();
   const [loading, setLoading] = React.useState(false);
   const [error, setError] = React.useState<string | null>(null);
@@ -108,5 +109,13 @@ export default function SimpleLoginPage() {
         </CardContent>
       </Card>
     </main>
+  );
+}
+
+export default function SimpleLoginPage() {
+  return (
+    <Suspense fallback={<div>Loading...</div>}>
+      <SimpleLoginContent />
+    </Suspense>
   );
 }
