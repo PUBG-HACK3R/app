@@ -1,6 +1,13 @@
 # 💰 WeEarn - Smart Investment Platform
 
-A modern, secure investment platform built with Next.js 15, Supabase, and NOWPayments. Users can invest USDT and earn guaranteed daily returns with full transparency and admin oversight.
+A modern investment platform built with Next.js 15, Supabase, and NOWPayments.
+
+## Latest Update
+- Advanced withdrawal system with 5% fees and 15-minute processing window
+- $30 minimum withdrawal limit with real-time validation  
+- Comprehensive admin dashboard with urgent withdrawal alerts
+
+Users can invest USDT and earn guaranteed daily returns with full transparency and admin oversight.
 
 ![WeEarn Platform](https://img.shields.io/badge/Next.js-15-black) ![TypeScript](https://img.shields.io/badge/TypeScript-5-blue) ![Supabase](https://img.shields.io/badge/Supabase-green) ![TailwindCSS](https://img.shields.io/badge/TailwindCSS-v4-blue)
 
