@@ -5,8 +5,9 @@ import { getSupabaseAdminClient } from "@/lib/supabase/admin";
 // PUT - Update plan (admin only)
 export async function PUT(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
+  const { id } = await params;
   try {
     const supabase = await getSupabaseServerClient();
     const {
@@ -53,7 +54,7 @@ export async function PUT(
         duration_days: parseInt(duration_days),
         is_active: is_active !== undefined ? is_active : true,
       })
-      .eq("id", params.id)
+      .eq("id", id)
       .select()
       .single();
 
@@ -76,8 +77,9 @@ export async function PUT(
 // DELETE - Delete plan (admin only)
 export async function DELETE(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
+  const { id } = await params;
   try {
     const supabase = await getSupabaseServerClient();
     const {
@@ -99,7 +101,7 @@ export async function DELETE(
     const { count: activeSubscriptions } = await admin
       .from("subscriptions")
       .select("id", { count: "exact", head: true })
-      .eq("plan_id", params.id)
+      .eq("plan_id", id)
       .eq("active", true);
 
     if (activeSubscriptions && activeSubscriptions > 0) {
@@ -110,10 +112,21 @@ export async function DELETE(
     }
 
     // Delete the plan
+    const { data: plan, error: fetchError } = await admin
+      .from("plans")
+      .select("*")
+      .eq("id", id)
+      .single();
+
+    if (fetchError) {
+      console.error("Error fetching plan:", fetchError);
+      return NextResponse.json({ error: "Failed to fetch plan" }, { status: 500 });
+    }
+
     const { error } = await admin
       .from("plans")
       .delete()
-      .eq("id", params.id);
+      .eq("id", id);
 
     if (error) {
       console.error("Error deleting plan:", error);

@@ -27,7 +27,7 @@ export async function loginAction(formData: FormData) {
 
     // Set session cookies
     if (data.session) {
-      const cookieStore = cookies();
+      const cookieStore = await cookies();
       const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
       const projectRef = supabaseUrl.split('//')[1].split('.')[0];
       

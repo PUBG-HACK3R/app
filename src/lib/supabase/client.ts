@@ -10,11 +10,12 @@ export function getSupabaseBrowserClient() {
     {
       cookies: {
         get: (name: string) => Cookies.get(name),
-        set: (name: string, value: string, options: any) =>
+        set: (name: string, value: string, options: any) => {
           Cookies.set(name, value, {
             ...options,
             sameSite: "lax",
-          }),
+          });
+        },
         remove: (name: string, options: any) => Cookies.remove(name, options),
       },
     }
