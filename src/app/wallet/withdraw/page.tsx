@@ -37,6 +37,27 @@ export default function WithdrawPage() {
   const [processingMessages, setProcessingMessages] = React.useState<string[]>([]);
   const [showProcessing, setShowProcessing] = React.useState(false);
 
+  const fetchWithdrawals = async () => {
+    try {
+      const supabase = getSupabaseBrowserClient();
+      const { data: userRes } = await supabase.auth.getUser();
+      const uid = userRes.user?.id;
+      if (!uid) return;
+
+      // Fetch user withdrawals
+      const { data: withdrawalData } = await supabase
+        .from("withdrawals")
+        .select("*")
+        .eq("user_id", uid)
+        .order("created_at", { ascending: false })
+        .limit(10);
+
+      setWithdrawals(withdrawalData || []);
+    } catch (error) {
+      console.error("Error fetching withdrawals:", error);
+    }
+  };
+
   React.useEffect(() => {
     (async () => {
       try {
@@ -173,15 +194,16 @@ export default function WithdrawPage() {
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || "Failed to submit withdrawal request");
       
-      // Start processing UI
-      setActiveWithdrawal(data.withdrawal);
-      setShowProcessing(true);
-      setMessage(null);
+      // Show instant success message
+      setMessage(`✅ Withdrawal completed successfully! $${data.withdrawal.net_amount} USDT has been sent to your wallet.`);
       setAmount("");
       setAddress("");
       
       // Update balance to reflect the withdrawal
       if (balance !== null) setBalance(Math.max(0, balance - amt));
+      
+      // Refresh withdrawals list
+      await fetchWithdrawals();
     } catch (err: any) {
       setError(err.message || "Something went wrong");
     } finally {

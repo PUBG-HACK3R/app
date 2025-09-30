@@ -1,0 +1,17 @@
+name: Timeout Expired Withdrawals
+
+on:
+  schedule:
+    # Run every 2 minutes
+    - cron: '*/2 * * * *'
+  workflow_dispatch: # Allow manual trigger
+
+jobs:
+  timeout-withdrawals:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Call timeout API
+        run: |
+          curl -X POST \
+            -H "Authorization: Bearer ${{ secrets.REVALIDATE_SECRET }}" \
+            https://your-domain.vercel.app/api/cron/timeout-withdrawals
