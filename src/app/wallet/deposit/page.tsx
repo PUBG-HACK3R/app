@@ -21,8 +21,9 @@ import {
   AlertCircle,
   TrendingUp
 } from "lucide-react";
+import { Suspense } from "react";
 
-export default function DepositPage() {
+function DepositContent() {
   const search = useSearchParams();
   const [amount, setAmount] = React.useState<string>("");
   const [loading, setLoading] = React.useState(false);
@@ -377,5 +378,13 @@ export default function DepositPage() {
         </div>
       </div>
     </main>
+  );
+}
+
+export default function DepositPage() {
+  return (
+    <Suspense fallback={<div>Loading...</div>}>
+      <DepositContent />
+    </Suspense>
   );
 }

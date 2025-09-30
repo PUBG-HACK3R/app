@@ -7,9 +7,10 @@ import { getSupabaseBrowserClient } from "@/lib/supabase/client";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { signupSchema, type SignupInput } from "@/lib/validations";
+import { signupSchema } from "@/lib/validations";
+import { Suspense } from "react";
 
-export default function SignupPage() {
+function SignupContent() {
   const router = useRouter();
   const search = useSearchParams();
   const [email, setEmail] = React.useState("");
@@ -187,5 +188,13 @@ export default function SignupPage() {
         </CardContent>
       </Card>
     </main>
+  );
+}
+
+export default function SignupPage() {
+  return (
+    <Suspense fallback={<div>Loading...</div>}>
+      <SignupContent />
+    </Suspense>
   );
 }
