@@ -8,31 +8,72 @@ export async function GET() {
   try {
     const supabase = await getSupabaseServerClient();
 
-    // Check existing referral codes
-    const { data: profiles, error: profilesError } = await supabase
-      .from("profiles")
-      .select("user_id, email, referral_code")
-      .limit(10);
+    // First, let's check if we can access the profiles table at all
+    let profilesAccessible = true;
+    let profilesError = null;
+    let profiles = [];
+    
+    try {
+      const { data, error } = await supabase
+        .from("profiles")
+        .select("user_id, email, referral_code")
+        .limit(10);
+      
+      if (error) {
+        profilesAccessible = false;
+        profilesError = error.message;
+      } else {
+        profiles = data || [];
+      }
+    } catch (err: any) {
+      profilesAccessible = false;
+      profilesError = err.message;
+    }
 
-    // Also check if profiles table exists and has the referral_code column
-    const { data: tableInfo, error: tableError } = await supabase
-      .from("information_schema.columns")
-      .select("column_name")
-      .eq("table_name", "profiles")
-      .eq("table_schema", "public");
+    // Check table structure using a different approach
+    let tableInfo = [];
+    let tableError = null;
+    
+    try {
+      const { data, error } = await supabase
+        .rpc('get_table_columns', { table_name: 'profiles' });
+      
+      if (error) {
+        // Fallback: try direct query
+        const { data: fallbackData, error: fallbackError } = await supabase
+          .from("information_schema.columns")
+          .select("column_name")
+          .eq("table_name", "profiles")
+          .eq("table_schema", "public");
+        
+        if (fallbackError) {
+          tableError = fallbackError.message;
+        } else {
+          tableInfo = fallbackData || [];
+        }
+      } else {
+        tableInfo = data || [];
+      }
+    } catch (err: any) {
+      tableError = err.message;
+    }
 
     // Check total count of profiles
-    const { count: profileCount, error: countError } = await supabase
-      .from("profiles")
-      .select("*", { count: "exact", head: true });
-
-    if (profilesError) {
-      return NextResponse.json({ 
-        error: "Failed to fetch profiles", 
-        details: profilesError.message,
-        tableInfo: tableInfo || [],
-        profileCount: profileCount || 0
-      }, { status: 500 });
+    let profileCount = 0;
+    let countError = null;
+    
+    try {
+      const { count, error } = await supabase
+        .from("profiles")
+        .select("*", { count: "exact", head: true });
+      
+      if (error) {
+        countError = error.message;
+      } else {
+        profileCount = count || 0;
+      }
+    } catch (err: any) {
+      countError = err.message;
     }
 
     // Test referral code validation with first available code
@@ -69,21 +110,45 @@ export async function GET() {
     };
 
     return NextResponse.json({
+      // Basic info
       totalProfiles: profiles.length,
-      profileCount: profileCount || 0,
-      tableColumns: tableInfo?.map(col => col.column_name) || [],
-      hasReferralCodeColumn: tableInfo?.some(col => col.column_name === 'referral_code') || false,
+      profileCount: profileCount,
+      profilesAccessible,
+      
+      // Table structure
+      tableColumns: tableInfo?.map(col => col.column_name || col) || [],
+      hasReferralCodeColumn: tableInfo?.some(col => (col.column_name || col) === 'referral_code') || false,
+      
+      // Profiles data
       profiles: profiles.map(p => ({
         email: p.email,
         hasReferralCode: !!p.referral_code,
         referralCode: p.referral_code
       })),
+      
+      // Test results
       validationTest,
       fakeTest,
+      
+      // Error details
+      errors: {
+        profilesError,
+        tableError,
+        countError
+      },
+      
+      // Troubleshooting
       troubleshooting: {
-        message: profiles.length === 0 ? 
-          "No profiles found. You need to either: 1) Run the create-referral-system.sql script in Supabase, or 2) Create some user accounts first" :
-          "Profiles exist but may not have referral codes"
+        message: !profilesAccessible ? 
+          `Cannot access profiles table: ${profilesError}` :
+          profiles.length === 0 ? 
+            "Profiles table exists but is empty. Create a user account first, then run the referral SQL script." :
+            "Profiles exist but may not have referral codes",
+        suggestions: [
+          !profilesAccessible ? "Check if profiles table exists in Supabase" : null,
+          profileCount === 0 ? "Create a user account first" : null,
+          !tableInfo?.some(col => (col.column_name || col) === 'referral_code') ? "Run the fix-referral-system.sql script" : null
+        ].filter(Boolean)
       }
     });
 
