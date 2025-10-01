@@ -246,15 +246,15 @@ export default async function WalletPage() {
             <div className="space-y-2">
               <div className="flex items-center space-x-2 text-sm text-muted-foreground">
                 <Shield className="h-4 w-4" />
-                <span>Manual admin approval</span>
+                <span>Instant approval</span>
               </div>
               <div className="flex items-center space-x-2 text-sm text-muted-foreground">
                 <Clock className="h-4 w-4" />
-                <span>24-48 hour processing</span>
+                <span>15-minute processing</span>
               </div>
               <div className="flex items-center space-x-2 text-sm text-muted-foreground">
                 <DollarSign className="h-4 w-4" />
-                <span>Minimum $10 withdrawal</span>
+                <span>Minimum $30 withdrawal</span>
               </div>
             </div>
             <Button size="lg" variant="outline" className="w-full" asChild>

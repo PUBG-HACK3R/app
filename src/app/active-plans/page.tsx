@@ -27,7 +27,7 @@ export default async function ActivePlansPage() {
   if (!user) redirect("/login?next=/active-plans");
 
   // Get active subscriptions with plan details
-  const { data: subscriptions } = await supabase
+  let { data: subscriptions, error: subscriptionsError } = await supabase
     .from("subscriptions")
     .select(`
       id,
@@ -47,6 +47,39 @@ export default async function ActivePlansPage() {
     .eq("user_id", user.id)
     .eq("active", true)
     .order("created_at", { ascending: false });
+
+  // Fallback query if description field doesn't exist
+  if (subscriptionsError && subscriptionsError.message?.includes('description')) {
+    console.log("Falling back to query without description field");
+    const fallbackResult = await supabase
+      .from("subscriptions")
+      .select(`
+        id,
+        plan_id,
+        principal_usdt,
+        roi_daily_percent,
+        start_date,
+        end_date,
+        active,
+        next_earning_at,
+        plans!inner (
+          name,
+          duration_days
+        )
+      `)
+      .eq("user_id", user.id)
+      .eq("active", true)
+      .order("created_at", { ascending: false });
+    
+    subscriptions = fallbackResult.data;
+    subscriptionsError = fallbackResult.error;
+  }
+
+  // Debug logging
+  if (subscriptionsError) {
+    console.error("Subscriptions query error:", subscriptionsError);
+  }
+  console.log("Subscriptions data:", subscriptions);
 
   // Get earnings for each subscription
   const subscriptionsWithEarnings = await Promise.all(
@@ -210,7 +243,9 @@ export default async function ActivePlansPage() {
                           <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
                           {subscription.plan?.name}
                         </CardTitle>
-                        <CardDescription>{subscription.plan?.description}</CardDescription>
+                        <CardDescription>
+                          {subscription.plan?.description || "Investment plan with competitive returns"}
+                        </CardDescription>
                       </div>
                       <Badge variant="secondary" className="bg-green-100 text-green-700 dark:bg-green-900 dark:text-green-300">
                         <CheckCircle className="h-3 w-3 mr-1" />
