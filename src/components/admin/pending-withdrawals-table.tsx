@@ -38,27 +38,6 @@ export function PendingWithdrawalsTable({ initial }: { initial: PendingWithdrawa
   const [rejectingId, setRejectingId] = React.useState<string | null>(null);
   const [rejectionReason, setRejectionReason] = React.useState("");
 
-  async function startProcessing(id: string) {
-    setBusy(id);
-    setError(null);
-    try {
-      const res = await fetch("/api/admin/withdrawals/start-processing", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ withdrawalId: id }),
-      });
-      const data = await res.json();
-      if (!res.ok) throw new Error(data.error || "Failed to start processing");
-      // Update the item status locally
-      setItems((prev) => prev.map(w => w.id === id ? {...w, status: "processing", processing_started_at: new Date().toISOString()} : w));
-      toast.success("Withdrawal processing started");
-    } catch (e: any) {
-      setError(e.message || "Unexpected error");
-      toast.error(e.message || "Failed to start processing");
-    } finally {
-      setBusy(null);
-    }
-  }
 
   async function approve(id: string) {
     setBusy(id);
@@ -185,11 +164,6 @@ export function PendingWithdrawalsTable({ initial }: { initial: PendingWithdrawa
                           <AlertTriangle className="h-3 w-3" />
                           <span className="text-xs font-bold">URGENT</span>
                         </div>
-                      ) : w.processing_started_at ? (
-                        <div className="flex items-center space-x-1 text-blue-600">
-                          <Clock className="h-3 w-3" />
-                          <span className="text-xs">Processing</span>
-                        </div>
                       ) : (
                         <div className="flex items-center space-x-1 text-yellow-600">
                           <Clock className="h-3 w-3" />
@@ -217,18 +191,7 @@ export function PendingWithdrawalsTable({ initial }: { initial: PendingWithdrawa
                     </td>
                     <td className="px-3 py-2">
                       <div className="flex gap-1 flex-wrap">
-                        {!expired && !w.processing_started_at && (
-                          <Button 
-                            size="sm" 
-                            onClick={() => startProcessing(w.id)} 
-                            disabled={busy === w.id}
-                            className="bg-blue-600 hover:bg-blue-700 text-xs"
-                          >
-                            <Clock className="h-3 w-3 mr-1" />
-                            {busy === w.id ? "Starting..." : "Start"}
-                          </Button>
-                        )}
-                        {w.processing_started_at && (
+                        {!expired && (
                           <Button 
                             size="sm" 
                             onClick={() => approve(w.id)} 
@@ -236,7 +199,7 @@ export function PendingWithdrawalsTable({ initial }: { initial: PendingWithdrawa
                             className="bg-green-600 hover:bg-green-700 text-xs"
                           >
                             <CheckCircle className="h-3 w-3 mr-1" />
-                            {busy === w.id ? "Approving…" : "Complete"}
+                            {busy === w.id ? "Approving…" : "Approve"}
                           </Button>
                         )}
                         <Button 

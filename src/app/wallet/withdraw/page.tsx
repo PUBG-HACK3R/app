@@ -105,7 +105,7 @@ export default function WithdrawPage() {
     })();
   }, []);
 
-  // Countdown timer effect
+  // Countdown timer effect and status polling
   React.useEffect(() => {
     if (!activeWithdrawal || !activeWithdrawal.expires_at) return;
     
@@ -120,9 +120,36 @@ export default function WithdrawPage() {
       }
     };
     
+    // Check withdrawal status every 5 seconds
+    const checkStatus = async () => {
+      try {
+        const supabase = getSupabaseBrowserClient();
+        const { data: withdrawal } = await supabase
+          .from("withdrawals")
+          .select("status")
+          .eq("id", activeWithdrawal.id)
+          .single();
+        
+        if (withdrawal && withdrawal.status === "approved") {
+          // Admin approved the withdrawal
+          setActiveWithdrawal(null);
+          setShowProcessing(false);
+          setMessage("✅ Withdrawal completed successfully! Your funds have been sent to your wallet.");
+          await fetchWithdrawals();
+        }
+      } catch (error) {
+        console.error("Status check error:", error);
+      }
+    };
+    
     updateTimer();
-    const interval = setInterval(updateTimer, 1000);
-    return () => clearInterval(interval);
+    const timerInterval = setInterval(updateTimer, 1000);
+    const statusInterval = setInterval(checkStatus, 5000);
+    
+    return () => {
+      clearInterval(timerInterval);
+      clearInterval(statusInterval);
+    };
   }, [activeWithdrawal]);
 
   // Processing messages simulation
@@ -130,12 +157,12 @@ export default function WithdrawPage() {
     if (!showProcessing) return;
     
     const messages = [
-      "Initiating blockchain transaction...",
-      "Connecting to TRC20 network...", 
-      "Validating wallet address...",
-      "Processing transaction confirmation...",
-      "Awaiting network confirmation...",
-      "Finalizing blockchain verification..."
+      "System confirmation in progress...",
+      "Blockchain confirmation initiated...", 
+      "Network validation processing...",
+      "Transaction verification pending...",
+      "Awaiting final confirmation...",
+      "Processing blockchain verification..."
     ];
     
     let index = 0;
@@ -165,9 +192,9 @@ export default function WithdrawPage() {
       if (res.ok) {
         setActiveWithdrawal(null);
         setShowProcessing(false);
-        setError("Blockchain processing timeout occurred. Please try your withdrawal again.");
+        setError("Blockchain error - please try again");
         // Refresh withdrawals list
-        window.location.reload();
+        await fetchWithdrawals();
       }
     } catch (err) {
       console.error("Timeout handling error:", err);
@@ -194,13 +221,12 @@ export default function WithdrawPage() {
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || "Failed to submit withdrawal request");
       
-      // Show instant success message
-      setMessage(`✅ Withdrawal completed successfully! $${data.withdrawal.net_amount} USDT has been sent to your wallet.`);
+      // Start processing flow
+      setActiveWithdrawal(data.withdrawal);
+      setShowProcessing(true);
       setAmount("");
       setAddress("");
-      
-      // Update balance to reflect the withdrawal
-      if (balance !== null) setBalance(Math.max(0, balance - amt));
+      setMessage("Withdrawal request submitted successfully! Processing has started.");
       
       // Refresh withdrawals list
       await fetchWithdrawals();
@@ -634,7 +660,7 @@ export default function WithdrawPage() {
               <div className="space-y-3">
                 <div className="flex items-center space-x-2">
                   <CheckCircle className="h-4 w-4 text-green-500" />
-                  <span className="text-sm">Manual admin review</span>
+                  <span className="text-sm">Instant process</span>
                 </div>
                 <div className="flex items-center space-x-2">
                   <Clock className="h-4 w-4 text-blue-500" />

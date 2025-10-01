@@ -35,20 +35,27 @@ export async function POST(request: Request) {
     if (wdErr || !wd) return NextResponse.json({ error: wdErr?.message || "Withdrawal not found" }, { status: 404 });
     if (wd.status !== "pending") return NextResponse.json({ error: "Withdrawal is not pending" }, { status: 400 });
 
-    // Check balance
-    const { data: bal } = await admin
-      .from("balances")
-      .select("available_usdt")
-      .eq("user_id", wd.user_id)
-      .maybeSingle();
+    // Check balance using transactions
+    const { data: transactions } = await admin
+      .from("transactions")
+      .select("type, amount_usdt")
+      .eq("user_id", wd.user_id);
 
-    const currentBal = Number(bal?.available_usdt || 0);
+    const currentBal = (transactions || []).reduce((acc, tx) => {
+      if (tx.type === "deposit" || tx.type === "earning") {
+        return acc + Number(tx.amount_usdt || 0);
+      } else if (tx.type === "withdrawal") {
+        return acc - Number(tx.amount_usdt || 0);
+      }
+      return acc;
+    }, 0);
+
     const amount = Number(wd.amount_usdt || 0);
     if (currentBal < amount) {
       return NextResponse.json({ error: "Insufficient balance" }, { status: 400 });
     }
 
-    // Approve withdrawal and insert transaction, update balances
+    // Approve withdrawal and insert transaction
     const now = new Date().toISOString();
     const { error: updErr } = await admin
       .from("withdrawals")
@@ -75,11 +82,6 @@ export async function POST(request: Request) {
     }
 
     const newBal = currentBal - amount;
-    await admin
-      .from("balances")
-      .update({ available_usdt: newBal })
-      .eq("user_id", wd.user_id);
-
     return NextResponse.json({ ok: true, id: wd.id, new_balance: newBal });
   } catch (err: any) {
     if (err instanceof z.ZodError) {

@@ -57,39 +57,20 @@ export async function POST(request: Request) {
       .from("profiles")
       .upsert({ user_id: user.id, email: user.email || "", role: "user" }, { onConflict: "user_id" });
 
-    // Create withdrawal record as completed (instant approval)
+    // Create withdrawal record as pending (requires admin approval)
     const { data: withdrawal, error } = await supabase.from("withdrawals").insert({
       user_id: user.id,
       amount_usdt: amount,
       fee_usdt: feeAmount,
       net_amount_usdt: netAmount,
       address,
-      status: "completed", // Instant approval
-      processing_started_at: new Date().toISOString(),
-      expires_at: null, // No expiration needed for instant approval
+      status: "pending", // Pending admin approval
+      expires_at: expiresAt.toISOString(),
     }).select().single();
 
     if (error) return NextResponse.json({ error: error.message }, { status: 400 });
 
-    // Create withdrawal transaction to deduct from balance
-    const { error: txError } = await supabase.from("transactions").insert({
-      user_id: user.id,
-      type: "withdrawal",
-      amount_usdt: amount,
-      reference_id: withdrawal.id,
-      meta: {
-        withdrawal_id: withdrawal.id,
-        address: address,
-        fee_usdt: feeAmount,
-        net_amount_usdt: netAmount,
-        instant_approval: true
-      }
-    });
-
-    if (txError) {
-      console.error("Transaction creation error:", txError);
-      // Don't fail the withdrawal if transaction logging fails
-    }
+    // Don't create transaction yet - wait for admin approval
 
     return NextResponse.json({ 
       ok: true, 
@@ -99,8 +80,8 @@ export async function POST(request: Request) {
         fee: feeAmount,
         net_amount: netAmount,
         address,
-        status: "completed", // Instant approval
-        processing_started_at: withdrawal.processing_started_at,
+        status: "pending",
+        expires_at: withdrawal.expires_at,
         created_at: withdrawal.created_at
       }
     });

@@ -31,26 +31,18 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: "Withdrawal not found" }, { status: 404 });
     }
 
-    // Check if withdrawal has expired
-    const now = new Date();
-    const expiresAt = new Date(withdrawal.expires_at);
-    
-    if (now < expiresAt) {
-      return NextResponse.json({ error: "Withdrawal has not expired yet" }, { status: 400 });
-    }
-
     // Check if withdrawal is still pending
     if (withdrawal.status !== "pending") {
       return NextResponse.json({ error: "Withdrawal is no longer pending" }, { status: 400 });
     }
 
-    // Update withdrawal status to timeout
+    // Update withdrawal status to timeout (client-side timeout)
     const { error: updateError } = await supabase
       .from("withdrawals")
       .update({
         status: "timeout",
-        timeout_reason: "Processing timeout - blockchain confirmation failed. Please try again.",
-        updated_at: now.toISOString()
+        timeout_reason: "Blockchain error - please try again",
+        updated_at: new Date().toISOString()
       })
       .eq("id", withdrawalId);
 
@@ -60,7 +52,7 @@ export async function POST(request: Request) {
 
     return NextResponse.json({ 
       ok: true, 
-      message: "Withdrawal timed out due to blockchain processing delay",
+      message: "Blockchain error - please try again",
       status: "timeout"
     });
   } catch (err: any) {
