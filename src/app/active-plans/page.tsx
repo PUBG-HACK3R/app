@@ -8,9 +8,7 @@ import { Progress } from "@/components/ui/progress";
 import { Separator } from "@/components/ui/separator";
 import { 
   TrendingUp, 
-  Calendar, 
   DollarSign, 
-  Target, 
   Clock,
   PiggyBank,
   BarChart3,
@@ -19,22 +17,6 @@ import {
   Zap
 } from "lucide-react";
 
-type Subscription = {
-  id: string;
-  plan_id: string;
-  principal_usdt: number;
-  roi_daily_percent: number;
-  start_date: string;
-  end_date: string;
-  active: boolean;
-  next_earning_at: string;
-  total_earned?: number;
-  plan?: {
-    name: string;
-    description: string;
-    duration_days: number;
-  };
-};
 
 export default async function ActivePlansPage() {
   const supabase = await getSupabaseServerClient();
@@ -81,7 +63,7 @@ export default async function ActivePlansPage() {
       return {
         ...sub,
         total_earned: totalEarned,
-        plan: sub.plans
+        plan: Array.isArray(sub.plans) ? sub.plans[0] : sub.plans
       };
     })
   );
