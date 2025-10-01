@@ -88,7 +88,7 @@ export default async function ActivePlansPage() {
       };
     });
     
-    subscriptions = subscriptionsWithDescription;
+    subscriptions = subscriptionsWithDescription || null;
     subscriptionsError = fallbackResult.error;
   }
 
