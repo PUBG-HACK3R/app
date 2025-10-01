@@ -76,7 +76,7 @@ export default async function ActivePlansPage() {
       ...sub,
       plans: Array.isArray(sub.plans) 
         ? sub.plans.map(plan => ({ ...plan, description: "Investment plan with competitive returns" }))
-        : { ...sub.plans, description: "Investment plan with competitive returns" }
+        : sub.plans ? { ...sub.plans, description: "Investment plan with competitive returns" } : null
     }));
     
     subscriptions = subscriptionsWithDescription;
