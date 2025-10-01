@@ -5,9 +5,10 @@ import { signupSchema } from "@/lib/validations";
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
+    const { referralCode, ...signupData } = body;
     
     // Validate input
-    const validatedData = signupSchema.parse(body);
+    const validatedData = signupSchema.parse(signupData);
     
     // Use admin client to create user (bypasses client-side cookie issues)
     const admin = getSupabaseAdminClient();
@@ -33,6 +34,27 @@ export async function POST(request: NextRequest) {
           email: data.user.email,
           role: "user",
         });
+
+        // Handle referral code if provided
+        if (referralCode && referralCode.trim()) {
+          try {
+            const response = await fetch(`${process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000'}/api/referrals`, {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({
+                referralCode: referralCode.trim(),
+                userId: data.user.id
+              })
+            });
+
+            if (!response.ok) {
+              console.warn("Referral application failed:", await response.text());
+            }
+          } catch (referralErr) {
+            console.warn("Referral processing failed:", referralErr);
+            // Non-fatal - user account is still created
+          }
+        }
       } catch (profileErr) {
         console.warn("Profile creation failed:", profileErr);
         // Non-fatal - profile will be created on first API call

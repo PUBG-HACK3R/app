@@ -4,6 +4,7 @@ import { getSupabaseServerClient } from "@/lib/supabase/server";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { SupportButton } from "@/components/support-button";
 import { 
   Wallet, 
   ArrowUpRight, 
@@ -16,7 +17,12 @@ import {
   DollarSign,
   PiggyBank,
   Banknote,
-  Activity
+  Activity,
+  Bitcoin,
+  Coins,
+  Zap,
+  MessageCircle,
+  Users
 } from "lucide-react";
 
 export default async function WalletPage() {
@@ -291,6 +297,37 @@ export default async function WalletPage() {
                 View History
               </Link>
             </Button>
+          </CardContent>
+        </Card>
+
+        <Card className="border-0 shadow-lg hover:shadow-xl transition-shadow duration-300">
+          <CardHeader className="text-center pb-4">
+            <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-gradient-to-r from-orange-500 to-orange-600 text-white mx-auto mb-4">
+              <MessageCircle className="h-8 w-8" />
+            </div>
+            <CardTitle className="text-xl">Need Help?</CardTitle>
+            <CardDescription className="text-base">
+              Get instant support from our team via live chat
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div className="space-y-2">
+              <div className="flex items-center space-x-2 text-sm text-muted-foreground">
+                <Zap className="h-4 w-4" />
+                <span>Instant response</span>
+              </div>
+              <div className="flex items-center space-x-2 text-sm text-muted-foreground">
+                <Shield className="h-4 w-4" />
+                <span>24/7 availability</span>
+              </div>
+              <div className="flex items-center space-x-2 text-sm text-muted-foreground">
+                <Users className="h-4 w-4" />
+                <span>Expert support team</span>
+              </div>
+            </div>
+            <SupportButton size="lg" className="w-full bg-orange-600 hover:bg-orange-700">
+              Start Live Chat
+            </SupportButton>
           </CardContent>
         </Card>
       </div>

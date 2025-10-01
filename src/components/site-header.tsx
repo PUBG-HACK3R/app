@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import Image from "next/image";
 import { useEffect, useState } from "react";
 import { ThemeToggle } from "@/components/theme-toggle";
 import { getSupabaseBrowserClient } from "@/lib/supabase/client";
@@ -51,10 +52,14 @@ export function SiteHeader() {
     <header className="sticky top-0 z-50 border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 shadow-sm">
       <div className="mx-auto flex h-16 max-w-7xl items-center justify-between px-6">
         <div className="flex items-center gap-8">
-          <Link href="/" className="flex items-center gap-2 font-bold text-xl">
-            <div className="w-8 h-8 bg-gradient-to-br from-blue-600 to-purple-600 rounded-lg flex items-center justify-center">
-              <span className="text-white font-bold text-sm">W</span>
-            </div>
+          <Link href="/" className="flex items-center gap-3 font-bold text-xl">
+            <Image 
+              src="/logo.png" 
+              alt="WeEarn Logo" 
+              width={40} 
+              height={40} 
+              className="rounded-lg shadow-sm"
+            />
             <span className="bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
               WeEarn
             </span>
@@ -81,6 +86,13 @@ export function SiteHeader() {
                   className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors relative group"
                 >
                   Wallet
+                  <span className="absolute -bottom-1 left-0 w-0 h-0.5 bg-gradient-to-r from-blue-600 to-purple-600 group-hover:w-full transition-all duration-300"></span>
+                </Link>
+                <Link 
+                  href="/referrals" 
+                  className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors relative group"
+                >
+                  Referrals
                   <span className="absolute -bottom-1 left-0 w-0 h-0.5 bg-gradient-to-r from-blue-600 to-purple-600 group-hover:w-full transition-all duration-300"></span>
                 </Link>
                 {isAdmin && (
@@ -142,10 +154,14 @@ export function SiteHeader() {
             </SheetTrigger>
             <SheetContent side="right" className="w-[320px] sm:w-[400px]">
               <div className="flex flex-col h-full">
-                <div className="flex items-center gap-2 mb-8">
-                  <div className="w-8 h-8 bg-gradient-to-br from-blue-600 to-purple-600 rounded-lg flex items-center justify-center">
-                    <span className="text-white font-bold text-sm">W</span>
-                  </div>
+                <div className="flex items-center gap-3 mb-8">
+                  <Image 
+                    src="/logo.png" 
+                    alt="WeEarn Logo" 
+                    width={32} 
+                    height={32} 
+                    className="rounded-lg shadow-sm"
+                  />
                   <span className="font-bold text-xl bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
                     WeEarn
                   </span>
@@ -174,6 +190,13 @@ export function SiteHeader() {
                       >
                         <span className="w-2 h-2 bg-purple-600 rounded-full"></span>
                         Wallet
+                      </Link>
+                      <Link 
+                        href="/referrals" 
+                        className="flex items-center gap-3 px-3 py-2 text-sm font-medium rounded-lg hover:bg-muted/50 transition-colors"
+                      >
+                        <span className="w-2 h-2 bg-orange-600 rounded-full"></span>
+                        Referrals
                       </Link>
                       {isAdmin && (
                         <Link 

@@ -122,6 +122,19 @@ export async function POST(request: Request) {
               .update({ available_usdt: newBal })
               .eq("user_id", deposit.user_id);
           }
+
+          // Process referral commission for this deposit
+          try {
+            await admin.rpc('process_referral_commission', {
+              p_referred_user_id: deposit.user_id,
+              p_transaction_id: null, // We'll get the transaction ID after insert
+              p_source_amount: deposit.amount_usdt,
+              p_source_type: 'deposit'
+            });
+          } catch (referralErr) {
+            console.warn("Referral commission processing failed:", referralErr);
+            // Non-fatal - deposit still processed successfully
+          }
         }
 
         // Create subscription once if a planId was provided at invoice time

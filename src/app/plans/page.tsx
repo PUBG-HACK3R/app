@@ -14,7 +14,9 @@ import {
   ArrowRight,
   Target,
   Zap,
-  Crown
+  Crown,
+  Bitcoin,
+  Coins
 } from "lucide-react";
 
 interface DatabasePlan {

@@ -2,6 +2,8 @@ import type { Metadata } from "next";
 import "./globals.css";
 import { ThemeProvider } from "@/components/theme-provider";
 import { SiteHeader } from "@/components/site-header";
+import { SiteFooter } from "@/components/site-footer";
+import { TawkToChat } from "@/components/tawk-to-chat";
 import { ErrorBoundary } from "@/components/error-boundary";
 import { Toaster } from "sonner";
 
@@ -10,6 +12,11 @@ export const metadata: Metadata = {
   description: "Join thousands of investors earning consistent daily returns through our secure, automated platform. Deposit USDT and watch your portfolio grow with guaranteed daily ROI.",
   keywords: "investment, daily returns, USDT, cryptocurrency, passive income, ROI, WeEarn",
   authors: [{ name: "WeEarn Team" }],
+  icons: {
+    icon: "/logo.png",
+    shortcut: "/logo.png",
+    apple: "/logo.png",
+  },
   openGraph: {
     title: "WeEarn - Smart Investment Platform",
     description: "Join thousands of investors earning consistent daily returns through our secure, automated platform.",
@@ -52,11 +59,15 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en" suppressHydrationWarning>
-      <body className="font-sans min-h-screen antialiased">
+      <body className="font-sans min-h-screen antialiased flex flex-col">
         <ErrorBoundary>
           <ThemeProvider attribute="class" defaultTheme="system" enableSystem disableTransitionOnChange>
             <SiteHeader />
-            {children}
+            <main className="flex-1">
+              {children}
+            </main>
+            <SiteFooter />
+            <TawkToChat />
             <Toaster />
           </ThemeProvider>
         </ErrorBoundary>

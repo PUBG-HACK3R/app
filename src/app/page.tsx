@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { SupportButton } from "@/components/support-button";
 import { ArrowRight, Shield, TrendingUp, Wallet, Users, Clock, CheckCircle } from "lucide-react";
 
 export default function Home() {
@@ -34,6 +35,13 @@ export default function Home() {
               <Button size="lg" variant="outline" asChild className="text-lg px-8 py-6">
                 <Link href="/plans">View Investment Plans</Link>
               </Button>
+              <SupportButton 
+                size="lg" 
+                variant="ghost" 
+                className="text-lg px-8 py-6 border border-gray-300 hover:bg-white/10"
+              >
+                Need Help?
+              </SupportButton>
             </div>
           </div>
         </div>

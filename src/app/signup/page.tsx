@@ -15,8 +15,53 @@ function SignupContent() {
   const search = useSearchParams();
   const [email, setEmail] = React.useState("");
   const [password, setPassword] = React.useState("");
+  const [referralCode, setReferralCode] = React.useState("");
+  const [referralValid, setReferralValid] = React.useState<boolean | null>(null);
+  const [referrerInfo, setReferrerInfo] = React.useState<any>(null);
   const [loading, setLoading] = React.useState(false);
   const [error, setError] = React.useState<string | null>(null);
+
+  // Get referral code from URL
+  React.useEffect(() => {
+    const refCode = search.get('ref');
+    if (refCode) {
+      setReferralCode(refCode);
+      validateReferralCode(refCode);
+    }
+  }, [search]);
+
+  const validateReferralCode = async (code: string) => {
+    if (!code || code.length < 3) {
+      setReferralValid(null);
+      setReferrerInfo(null);
+      return;
+    }
+
+    try {
+      const response = await fetch('/api/referrals/validate', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ referralCode: code })
+      });
+
+      const data = await response.json();
+      setReferralValid(data.valid);
+      setReferrerInfo(data.valid ? data.referrer : null);
+    } catch (error) {
+      setReferralValid(false);
+      setReferrerInfo(null);
+    }
+  };
+
+  const handleReferralCodeChange = (value: string) => {
+    setReferralCode(value.toUpperCase());
+    if (value.length >= 3) {
+      validateReferralCode(value);
+    } else {
+      setReferralValid(null);
+      setReferrerInfo(null);
+    }
+  };
 
   function clearBrowserData() {
     if (typeof window !== 'undefined') {
@@ -97,7 +142,10 @@ function SignupContent() {
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify(validatedData),
+        body: JSON.stringify({
+          ...validatedData,
+          referralCode: referralCode || undefined
+        }),
       });
 
       const result = await response.json();
@@ -163,6 +211,23 @@ function SignupContent() {
             <div className="grid gap-2">
               <label htmlFor="password" className="text-sm">Password</label>
               <Input id="password" type="password" required value={password} onChange={(e) => setPassword(e.target.value)} />
+            </div>
+            <div className="grid gap-2">
+              <label htmlFor="referralCode" className="text-sm">Referral Code (Optional)</label>
+              <Input 
+                id="referralCode" 
+                type="text" 
+                placeholder="Enter referral code"
+                value={referralCode} 
+                onChange={(e) => handleReferralCodeChange(e.target.value)}
+                className={referralValid === true ? "border-green-500" : referralValid === false ? "border-red-500" : ""}
+              />
+              {referralValid === true && referrerInfo && (
+                <p className="text-xs text-green-600">✓ Valid referral code from {referrerInfo.email}</p>
+              )}
+              {referralValid === false && referralCode.length >= 3 && (
+                <p className="text-xs text-red-600">✗ Invalid referral code</p>
+              )}
             </div>
             {error && (
               <div className="space-y-2">
