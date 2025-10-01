@@ -7,6 +7,7 @@ import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
 import { Separator } from "@/components/ui/separator";
 import { SupportButton } from "@/components/support-button";
+import { CryptoTicker } from "@/components/crypto-ticker";
 import { DailyReturnsChart, type DailyReturnsDatum } from "@/components/charts/daily-returns";
 import { 
   TrendingUp, 
@@ -108,74 +109,7 @@ export default async function DashboardPage() {
   return (
     <main className="mx-auto max-w-7xl px-4 py-8 space-y-8">
       {/* Crypto Ticker */}
-      <div className="bg-gradient-to-r from-blue-50 to-purple-50 dark:from-blue-950 dark:to-purple-950 border border-blue-200 dark:border-blue-800 rounded-lg p-4">
-        <div className="flex items-center gap-2 mb-3">
-          <Bitcoin className="h-4 w-4 text-orange-500" />
-          <span className="text-sm font-medium text-blue-700 dark:text-blue-300">Live Crypto Prices</span>
-        </div>
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-2">
-              <div className="w-6 h-6 bg-orange-500 rounded-full flex items-center justify-center">
-                <span className="text-white text-xs font-bold">₿</span>
-              </div>
-              <div>
-                <div className="text-sm font-medium">BTC</div>
-                <div className="text-xs text-muted-foreground">Bitcoin</div>
-              </div>
-            </div>
-            <div className="text-right">
-              <div className="text-sm font-bold">$43,250</div>
-              <div className="text-xs text-green-600">+2.4%</div>
-            </div>
-          </div>
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-2">
-              <div className="w-6 h-6 bg-blue-500 rounded-full flex items-center justify-center">
-                <span className="text-white text-xs font-bold">Ξ</span>
-              </div>
-              <div>
-                <div className="text-sm font-medium">ETH</div>
-                <div className="text-xs text-muted-foreground">Ethereum</div>
-              </div>
-            </div>
-            <div className="text-right">
-              <div className="text-sm font-bold">$2,580</div>
-              <div className="text-xs text-green-600">+1.8%</div>
-            </div>
-          </div>
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-2">
-              <div className="w-6 h-6 bg-green-500 rounded-full flex items-center justify-center">
-                <span className="text-white text-xs font-bold">₮</span>
-              </div>
-              <div>
-                <div className="text-sm font-medium">USDT</div>
-                <div className="text-xs text-muted-foreground">Tether</div>
-              </div>
-            </div>
-            <div className="text-right">
-              <div className="text-sm font-bold">$1.00</div>
-              <div className="text-xs text-gray-500">0.0%</div>
-            </div>
-          </div>
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-2">
-              <div className="w-6 h-6 bg-yellow-500 rounded-full flex items-center justify-center">
-                <span className="text-white text-xs font-bold">B</span>
-              </div>
-              <div>
-                <div className="text-sm font-medium">BNB</div>
-                <div className="text-xs text-muted-foreground">Binance</div>
-              </div>
-            </div>
-            <div className="text-right">
-              <div className="text-sm font-bold">$315</div>
-              <div className="text-xs text-green-600">+3.2%</div>
-            </div>
-          </div>
-        </div>
-      </div>
+      <CryptoTicker variant="dashboard" />
 
       {/* Header Section */}
       <div className="flex items-center justify-between">

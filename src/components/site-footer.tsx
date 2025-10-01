@@ -3,10 +3,12 @@
 import Link from "next/link";
 import Image from "next/image";
 import { openTawkToChat } from "@/components/tawk-to-chat";
+import { useCryptoPrices } from "@/hooks/use-crypto-prices";
 import { 
   Bitcoin, 
   Coins, 
   TrendingUp, 
+  TrendingDown,
   Shield, 
   Users, 
   Mail, 
@@ -17,16 +19,22 @@ import {
   Instagram,
   Linkedin,
   Github,
-  MessageCircle
+  MessageCircle,
+  Loader2
 } from "lucide-react";
 
 export function SiteFooter() {
-  const cryptoData = [
-    { name: "Bitcoin", symbol: "BTC", price: "$43,250", change: "+2.4%" },
-    { name: "Ethereum", symbol: "ETH", price: "$2,580", change: "+1.8%" },
-    { name: "USDT", symbol: "USDT", price: "$1.00", change: "0.0%" },
-    { name: "BNB", symbol: "BNB", price: "$315", change: "+3.2%" },
+  const { pricesArray, loading, error } = useCryptoPrices();
+
+  // Fallback data if API fails
+  const fallbackData = [
+    { name: "Bitcoin", symbol: "BTC", formatted_price: "$43,250", formatted_change: "+2.4%", change: 2.4 },
+    { name: "Ethereum", symbol: "ETH", formatted_price: "$2,580", formatted_change: "+1.8%", change: 1.8 },
+    { name: "USDT", symbol: "USDT", formatted_price: "$1.00", formatted_change: "0.0%", change: 0.0 },
+    { name: "BNB", symbol: "BNB", formatted_price: "$315", formatted_change: "+3.2%", change: 3.2 },
   ];
+
+  const cryptoData = loading || error ? fallbackData : pricesArray;
 
   const quickLinks = [
     { name: "Dashboard", href: "/dashboard" },
@@ -50,15 +58,31 @@ export function SiteFooter() {
       <div className="border-b border-white/10 bg-black/20 backdrop-blur-sm">
         <div className="mx-auto max-w-7xl px-6 py-4">
           <div className="flex items-center gap-2 mb-3">
-            <TrendingUp className="h-4 w-4 text-green-400" />
-            <span className="text-sm font-medium text-green-400">Live Crypto Prices</span>
+            {loading ? (
+              <Loader2 className="h-4 w-4 text-blue-400 animate-spin" />
+            ) : error ? (
+              <TrendingDown className="h-4 w-4 text-red-400" />
+            ) : (
+              <TrendingUp className="h-4 w-4 text-green-400" />
+            )}
+            <span className={`text-sm font-medium ${loading ? 'text-blue-400' : error ? 'text-red-400' : 'text-green-400'}`}>
+              {loading ? 'Loading Crypto Prices...' : error ? 'Crypto Prices (Offline)' : 'Live Crypto Prices'}
+            </span>
+            {!loading && !error && (
+              <span className="text-xs text-gray-400">• Updates every 30s</span>
+            )}
           </div>
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
             {cryptoData.map((crypto) => (
-              <div key={crypto.symbol} className="flex items-center justify-between p-3 bg-white/5 rounded-lg backdrop-blur-sm border border-white/10">
+              <div key={crypto.symbol} className="flex items-center justify-between p-3 bg-white/5 rounded-lg backdrop-blur-sm border border-white/10 hover:bg-white/10 transition-colors">
                 <div className="flex items-center gap-2">
-                  <div className="w-6 h-6 bg-gradient-to-br from-orange-400 to-yellow-500 rounded-full flex items-center justify-center">
-                    <Coins className="h-3 w-3 text-white" />
+                  <div className={`w-6 h-6 rounded-full flex items-center justify-center ${
+                    crypto.symbol === 'BTC' ? 'bg-gradient-to-br from-orange-400 to-yellow-500' :
+                    crypto.symbol === 'ETH' ? 'bg-gradient-to-br from-blue-400 to-purple-500' :
+                    crypto.symbol === 'USDT' ? 'bg-gradient-to-br from-green-400 to-emerald-500' :
+                    'bg-gradient-to-br from-yellow-400 to-orange-500'
+                  }`}>
+                    {crypto.symbol === 'BTC' ? <Bitcoin className="h-3 w-3 text-white" /> : <Coins className="h-3 w-3 text-white" />}
                   </div>
                   <div>
                     <div className="text-sm font-medium">{crypto.symbol}</div>
@@ -66,9 +90,17 @@ export function SiteFooter() {
                   </div>
                 </div>
                 <div className="text-right">
-                  <div className="text-sm font-bold">{crypto.price}</div>
-                  <div className={`text-xs ${crypto.change.startsWith('+') ? 'text-green-400' : crypto.change.startsWith('-') ? 'text-red-400' : 'text-gray-400'}`}>
-                    {crypto.change}
+                  <div className="text-sm font-bold">{crypto.formatted_price || crypto.price}</div>
+                  <div className={`text-xs flex items-center gap-1 ${
+                    (crypto.change || 0) > 0 ? 'text-green-400' : 
+                    (crypto.change || 0) < 0 ? 'text-red-400' : 'text-gray-400'
+                  }`}>
+                    {(crypto.change || 0) > 0 ? (
+                      <TrendingUp className="h-3 w-3" />
+                    ) : (crypto.change || 0) < 0 ? (
+                      <TrendingDown className="h-3 w-3" />
+                    ) : null}
+                    {crypto.formatted_change || crypto.change}
                   </div>
                 </div>
               </div>
