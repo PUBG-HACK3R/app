@@ -90,7 +90,7 @@ export function SiteFooter() {
                   </div>
                 </div>
                 <div className="text-right">
-                  <div className="text-sm font-bold">{crypto.formatted_price || crypto.price}</div>
+                  <div className="text-sm font-bold">{crypto.formatted_price}</div>
                   <div className={`text-xs flex items-center gap-1 ${
                     (crypto.change || 0) > 0 ? 'text-green-400' : 
                     (crypto.change || 0) < 0 ? 'text-red-400' : 'text-gray-400'
@@ -100,7 +100,7 @@ export function SiteFooter() {
                     ) : (crypto.change || 0) < 0 ? (
                       <TrendingDown className="h-3 w-3" />
                     ) : null}
-                    {crypto.formatted_change || crypto.change}
+                    {crypto.formatted_change}
                   </div>
                 </div>
               </div>
