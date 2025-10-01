@@ -71,7 +71,15 @@ export default async function ActivePlansPage() {
       .eq("active", true)
       .order("created_at", { ascending: false });
     
-    subscriptions = fallbackResult.data;
+    // Add missing description field to maintain type compatibility
+    const subscriptionsWithDescription = fallbackResult.data?.map(sub => ({
+      ...sub,
+      plans: Array.isArray(sub.plans) 
+        ? sub.plans.map(plan => ({ ...plan, description: "Investment plan with competitive returns" }))
+        : { ...sub.plans, description: "Investment plan with competitive returns" }
+    }));
+    
+    subscriptions = subscriptionsWithDescription;
     subscriptionsError = fallbackResult.error;
   }
 
