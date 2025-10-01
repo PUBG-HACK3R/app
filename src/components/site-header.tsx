@@ -78,6 +78,7 @@ export function SiteHeader() {
 
   const userNavItems = [
     { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard, description: "Your investment overview" },
+    { href: "/active-plans", label: "Active Plans", icon: BarChart3, description: "Monitor your investments" },
     { href: "/wallet", label: "Wallet", icon: Wallet, description: "Manage your funds" },
     { href: "/referrals", label: "Referrals", icon: Gift, description: "Earn through referrals" },
   ];

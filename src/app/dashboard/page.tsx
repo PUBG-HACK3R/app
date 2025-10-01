@@ -259,6 +259,12 @@ export default async function DashboardPage() {
             </CardHeader>
             <CardContent className="space-y-3">
               <Button className="w-full justify-start" variant="ghost" asChild>
+                <Link href="/active-plans">
+                  <BarChart3 className="mr-2 h-4 w-4" />
+                  Active Plans
+                </Link>
+              </Button>
+              <Button className="w-full justify-start" variant="ghost" asChild>
                 <Link href="/plans">
                   <Target className="mr-2 h-4 w-4" />
                   Browse Investment Plans

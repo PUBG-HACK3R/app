@@ -326,7 +326,7 @@ export default function WithdrawPage() {
                   </span>
                 </div>
                 <p className="text-sm text-yellow-700 dark:text-yellow-300 mb-3">
-                  Processing will timeout if not completed within 15 minutes
+                  Processing will complete within 15 minutes
                 </p>
                 
                 {/* Processing Messages */}
@@ -660,7 +660,7 @@ export default function WithdrawPage() {
               <div className="space-y-3">
                 <div className="flex items-center space-x-2">
                   <CheckCircle className="h-4 w-4 text-green-500" />
-                  <span className="text-sm">Instant process</span>
+                  <span className="text-sm">Instant Approval</span>
                 </div>
                 <div className="flex items-center space-x-2">
                   <Clock className="h-4 w-4 text-blue-500" />
@@ -679,7 +679,7 @@ export default function WithdrawPage() {
               <Separator />
               
               <div className="text-xs text-muted-foreground">
-                All withdrawal requests are manually reviewed by our security team to ensure the safety of your funds.
+                All withdrawal requests are automatically approved and processed within 15 minutes for enhanced user experience.
               </div>
             </CardContent>
           </Card>

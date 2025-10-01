@@ -2,14 +2,15 @@ import { redirect } from "next/navigation";
 import { getSupabaseServerClient } from "@/lib/supabase/server";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Clock, CheckCircle, AlertCircle, ArrowUpRight, ArrowDownRight, TrendingUp } from "lucide-react";
+import { Clock, CheckCircle, AlertCircle, ArrowUpRight, ArrowDownRight, TrendingUp, PiggyBank } from "lucide-react";
 
 type Tx = { 
-  type: "deposit" | "earning" | "withdrawal" | "pending_deposit"; 
+  type: "deposit" | "earning" | "withdrawal" | "investment" | "pending_deposit"; 
   amount_usdt: number; 
   created_at: string;
   status?: string;
   order_id?: string;
+  meta?: any;
 };
 
 export default async function WalletHistoryPage() {
@@ -22,7 +23,7 @@ export default async function WalletHistoryPage() {
   // Get confirmed transactions
   const { data: txs } = await supabase
     .from("transactions")
-    .select("type, amount_usdt, created_at")
+    .select("type, amount_usdt, created_at, meta")
     .eq("user_id", user.id)
     .order("created_at", { ascending: false })
     .limit(40);
@@ -76,7 +77,8 @@ export default async function WalletHistoryPage() {
                 const isPending = t.type === "pending_deposit";
                 const isPositive = t.type === 'deposit' || t.type === 'earning' || t.type === 'pending_deposit';
                 const icon = t.type === 'deposit' || t.type === 'pending_deposit' ? ArrowUpRight : 
-                           t.type === 'withdrawal' ? ArrowDownRight : TrendingUp;
+                           t.type === 'withdrawal' ? ArrowDownRight : 
+                           t.type === 'investment' ? PiggyBank : TrendingUp;
                 const IconComponent = icon;
                 
                 return (
@@ -87,6 +89,7 @@ export default async function WalletHistoryPage() {
                     <div className="flex items-center space-x-3">
                       <div className={`p-2 rounded-full ${
                         isPending ? 'bg-yellow-100 text-yellow-600 dark:bg-yellow-900 dark:text-yellow-400' :
+                        t.type === 'investment' ? 'bg-blue-100 text-blue-600 dark:bg-blue-900 dark:text-blue-400' :
                         isPositive ? 'bg-green-100 text-green-600 dark:bg-green-900 dark:text-green-400' : 
                         'bg-red-100 text-red-600 dark:bg-red-900 dark:text-red-400'
                       }`}>
@@ -95,8 +98,14 @@ export default async function WalletHistoryPage() {
                       <div className="flex-1">
                         <div className="flex items-center space-x-2">
                           <span className="font-medium capitalize">
-                            {t.type === 'pending_deposit' ? 'Deposit' : t.type}
+                            {t.type === 'pending_deposit' ? 'Deposit' : 
+                             t.type === 'investment' ? 'Plan Purchase' : t.type}
                           </span>
+                          {t.type === 'investment' && t.meta?.plan_name && (
+                            <Badge variant="outline" className="text-xs bg-blue-50 text-blue-700 border-blue-200 dark:bg-blue-950 dark:text-blue-300 dark:border-blue-800">
+                              {t.meta.plan_name}
+                            </Badge>
+                          )}
                           {isPending && (
                             <Badge variant="outline" className="text-xs bg-yellow-100 text-yellow-700 border-yellow-300 dark:bg-yellow-900 dark:text-yellow-300 dark:border-yellow-700">
                               Pending
@@ -118,9 +127,10 @@ export default async function WalletHistoryPage() {
                     </div>
                     <div className={`font-semibold ${
                       isPending ? 'text-yellow-600 dark:text-yellow-400' :
+                      t.type === 'investment' ? 'text-blue-600' :
                       isPositive ? 'text-green-600' : 'text-red-600'
                     }`}>
-                      {isPositive ? '+' : '-'}${Number(t.amount_usdt).toFixed(2)}
+                      {t.type === 'investment' ? '-' : isPositive ? '+' : '-'}${Number(t.amount_usdt).toFixed(2)}
                     </div>
                   </div>
                 );

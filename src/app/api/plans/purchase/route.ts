@@ -106,12 +106,12 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: "Failed to create subscription" }, { status: 500 });
     }
 
-    // Create withdrawal transaction for the plan purchase
+    // Create investment transaction for the plan purchase
     const { error: txError } = await admin
       .from("transactions")
       .insert({
         user_id: user.id,
-        type: "withdrawal",
+        type: "investment",
         amount_usdt: planPrice,
         reference_id: subscription.id,
         meta: { 
