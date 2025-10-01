@@ -10,8 +10,8 @@ export async function GET() {
 
     // First, let's check if we can access the profiles table at all
     let profilesAccessible = true;
-    let profilesError = null;
-    let profiles = [];
+    let profilesError: string | null = null;
+    let profiles: any[] = [];
     
     try {
       const { data, error } = await supabase
@@ -31,8 +31,8 @@ export async function GET() {
     }
 
     // Check table structure using a different approach
-    let tableInfo = [];
-    let tableError = null;
+    let tableInfo: any[] = [];
+    let tableError: string | null = null;
     
     try {
       const { data, error } = await supabase
@@ -60,7 +60,7 @@ export async function GET() {
 
     // Check total count of profiles
     let profileCount = 0;
-    let countError = null;
+    let countError: string | null = null;
     
     try {
       const { count, error } = await supabase
