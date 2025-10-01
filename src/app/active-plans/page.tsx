@@ -72,14 +72,21 @@ export default async function ActivePlansPage() {
       .order("created_at", { ascending: false });
     
     // Add missing description field to maintain type compatibility
-    const subscriptionsWithDescription = fallbackResult.data?.map(sub => ({
-      ...sub,
-      plans: Array.isArray(sub.plans) 
-        ? sub.plans.map(plan => ({ ...plan, description: "Investment plan with competitive returns" }))
-        : (sub.plans && typeof sub.plans === 'object') 
-          ? { ...sub.plans, description: "Investment plan with competitive returns" } 
-          : null
-    }));
+    const subscriptionsWithDescription = fallbackResult.data?.map(sub => {
+      let plans;
+      if (Array.isArray(sub.plans)) {
+        plans = sub.plans.map(plan => ({ ...plan, description: "Investment plan with competitive returns" }));
+      } else if (sub.plans && typeof sub.plans === 'object') {
+        plans = { ...(sub.plans as any), description: "Investment plan with competitive returns" };
+      } else {
+        plans = null;
+      }
+      
+      return {
+        ...sub,
+        plans
+      };
+    });
     
     subscriptions = subscriptionsWithDescription;
     subscriptionsError = fallbackResult.error;
