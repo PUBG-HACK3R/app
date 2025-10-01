@@ -153,10 +153,19 @@ export async function POST(request: Request) {
     }
 
     // Update referrer's total referrals count
+    // First get current count
+    const { data: currentProfile } = await supabase
+      .from("profiles")
+      .select("total_referrals")
+      .eq("user_id", referrer.user_id)
+      .single();
+
+    const currentCount = currentProfile?.total_referrals || 0;
+    
     const { error: countError } = await supabase
       .from("profiles")
       .update({ 
-        total_referrals: supabase.raw('total_referrals + 1')
+        total_referrals: currentCount + 1
       })
       .eq("user_id", referrer.user_id);
 
