@@ -65,7 +65,7 @@ export function CryptoTicker({ variant = "dashboard", className = "" }: CryptoTi
                 </div>
               </div>
               <div className="text-right">
-                <div className="text-sm font-bold">{crypto.formatted_price || crypto.price}</div>
+                <div className="text-sm font-bold">{crypto.formatted_price}</div>
                 <div className={`text-xs flex items-center gap-1 ${
                   (crypto.change || 0) > 0 ? 'text-green-600' : 
                   (crypto.change || 0) < 0 ? 'text-red-600' : 'text-gray-500'
@@ -75,7 +75,7 @@ export function CryptoTicker({ variant = "dashboard", className = "" }: CryptoTi
                   ) : (crypto.change || 0) < 0 ? (
                     <TrendingDown className="h-3 w-3" />
                   ) : null}
-                  {crypto.formatted_change || crypto.change}
+                  {crypto.formatted_change}
                 </div>
               </div>
             </div>
