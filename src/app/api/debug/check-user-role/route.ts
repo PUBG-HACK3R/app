@@ -16,8 +16,17 @@ export async function GET() {
       }, { status: 401 });
     }
 
-    // Get user profile
+    // Get user profile with detailed debugging
     const { data: profile, error: profileError } = await supabase
+      .from("profiles")
+      .select("*")
+      .eq("user_id", user.id)
+      .single();
+
+    // Also try with admin client to compare
+    const { getSupabaseAdminClient } = await import("@/lib/supabase/admin");
+    const admin = getSupabaseAdminClient();
+    const { data: adminProfile } = await admin
       .from("profiles")
       .select("*")
       .eq("user_id", user.id)
@@ -30,6 +39,10 @@ export async function GET() {
         user: {
           id: user.id,
           email: user.email
+        },
+        debug: {
+          adminProfile: adminProfile,
+          profileError: profileError
         }
       }, { status: 500 });
     }
@@ -42,6 +55,12 @@ export async function GET() {
         email: user.email,
         role: profile?.role || 'none',
         profile: profile
+      },
+      debug: {
+        userClientProfile: profile,
+        adminClientProfile: adminProfile,
+        rolesMatch: profile?.role === adminProfile?.role,
+        timestamp: new Date().toISOString()
       }
     });
 

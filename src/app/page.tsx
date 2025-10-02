@@ -15,7 +15,7 @@ export default function Home() {
             <div className="flex items-center justify-center mb-6">
               <div className="relative">
                 <Image 
-                  src="/hero_section_logo.png" 
+                  src="/logoC.png" 
                   alt="EarningWe Logo" 
                   width={150} 
                   height={150} 
