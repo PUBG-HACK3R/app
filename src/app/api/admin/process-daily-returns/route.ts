@@ -16,14 +16,27 @@ export async function POST() {
     }
 
     // Check if user is admin
-    const { data: profile } = await supabase
+    const { data: profile, error: profileError } = await supabase
       .from("profiles")
       .select("role")
       .eq("user_id", user.id)
       .single();
 
+    if (profileError) {
+      console.error("Profile fetch error:", profileError);
+      return NextResponse.json({ 
+        error: "Failed to fetch user profile", 
+        details: profileError.message 
+      }, { status: 500 });
+    }
+
+    console.log("User profile:", { userId: user.id, role: profile?.role });
+
     if (profile?.role !== "admin") {
-      return NextResponse.json({ error: "Admin access required" }, { status: 403 });
+      return NextResponse.json({ 
+        error: "Admin access required", 
+        details: `Current role: ${profile?.role || 'none'}` 
+      }, { status: 403 });
     }
 
     // Process daily returns using admin client

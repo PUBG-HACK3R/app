@@ -13,13 +13,19 @@ export default function Home() {
         <div className="mx-auto max-w-7xl px-4">
           <div className="text-center space-y-8">
             <div className="flex items-center justify-center mb-6">
-              <Image 
-                src="/hero_section_logo.png" 
-                alt="EarningWe Logo" 
-                width={200} 
-                height={200} 
-                className="rounded-2xl shadow-lg"
-              />
+              <div className="relative">
+                <Image 
+                  src="/hero_section_logo.png" 
+                  alt="EarningWe Logo" 
+                  width={150} 
+                  height={150} 
+                  className="object-contain"
+                  style={{ 
+                    filter: 'drop-shadow(0 10px 25px rgba(0, 0, 0, 0.1))',
+                    background: 'transparent'
+                  }}
+                />
+              </div>
             </div>
             <h2 className="text-3xl md:text-4xl font-bold text-foreground mb-4">
               Smart Investment Platform
