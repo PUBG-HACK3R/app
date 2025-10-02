@@ -5,7 +5,7 @@ import { getSupabaseAdminClient } from "@/lib/supabase/admin";
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
-export async function POST(request: Request) {
+export async function POST() {
   try {
     // Check admin authentication
     const supabase = await getSupabaseServerClient();
@@ -50,7 +50,7 @@ export async function POST(request: Request) {
 
     let credited = 0;
     let deactivated = 0;
-    let errors = [];
+    const errors = [];
     let totalAmount = 0;
 
     for (const sub of subs || []) {

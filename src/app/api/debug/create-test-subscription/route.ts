@@ -115,7 +115,7 @@ export async function GET() {
         end_date,
         next_earning_at,
         active,
-        profiles!subscriptions_user_id_fkey(email)
+        profiles(email)
       `)
       .order("created_at", { ascending: false })
       .limit(10);
@@ -132,7 +132,7 @@ export async function GET() {
       subscriptions: subscriptions?.map(sub => ({
         id: sub.id,
         userId: sub.user_id,
-        userEmail: sub.profiles?.email,
+        userEmail: (sub as any).profiles?.email || 'Unknown',
         planId: sub.plan_id,
         principal: sub.principal_usdt,
         roiDaily: sub.roi_daily_percent,
