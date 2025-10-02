@@ -165,20 +165,17 @@ function LoginContent() {
         <div className="hidden lg:flex lg:w-1/2 flex-col justify-center px-12 xl:px-16">
           <div className="space-y-8">
             {/* Logo */}
-            <div className="flex items-center gap-3">
+            <div className="flex items-center justify-center">
               <div className="relative">
                 <div className="absolute inset-0 bg-gradient-to-r from-blue-500 to-purple-600 rounded-full blur-xl opacity-30 animate-pulse"></div>
                 <Image 
                   src="/logoC.png" 
-                  alt="EarningWe Logo" 
+                  alt="WeEarn Logo" 
                   width={60} 
                   height={60} 
                   className="relative object-contain"
                 />
               </div>
-              <span className="text-3xl font-bold bg-gradient-to-r from-blue-400 to-purple-400 bg-clip-text text-transparent">
-                EarningWe
-              </span>
             </div>
 
             {/* Hero Content */}
@@ -231,20 +228,17 @@ function LoginContent() {
           <div className="w-full max-w-md space-y-6">
             {/* Mobile Logo */}
             <div className="lg:hidden text-center">
-              <div className="flex items-center justify-center gap-3 mb-6">
+              <div className="flex items-center justify-center mb-6">
                 <div className="relative">
                   <div className="absolute inset-0 bg-gradient-to-r from-blue-500 to-purple-600 rounded-full blur-xl opacity-30 animate-pulse"></div>
                   <Image 
                     src="/logoC.png" 
-                    alt="EarningWe Logo" 
+                    alt="WeEarn Logo" 
                     width={50} 
                     height={50} 
                     className="relative object-contain"
                   />
                 </div>
-                <span className="text-2xl font-bold bg-gradient-to-r from-blue-400 to-purple-400 bg-clip-text text-transparent">
-                  EarningWe
-                </span>
               </div>
             </div>
 

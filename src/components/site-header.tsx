@@ -4,7 +4,6 @@ import Link from "next/link";
 import Image from "next/image";
 import { useEffect, useState } from "react";
 import { usePathname } from "next/navigation";
-import { ThemeToggle } from "@/components/theme-toggle";
 import { getSupabaseBrowserClient } from "@/lib/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
@@ -99,7 +98,7 @@ export function SiteHeader() {
             <div className="relative">
               <Image 
                 src="/logo.png" 
-                alt="EarningWe Logo" 
+                alt="WeEarn Logo" 
                 width={60} 
                 height={60} 
                 className="rounded-lg shadow-sm group-hover:shadow-md transition-shadow"
@@ -251,7 +250,7 @@ export function SiteHeader() {
                   <div className="flex items-center">
                     <Image 
                       src="/logo.png" 
-                      alt="EarningWe Logo" 
+                      alt="WeEarn Logo" 
                       width={48} 
                       height={48} 
                       className="rounded-lg shadow-sm"
@@ -428,8 +427,6 @@ export function SiteHeader() {
               </div>
             </SheetContent>
           </Sheet>
-          
-          <ThemeToggle />
         </div>
       </div>
     </header>

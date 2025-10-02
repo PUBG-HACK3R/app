@@ -59,7 +59,7 @@ export default function Home() {
                 <div className="absolute inset-0 bg-gradient-to-r from-blue-500 to-purple-600 rounded-full blur-xl opacity-30 animate-pulse"></div>
                 <Image 
                   src="/logoC.png" 
-                  alt="EarningWe Logo" 
+                  alt="WeEarn Logo" 
                   width={120} 
                   height={120} 
                   className="relative object-contain sm:w-[150px] sm:h-[150px]"
@@ -407,8 +407,8 @@ export default function Home() {
             </Badge>
             <h2 className="text-3xl sm:text-4xl lg:text-5xl font-bold text-white">
               Why Choose 
-              <span className="block bg-gradient-to-r from-purple-400 to-pink-400 bg-clip-text text-transparent">
-                EarningWe?
+              <span className="text-3xl font-bold bg-gradient-to-r from-blue-400 to-purple-400 bg-clip-text text-transparent">
+                WeEarn
               </span>
             </h2>
             <p className="text-lg sm:text-xl text-gray-300 max-w-3xl mx-auto">
@@ -548,7 +548,7 @@ export default function Home() {
               Ready to Start Earning?
             </h2>
             <p className="text-lg sm:text-xl text-blue-100 max-w-2xl mx-auto">
-              Join thousands of successful crypto investors who are already earning daily returns with EarningWe
+              Join thousands of successful crypto investors who are already earning daily returns with WeEarn
             </p>
             <div className="flex flex-col sm:flex-row gap-4 justify-center pt-4">
               <Button 

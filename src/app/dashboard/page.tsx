@@ -125,17 +125,11 @@ export default async function DashboardPage() {
             </h1>
             <p className="text-gray-400 text-sm sm:text-base">Monitor your investments and track crypto earnings in real-time</p>
           </div>
-          <div className="flex flex-col sm:flex-row gap-3">
-            <Button size="lg" className="bg-gradient-to-r from-green-500 to-green-600 hover:from-green-600 hover:to-green-700 text-white shadow-lg transform hover:scale-105 transition-all duration-200" asChild>
-              <Link href="/wallet/deposit">
-                <ArrowUpRight className="mr-2 h-4 w-4" />
-                Deposit USDT
-              </Link>
-            </Button>
-            <Button size="lg" variant="outline" className="border-2 border-purple-400 text-purple-400 hover:bg-purple-400 hover:text-white backdrop-blur-sm" asChild>
-              <Link href="/wallet/withdraw">
-                <ArrowDownRight className="mr-2 h-4 w-4" />
-                Withdraw
+          <div className="flex justify-center sm:justify-end">
+            <Button size="lg" className="bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700 text-white shadow-lg transform hover:scale-105 transition-all duration-200" asChild>
+              <Link href="/wallet">
+                <Wallet className="mr-2 h-4 w-4" />
+                Wallet
               </Link>
             </Button>
           </div>
