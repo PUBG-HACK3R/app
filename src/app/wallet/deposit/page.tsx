@@ -22,6 +22,7 @@ import {
   TrendingUp
 } from "lucide-react";
 import { Suspense } from "react";
+import HotWalletConnector from "@/components/wallet/hot-wallet-connector";
 
 function DepositContent() {
   const search = useSearchParams();
@@ -30,6 +31,8 @@ function DepositContent() {
   const [error, setError] = React.useState<string | null>(null);
   const [minAmount, setMinAmount] = React.useState<number>(12);
   const [loadingMinAmount, setLoadingMinAmount] = React.useState(true);
+  const [hotWalletSuccess, setHotWalletSuccess] = React.useState<string | null>(null);
+  const [hotWalletError, setHotWalletError] = React.useState<string | null>(null);
 
   React.useEffect(() => {
     const qAmount = search.get("amount");
@@ -108,6 +111,40 @@ function DepositContent() {
       setLoading(false);
     }
   }
+
+  const handleHotWalletSuccess = async (txHash: string, walletAddress: string) => {
+    try {
+      const response = await fetch("/api/hotwallet-deposit", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          txHash,
+          amount: parseFloat(amount),
+          wallet: walletAddress,
+        }),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.error || "Failed to process deposit");
+      }
+
+      setHotWalletSuccess(`Deposit successful! Transaction: ${txHash.slice(0, 10)}...`);
+      setHotWalletError(null);
+      setAmount("");
+    } catch (err: any) {
+      console.error("Hot wallet deposit error:", err);
+      setHotWalletError(err.message);
+    }
+  };
+
+  const handleHotWalletError = (error: string) => {
+    setHotWalletError(error);
+    setHotWalletSuccess(null);
+  };
 
   const planName = search.get("plan");
   const suggestedAmounts = React.useMemo(() => {
@@ -264,6 +301,39 @@ function DepositContent() {
               </form>
             </CardContent>
           </Card>
+
+            {/* Hot Wallet Deposit Section */}
+            {amount && parseFloat(amount) > 0 && (
+              <div className="space-y-4">
+                <div className="flex items-center justify-center">
+                  <div className="flex items-center space-x-4">
+                    <div className="h-px bg-slate-600 flex-1"></div>
+                    <span className="text-sm text-gray-400 px-4">OR</span>
+                    <div className="h-px bg-slate-600 flex-1"></div>
+                  </div>
+                </div>
+                
+                <HotWalletConnector
+                  amount={parseFloat(amount)}
+                  onSuccess={handleHotWalletSuccess}
+                  onError={handleHotWalletError}
+                />
+
+                {hotWalletSuccess && (
+                  <div className="flex items-center space-x-2 p-3 bg-green-900/20 border border-green-700/50 rounded-lg">
+                    <CheckCircle className="h-4 w-4 text-green-400" />
+                    <p className="text-sm text-green-300">{hotWalletSuccess}</p>
+                  </div>
+                )}
+
+                {hotWalletError && (
+                  <div className="flex items-center space-x-2 p-3 bg-red-900/20 border border-red-700/50 rounded-lg">
+                    <AlertCircle className="h-4 w-4 text-red-400" />
+                    <p className="text-sm text-red-300">{hotWalletError}</p>
+                  </div>
+                )}
+              </div>
+            )}
 
             {/* Payment Information */}
             <Card className="bg-gradient-to-br from-slate-800/80 to-slate-900/80 border-slate-700/50 backdrop-blur-sm">

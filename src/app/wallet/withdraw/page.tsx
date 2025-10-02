@@ -23,6 +23,7 @@ import {
   TrendingDown,
   User
 } from "lucide-react";
+import HotWalletWithdrawal from "@/components/wallet/hot-wallet-withdrawal";
 
 export default function WithdrawPage() {
   const [amount, setAmount] = React.useState("");
@@ -36,6 +37,8 @@ export default function WithdrawPage() {
   const [timeRemaining, setTimeRemaining] = React.useState<number>(0);
   const [processingMessages, setProcessingMessages] = React.useState<string[]>([]);
   const [showProcessing, setShowProcessing] = React.useState(false);
+  const [hotWalletSuccess, setHotWalletSuccess] = React.useState<string | null>(null);
+  const [hotWalletError, setHotWalletError] = React.useState<string | null>(null);
 
   const fetchWithdrawals = async () => {
     try {
@@ -257,6 +260,17 @@ export default function WithdrawPage() {
 
   const calculateNetAmount = (amount: number) => {
     return Math.round((amount - calculateFee(amount)) * 100) / 100;
+  };
+
+  const handleHotWalletSuccess = (withdrawalId: string) => {
+    setHotWalletSuccess("Hot wallet withdrawal request submitted successfully!");
+    setHotWalletError(null);
+    fetchWithdrawals(); // Refresh the withdrawals list
+  };
+
+  const handleHotWalletError = (error: string) => {
+    setHotWalletError(error);
+    setHotWalletSuccess(null);
   };
 
   return (
@@ -527,6 +541,39 @@ export default function WithdrawPage() {
               </form>
             </CardContent>
           </Card>
+
+          {/* Hot Wallet Withdrawal Section */}
+          {balance !== null && !showProcessing && (
+            <div className="space-y-4">
+              <div className="flex items-center justify-center">
+                <div className="flex items-center space-x-4">
+                  <div className="h-px bg-slate-600 flex-1"></div>
+                  <span className="text-sm text-gray-400 px-4">OR</span>
+                  <div className="h-px bg-slate-600 flex-1"></div>
+                </div>
+              </div>
+              
+              <HotWalletWithdrawal
+                balance={balance}
+                onSuccess={handleHotWalletSuccess}
+                onError={handleHotWalletError}
+              />
+
+              {hotWalletSuccess && (
+                <div className="flex items-center space-x-2 p-3 bg-green-50 dark:bg-green-950/20 rounded-lg">
+                  <CheckCircle className="h-4 w-4 text-green-600" />
+                  <p className="text-sm text-green-700 dark:text-green-300">{hotWalletSuccess}</p>
+                </div>
+              )}
+
+              {hotWalletError && (
+                <div className="flex items-center space-x-2 p-3 bg-red-50 dark:bg-red-950/20 rounded-lg">
+                  <AlertCircle className="h-4 w-4 text-red-600" />
+                  <p className="text-sm text-red-700 dark:text-red-300">{hotWalletError}</p>
+                </div>
+              )}
+            </div>
+          )}
 
           {/* Withdrawal History */}
           {withdrawals.length > 0 && (
