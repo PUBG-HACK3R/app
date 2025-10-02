@@ -15,8 +15,9 @@ export async function POST() {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    // Check if user is admin
-    const { data: profile, error: profileError } = await supabase
+    // Check if user is admin using admin client (more reliable)
+    const admin = getSupabaseAdminClient();
+    const { data: profile, error: profileError } = await admin
       .from("profiles")
       .select("role")
       .eq("user_id", user.id)
@@ -35,12 +36,11 @@ export async function POST() {
     if (profile?.role !== "admin") {
       return NextResponse.json({ 
         error: "Admin access required", 
-        details: `Current role: ${profile?.role || 'none'}` 
+        details: `Current role: ${profile?.role || 'none'}. Please ensure your role is set to 'admin' in the database.` 
       }, { status: 403 });
     }
 
-    // Process daily returns using admin client
-    const admin = getSupabaseAdminClient();
+    // Process daily returns using the same admin client
     const now = new Date();
     const nowIso = now.toISOString();
     const today = now.toISOString().slice(0, 10); // YYYY-MM-DD
