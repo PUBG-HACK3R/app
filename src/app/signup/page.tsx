@@ -2,19 +2,39 @@
 
 import * as React from "react";
 import Link from "next/link";
+import Image from "next/image";
 import { useRouter, useSearchParams } from "next/navigation";
 import { getSupabaseBrowserClient } from "@/lib/supabase/client";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
+import { PasswordInput } from "@/components/ui/password-input";
 import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
 import { signupSchema } from "@/lib/validations";
 import { Suspense } from "react";
+import { 
+  ParticleBackground, 
+  FloatingCryptoIcons, 
+  GlowingBorder 
+} from "@/components/crypto-animations";
+import { 
+  Shield, 
+  Lock, 
+  Zap, 
+  Bitcoin, 
+  Coins, 
+  CheckCircle, 
+  Users,
+  Star,
+  ArrowRight
+} from "lucide-react";
 
 function SignupContent() {
   const router = useRouter();
   const search = useSearchParams();
   const [email, setEmail] = React.useState("");
   const [password, setPassword] = React.useState("");
+  const [confirmPassword, setConfirmPassword] = React.useState("");
   const [referralCode, setReferralCode] = React.useState("");
   const [referralValid, setReferralValid] = React.useState<boolean | null>(null);
   const [referrerInfo, setReferrerInfo] = React.useState<any>(null);
@@ -99,7 +119,13 @@ function SignupContent() {
     console.log("Form submitted with:", { email, password: password ? "***" : "empty" });
     
     try {
-      // Validate input first
+      // Check password confirmation first
+      if (password !== confirmPassword) {
+        setError("Passwords do not match");
+        return;
+      }
+      
+      // Validate input
       const validatedData = signupSchema.parse({ email, password });
       console.log("Validation passed:", { email: validatedData.email, password: "***" });
       
@@ -188,70 +214,258 @@ function SignupContent() {
   }
 
   return (
-    <main className="mx-auto max-w-md px-4 py-10">
-      <Card>
-        <CardHeader className="text-center">
-          <div className="flex items-center justify-center gap-2 mb-4">
-            <div className="w-10 h-10 bg-gradient-to-br from-blue-600 to-purple-600 rounded-lg flex items-center justify-center">
-              <span className="text-white font-bold">W</span>
-            </div>
-            <span className="text-2xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
-              WeEarn
-            </span>
-          </div>
-          <CardTitle>Create Account</CardTitle>
-          <CardDescription>Join WeEarn and start earning daily returns</CardDescription>
-        </CardHeader>
-        <CardContent>
-          <form onSubmit={onSubmit} className="grid gap-4">
-            <div className="grid gap-2">
-              <label htmlFor="email" className="text-sm">Email</label>
-              <Input id="email" type="email" required value={email} onChange={(e) => setEmail(e.target.value)} />
-            </div>
-            <div className="grid gap-2">
-              <label htmlFor="password" className="text-sm">Password</label>
-              <Input id="password" type="password" required value={password} onChange={(e) => setPassword(e.target.value)} />
-            </div>
-            <div className="grid gap-2">
-              <label htmlFor="referralCode" className="text-sm">Referral Code (Optional)</label>
-              <Input 
-                id="referralCode" 
-                type="text" 
-                placeholder="Enter referral code"
-                value={referralCode} 
-                onChange={(e) => handleReferralCodeChange(e.target.value)}
-                className={referralValid === true ? "border-green-500" : referralValid === false ? "border-red-500" : ""}
-              />
-              {referralValid === true && referrerInfo && (
-                <p className="text-xs text-green-600">✓ Valid referral code from {referrerInfo.email}</p>
-              )}
-              {referralValid === false && referralCode.length >= 3 && (
-                <p className="text-xs text-red-600">✗ Invalid referral code</p>
-              )}
-            </div>
-            {error && (
-              <div className="space-y-2">
-                <p className="text-sm text-destructive">{error}</p>
-                {error.includes("split is not a function") || error.includes("attributes") && (
-                  <Button 
-                    type="button" 
-                    variant="outline" 
-                    size="sm" 
-                    onClick={clearBrowserData}
-                    className="w-full"
-                  >
-                    Clear Browser Data & Try Again
-                  </Button>
-                )}
+    <main className="min-h-screen bg-gradient-to-br from-slate-900 via-blue-900/10 to-slate-900 relative overflow-hidden">
+      {/* Background Effects */}
+      <ParticleBackground />
+      <FloatingCryptoIcons />
+      <div className="absolute inset-0 bg-gradient-to-br from-blue-600/10 via-purple-600/10 to-pink-600/10 animate-crypto-pulse"></div>
+      
+      <div className="relative flex min-h-screen">
+        {/* Left Side - Branding */}
+        <div className="hidden lg:flex lg:w-1/2 flex-col justify-center px-12 xl:px-16">
+          <div className="space-y-8">
+            {/* Logo */}
+            <div className="flex items-center gap-3">
+              <div className="relative">
+                <div className="absolute inset-0 bg-gradient-to-r from-blue-500 to-purple-600 rounded-full blur-xl opacity-30 animate-pulse"></div>
+                <Image 
+                  src="/logoC.png" 
+                  alt="EarningWe Logo" 
+                  width={60} 
+                  height={60} 
+                  className="relative object-contain"
+                />
               </div>
-            )}
-            <Button type="submit" disabled={loading}>{loading ? "Creating..." : "Create account"}</Button>
-            <p className="text-sm text-muted-foreground">
-              Already have an account? <Link className="underline" href="/login">Log in</Link>
-            </p>
-          </form>
-        </CardContent>
-      </Card>
+              <span className="text-3xl font-bold bg-gradient-to-r from-blue-400 to-purple-400 bg-clip-text text-transparent">
+                EarningWe
+              </span>
+            </div>
+
+            {/* Hero Content */}
+            <div className="space-y-6">
+              <div className="space-y-4">
+                <Badge className="bg-gradient-to-r from-green-500 to-blue-500 text-white px-4 py-2">
+                  <Star className="h-4 w-4 mr-2" />
+                  #1 Crypto Earning Platform
+                </Badge>
+                <h1 className="text-4xl xl:text-5xl font-bold text-white leading-tight">
+                  Start Your
+                  <span className="block bg-gradient-to-r from-green-400 to-blue-400 bg-clip-text text-transparent">
+                    Crypto Journey
+                  </span>
+                </h1>
+                <p className="text-xl text-gray-300 leading-relaxed">
+                  Join <span className="text-blue-400 font-semibold">50,000+</span> investors earning 
+                  <span className="text-green-400 font-semibold"> 1-3% daily returns</span> through our 
+                  AI-powered USDT investment platform.
+                </p>
+              </div>
+
+              {/* Features */}
+              <div className="grid gap-4">
+                <div className="flex items-center gap-3">
+                  <div className="p-2 rounded-full bg-green-500/20">
+                    <CheckCircle className="h-5 w-5 text-green-400" />
+                  </div>
+                  <span className="text-gray-300">Secure USDT TRC20 deposits</span>
+                </div>
+                <div className="flex items-center gap-3">
+                  <div className="p-2 rounded-full bg-blue-500/20">
+                    <Shield className="h-5 w-5 text-blue-400" />
+                  </div>
+                  <span className="text-gray-300">Bank-level security & encryption</span>
+                </div>
+                <div className="flex items-center gap-3">
+                  <div className="p-2 rounded-full bg-purple-500/20">
+                    <Users className="h-5 w-5 text-purple-400" />
+                  </div>
+                  <span className="text-gray-300">24/7 customer support</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Right Side - Form */}
+        <div className="w-full lg:w-1/2 flex items-center justify-center px-4 py-12">
+          <div className="w-full max-w-md space-y-6">
+            {/* Mobile Logo */}
+            <div className="lg:hidden text-center">
+              <div className="flex items-center justify-center gap-3 mb-6">
+                <div className="relative">
+                  <div className="absolute inset-0 bg-gradient-to-r from-blue-500 to-purple-600 rounded-full blur-xl opacity-30 animate-pulse"></div>
+                  <Image 
+                    src="/logoC.png" 
+                    alt="EarningWe Logo" 
+                    width={50} 
+                    height={50} 
+                    className="relative object-contain"
+                  />
+                </div>
+                <span className="text-2xl font-bold bg-gradient-to-r from-blue-400 to-purple-400 bg-clip-text text-transparent">
+                  EarningWe
+                </span>
+              </div>
+            </div>
+
+            <GlowingBorder>
+              <Card className="bg-gradient-to-br from-slate-800/80 to-slate-900/80 border-slate-700/50 backdrop-blur-sm">
+                <CardHeader className="text-center space-y-4">
+                  <div className="space-y-2">
+                    <CardTitle className="text-2xl text-white">Create Your Account</CardTitle>
+                    <CardDescription className="text-gray-400">
+                      Join the crypto earning revolution
+                    </CardDescription>
+                  </div>
+                  <Badge className="bg-gradient-to-r from-green-500/20 to-blue-500/20 text-green-300 border-green-500/30 mx-auto">
+                    <Bitcoin className="h-4 w-4 mr-2" />
+                    USDT Investment Platform
+                  </Badge>
+                </CardHeader>
+                <CardContent>
+                  <form onSubmit={onSubmit} className="space-y-5">
+                    <div className="space-y-2">
+                      <label htmlFor="email" className="text-sm font-medium text-white">Email Address</label>
+                      <Input 
+                        id="email" 
+                        type="email" 
+                        required 
+                        value={email} 
+                        onChange={(e) => setEmail(e.target.value)}
+                        className="bg-slate-700/50 border-slate-600 text-white placeholder:text-gray-400 focus:border-blue-500"
+                        placeholder="Enter your email"
+                      />
+                    </div>
+                    
+                    <div className="space-y-2">
+                      <label htmlFor="password" className="text-sm font-medium text-white">Password</label>
+                      <PasswordInput 
+                        id="password" 
+                        required 
+                        value={password} 
+                        onChange={(e) => setPassword(e.target.value)}
+                        className="bg-slate-700/50 border-slate-600 text-white placeholder:text-gray-400 focus:border-blue-500"
+                        placeholder="Create a strong password"
+                      />
+                    </div>
+
+                    <div className="space-y-2">
+                      <label htmlFor="confirmPassword" className="text-sm font-medium text-white">Confirm Password</label>
+                      <PasswordInput 
+                        id="confirmPassword" 
+                        required 
+                        value={confirmPassword} 
+                        onChange={(e) => setConfirmPassword(e.target.value)}
+                        className={`bg-slate-700/50 border-slate-600 text-white placeholder:text-gray-400 focus:border-blue-500 ${
+                          confirmPassword && password !== confirmPassword ? 'border-red-500' : 
+                          confirmPassword && password === confirmPassword ? 'border-green-500' : ''
+                        }`}
+                        placeholder="Confirm your password"
+                      />
+                      {confirmPassword && password !== confirmPassword && (
+                        <p className="text-xs text-red-400">Passwords do not match</p>
+                      )}
+                      {confirmPassword && password === confirmPassword && (
+                        <p className="text-xs text-green-400">✓ Passwords match</p>
+                      )}
+                    </div>
+                    
+                    <div className="space-y-2">
+                      <label htmlFor="referralCode" className="text-sm font-medium text-white">
+                        Referral Code <span className="text-gray-400">(Optional)</span>
+                      </label>
+                      <Input 
+                        id="referralCode" 
+                        type="text" 
+                        placeholder="Enter referral code"
+                        value={referralCode} 
+                        onChange={(e) => handleReferralCodeChange(e.target.value)}
+                        className={`bg-slate-700/50 border-slate-600 text-white placeholder:text-gray-400 focus:border-blue-500 ${
+                          referralValid === true ? "border-green-500" : 
+                          referralValid === false ? "border-red-500" : ""
+                        }`}
+                      />
+                      {referralValid === true && referrerInfo && (
+                        <div className="flex items-center gap-2 p-2 bg-green-900/20 border border-green-700/50 rounded-lg">
+                          <CheckCircle className="h-4 w-4 text-green-400" />
+                          <p className="text-xs text-green-300">Valid referral code from {referrerInfo.email}</p>
+                        </div>
+                      )}
+                      {referralValid === false && referralCode.length >= 3 && (
+                        <p className="text-xs text-red-400">✗ Invalid referral code</p>
+                      )}
+                    </div>
+                    
+                    {error && (
+                      <div className="space-y-3 p-3 bg-gradient-to-r from-red-900/30 to-pink-900/30 border border-red-700/50 rounded-lg">
+                        <p className="text-sm text-red-300">{error}</p>
+                        {(error.includes("split is not a function") || error.includes("attributes")) && (
+                          <Button 
+                            type="button" 
+                            variant="outline" 
+                            size="sm" 
+                            onClick={clearBrowserData}
+                            className="w-full border-red-400 text-red-400 hover:bg-red-400 hover:text-white"
+                          >
+                            Clear Browser Data & Try Again
+                          </Button>
+                        )}
+                      </div>
+                    )}
+                    
+                    <Button 
+                      type="submit" 
+                      disabled={loading || password !== confirmPassword}
+                      className="w-full bg-gradient-to-r from-green-500 to-blue-500 hover:from-green-600 hover:to-blue-600 text-white font-semibold py-3 shadow-lg transform hover:scale-105 transition-all duration-200"
+                    >
+                      {loading ? (
+                        <>
+                          <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+                          Creating Account...
+                        </>
+                      ) : (
+                        <>
+                          <Zap className="mr-2 h-4 w-4" />
+                          Create Account & Start Earning
+                          <ArrowRight className="ml-2 h-4 w-4" />
+                        </>
+                      )}
+                    </Button>
+                    
+                    <div className="text-center">
+                      <p className="text-sm text-gray-400">
+                        Already have an account?{" "}
+                        <Link 
+                          className="text-blue-400 hover:text-blue-300 underline font-medium" 
+                          href="/login"
+                        >
+                          Sign in here
+                        </Link>
+                      </p>
+                    </div>
+                  </form>
+                </CardContent>
+              </Card>
+            </GlowingBorder>
+
+            {/* Trust Indicators */}
+            <div className="flex justify-center items-center gap-6 text-gray-400 text-xs">
+              <div className="flex items-center gap-1">
+                <Shield className="h-4 w-4 text-green-400" />
+                <span>SSL Secured</span>
+              </div>
+              <div className="flex items-center gap-1">
+                <Lock className="h-4 w-4 text-blue-400" />
+                <span>Encrypted</span>
+              </div>
+              <div className="flex items-center gap-1">
+                <Coins className="h-4 w-4 text-orange-400" />
+                <span>USDT Ready</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
     </main>
   );
 }
