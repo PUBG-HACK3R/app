@@ -107,235 +107,283 @@ export default async function DashboardPage() {
   const roi = totalInvested > 0 ? (totalEarnings / totalInvested) * 100 : 0;
 
   return (
-    <main className="mx-auto max-w-7xl px-4 py-8 space-y-8">
-      {/* Crypto Ticker */}
-      <CryptoTicker variant="dashboard" />
-
-      {/* Header Section */}
-      <div className="flex items-center justify-between">
-        <div className="space-y-1">
-          <h1 className="text-3xl font-bold tracking-tight">Portfolio Dashboard</h1>
-          <p className="text-muted-foreground">Monitor your investments and track performance</p>
+    <main className="min-h-screen bg-gradient-to-br from-slate-900 via-blue-900/10 to-slate-900">
+      <div className="mx-auto max-w-7xl px-4 py-6 sm:py-8 space-y-6 sm:space-y-8">
+        {/* Crypto Ticker */}
+        <div className="bg-gradient-to-r from-slate-800/80 to-slate-900/80 backdrop-blur-sm rounded-xl border border-slate-700/50">
+          <CryptoTicker variant="dashboard" />
         </div>
-        <div className="flex gap-3">
-          <Button size="lg" className="bg-green-600 hover:bg-green-700" asChild>
-            <Link href="/wallet/deposit">
-              <ArrowUpRight className="mr-2 h-4 w-4" />
-              Deposit
-            </Link>
-          </Button>
-          <Button size="lg" variant="outline" asChild>
-            <Link href="/wallet/withdraw">
-              <ArrowDownRight className="mr-2 h-4 w-4" />
-              Withdraw
-            </Link>
-          </Button>
-        </div>
-      </div>
 
-      {/* Key Metrics Cards */}
-      <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4">
-        <Card className="border-0 shadow-lg bg-gradient-to-br from-blue-50 to-blue-100 dark:from-blue-950 dark:to-blue-900">
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium text-blue-700 dark:text-blue-300">Portfolio Value</CardTitle>
-            <div className="flex items-center gap-1">
-              <Coins className="h-4 w-4 text-blue-600 dark:text-blue-400" />
-              <span className="text-xs text-blue-600 dark:text-blue-400 font-medium">USDT</span>
-            </div>
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold text-blue-900 dark:text-blue-100">${walletBalance.toFixed(2)}</div>
-            <p className="text-xs text-blue-600 dark:text-blue-400 mt-1 flex items-center gap-1">
-              <Shield className="h-3 w-3" />
-              Secured Balance
-            </p>
-          </CardContent>
-        </Card>
-
-        <Card className="border-0 shadow-lg bg-gradient-to-br from-green-50 to-green-100 dark:from-green-950 dark:to-green-900">
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium text-green-700 dark:text-green-300">Total Returns</CardTitle>
-            <TrendingUp className="h-4 w-4 text-green-600 dark:text-green-400" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold text-green-900 dark:text-green-100">${totalEarnings.toFixed(2)}</div>
-            <div className="flex items-center space-x-2 mt-1">
-              <Badge variant="success" className="text-xs">
-                +{roi.toFixed(1)}% ROI
-              </Badge>
-            </div>
-          </CardContent>
-        </Card>
-
-        <Card className="border-0 shadow-lg bg-gradient-to-br from-purple-50 to-purple-100 dark:from-purple-950 dark:to-purple-900">
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium text-purple-700 dark:text-purple-300">Today's Earnings</CardTitle>
-            <div className="flex items-center gap-1">
-              <Zap className="h-4 w-4 text-purple-600 dark:text-purple-400" />
-              <Bitcoin className="h-3 w-3 text-orange-500" />
-            </div>
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold text-purple-900 dark:text-purple-100">${todayEarnings.toFixed(2)}</div>
-            <div className="flex items-center space-x-1 mt-1">
-              {earningsChange >= 0 ? (
-                <TrendingUp className="h-3 w-3 text-green-500" />
-              ) : (
-                <TrendingDown className="h-3 w-3 text-red-500" />
-              )}
-              <span className={`text-xs ${
-                earningsChange >= 0 ? 'text-green-600' : 'text-red-600'
-              }`}>
-                {earningsChange >= 0 ? '+' : ''}{earningsChangePercent.toFixed(1)}%
+        {/* Header Section */}
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 sm:gap-6">
+          <div className="space-y-2">
+            <h1 className="text-2xl sm:text-3xl lg:text-4xl font-bold text-white">
+              Crypto Portfolio 
+              <span className="block sm:inline bg-gradient-to-r from-blue-400 to-purple-400 bg-clip-text text-transparent">
+                Dashboard
               </span>
-              <span className="text-xs text-purple-600 dark:text-purple-400">vs yesterday</span>
-            </div>
-          </CardContent>
-        </Card>
+            </h1>
+            <p className="text-gray-400 text-sm sm:text-base">Monitor your investments and track crypto earnings in real-time</p>
+          </div>
+          <div className="flex flex-col sm:flex-row gap-3">
+            <Button size="lg" className="bg-gradient-to-r from-green-500 to-green-600 hover:from-green-600 hover:to-green-700 text-white shadow-lg transform hover:scale-105 transition-all duration-200" asChild>
+              <Link href="/wallet/deposit">
+                <ArrowUpRight className="mr-2 h-4 w-4" />
+                Deposit USDT
+              </Link>
+            </Button>
+            <Button size="lg" variant="outline" className="border-2 border-purple-400 text-purple-400 hover:bg-purple-400 hover:text-white backdrop-blur-sm" asChild>
+              <Link href="/wallet/withdraw">
+                <ArrowDownRight className="mr-2 h-4 w-4" />
+                Withdraw
+              </Link>
+            </Button>
+          </div>
+        </div>
 
-        <Card className="border-0 shadow-lg bg-gradient-to-br from-orange-50 to-orange-100 dark:from-orange-950 dark:to-orange-900">
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium text-orange-700 dark:text-orange-300">Investment Status</CardTitle>
-            <Target className="h-4 w-4 text-orange-600 dark:text-orange-400" />
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-2">
-              {activeSub ? (
-                <>
-                  <Badge variant="success">Active Plan</Badge>
-                  <div className="text-sm text-orange-600 dark:text-orange-400">
-                    Earning daily returns
-                  </div>
-                </>
-              ) : (
-                <>
-                  <Badge variant="outline">No Active Plan</Badge>
-                  <Button size="sm" variant="outline" asChild>
-                    <Link href="/plans">View Plans</Link>
-                  </Button>
-                </>
-              )}
-            </div>
-          </CardContent>
-        </Card>
-      </div>
-
-      {/* Charts and Analytics Section */}
-      <div className="grid gap-6 lg:grid-cols-3">
-        <Card className="lg:col-span-2 border-0 shadow-lg">
-          <CardHeader>
-            <div className="flex items-center justify-between">
-              <div>
-                <CardTitle className="text-xl">Performance Analytics</CardTitle>
-                <CardDescription>Daily earnings over the last 7 days</CardDescription>
+        {/* Key Metrics Cards */}
+        <div className="grid gap-4 sm:gap-6 grid-cols-1 sm:grid-cols-2 lg:grid-cols-4">
+          {/* Portfolio Value Card */}
+          <Card className="bg-gradient-to-br from-blue-900/50 to-blue-800/50 border-blue-700/50 backdrop-blur-sm hover:border-blue-500/70 transition-all duration-300 group">
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-3">
+              <CardTitle className="text-sm font-medium text-blue-200">Portfolio Value</CardTitle>
+              <div className="flex items-center gap-2">
+                <div className="p-2 rounded-full bg-blue-500/20 group-hover:bg-blue-500/30 transition-colors duration-300">
+                  <Wallet className="h-4 w-4 text-blue-400" />
+                </div>
               </div>
-              <BarChart3 className="h-5 w-5 text-muted-foreground" />
-            </div>
-          </CardHeader>
-          <CardContent>
-            <DailyReturnsChart data={data} />
-            <div className="mt-4 grid grid-cols-3 gap-4">
-              <div className="text-center">
-                <div className="text-sm text-muted-foreground">7-Day Total</div>
-                <div className="text-lg font-semibold">${data.reduce((sum, d) => sum + d.earnings, 0).toFixed(2)}</div>
-              </div>
-              <div className="text-center">
-                <div className="text-sm text-muted-foreground">Daily Average</div>
-                <div className="text-lg font-semibold">${(data.reduce((sum, d) => sum + d.earnings, 0) / 7).toFixed(2)}</div>
-              </div>
-              <div className="text-center">
-                <div className="text-sm text-muted-foreground">Best Day</div>
-                <div className="text-lg font-semibold">${Math.max(...data.map(d => d.earnings)).toFixed(2)}</div>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-
-        <div className="space-y-6">
-          {/* Quick Actions */}
-          <Card className="border-0 shadow-lg">
-            <CardHeader>
-              <CardTitle className="text-lg">Quick Actions</CardTitle>
             </CardHeader>
-            <CardContent className="space-y-3">
-              <Button className="w-full justify-start" variant="ghost" asChild>
-                <Link href="/active-plans">
-                  <BarChart3 className="mr-2 h-4 w-4" />
-                  Active Plans
-                </Link>
-              </Button>
-              <Button className="w-full justify-start" variant="ghost" asChild>
-                <Link href="/plans">
-                  <Target className="mr-2 h-4 w-4" />
-                  Browse Investment Plans
-                </Link>
-              </Button>
-              <Button className="w-full justify-start" variant="ghost" asChild>
-                <Link href="/wallet/history">
-                  <Clock className="mr-2 h-4 w-4" />
-                  Transaction History
-                </Link>
-              </Button>
-              <Button className="w-full justify-start" variant="ghost" asChild>
-                <Link href="/wallet">
-                  <PiggyBank className="mr-2 h-4 w-4" />
-                  Wallet Overview
-                </Link>
-              </Button>
-              <Button className="w-full justify-start" variant="ghost" asChild>
-                <Link href="/referrals">
-                  <Users className="mr-2 h-4 w-4" />
-                  Referral Program
-                </Link>
-              </Button>
-              <SupportButton 
-                className="w-full justify-start" 
-                variant="ghost"
-              >
-                Contact Support
-              </SupportButton>
+            <CardContent>
+              <div className="text-2xl sm:text-3xl font-bold text-white mb-2">${walletBalance.toFixed(2)}</div>
+              <div className="flex items-center gap-2">
+                <Badge className="bg-blue-500/20 text-blue-300 border-blue-500/30 text-xs">
+                  <Coins className="h-3 w-3 mr-1" />
+                  USDT
+                </Badge>
+                <div className="flex items-center gap-1 text-xs text-blue-300">
+                  <Shield className="h-3 w-3" />
+                  Secured
+                </div>
+              </div>
             </CardContent>
           </Card>
 
-          {/* Investment Summary */}
-          <Card className="border-0 shadow-lg">
-            <CardHeader>
-              <CardTitle className="text-lg">Investment Summary</CardTitle>
+          {/* Total Returns Card */}
+          <Card className="bg-gradient-to-br from-green-900/50 to-green-800/50 border-green-700/50 backdrop-blur-sm hover:border-green-500/70 transition-all duration-300 group">
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-3">
+              <CardTitle className="text-sm font-medium text-green-200">Total Returns</CardTitle>
+              <div className="p-2 rounded-full bg-green-500/20 group-hover:bg-green-500/30 transition-colors duration-300">
+                <TrendingUp className="h-4 w-4 text-green-400" />
+              </div>
             </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="space-y-2">
-                <div className="flex justify-between text-sm">
-                  <span className="text-muted-foreground">Total Invested</span>
-                  <span className="font-medium">${totalDeposits.toFixed(2)}</span>
+            <CardContent>
+              <div className="text-2xl sm:text-3xl font-bold text-white mb-2">${totalEarnings.toFixed(2)}</div>
+              <div className="flex items-center gap-2">
+                <Badge className="bg-green-500/20 text-green-300 border-green-500/30 text-xs">
+                  +{roi.toFixed(1)}% ROI
+                </Badge>
+                <div className="text-xs text-green-300">All-time</div>
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Today's Earnings Card */}
+          <Card className="bg-gradient-to-br from-purple-900/50 to-purple-800/50 border-purple-700/50 backdrop-blur-sm hover:border-purple-500/70 transition-all duration-300 group">
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-3">
+              <CardTitle className="text-sm font-medium text-purple-200">Today's Earnings</CardTitle>
+              <div className="flex items-center gap-1">
+                <div className="p-2 rounded-full bg-purple-500/20 group-hover:bg-purple-500/30 transition-colors duration-300">
+                  <Zap className="h-4 w-4 text-purple-400" />
                 </div>
-                <div className="flex justify-between text-sm">
-                  <span className="text-muted-foreground">Total Earned</span>
-                  <span className="font-medium text-green-600">${totalEarnings.toFixed(2)}</span>
-                </div>
-                <div className="flex justify-between text-sm">
-                  <span className="text-muted-foreground">Total Withdrawn</span>
-                  <span className="font-medium">${totalWithdrawals.toFixed(2)}</span>
-                </div>
-                <Separator />
-                <div className="flex justify-between text-sm font-semibold">
-                  <span>Net Profit</span>
-                  <span className={totalEarnings - totalWithdrawals >= 0 ? 'text-green-600' : 'text-red-600'}>
-                    ${(totalEarnings - totalWithdrawals).toFixed(2)}
+                <Bitcoin className="h-4 w-4 text-orange-400" />
+              </div>
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl sm:text-3xl font-bold text-white mb-2">${todayEarnings.toFixed(2)}</div>
+              <div className="flex items-center gap-2">
+                <div className="flex items-center gap-1">
+                  {earningsChange >= 0 ? (
+                    <TrendingUp className="h-3 w-3 text-green-400" />
+                  ) : (
+                    <TrendingDown className="h-3 w-3 text-red-400" />
+                  )}
+                  <span className={`text-xs font-medium ${
+                    earningsChange >= 0 ? 'text-green-400' : 'text-red-400'
+                  }`}>
+                    {earningsChange >= 0 ? '+' : ''}{earningsChangePercent.toFixed(1)}%
                   </span>
                 </div>
+                <span className="text-xs text-purple-300">vs yesterday</span>
               </div>
-              
-              {totalInvested > 0 && (
-                <div className="space-y-2">
-                  <div className="flex justify-between text-sm">
-                    <span className="text-muted-foreground">ROI Progress</span>
-                    <span className="font-medium">{roi.toFixed(1)}%</span>
-                  </div>
-                  <Progress value={Math.min(roi, 100)} className="h-2" />
-                </div>
-              )}
             </CardContent>
           </Card>
+
+          {/* Investment Status Card */}
+          <Card className="bg-gradient-to-br from-orange-900/50 to-orange-800/50 border-orange-700/50 backdrop-blur-sm hover:border-orange-500/70 transition-all duration-300 group">
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-3">
+              <CardTitle className="text-sm font-medium text-orange-200">Investment Status</CardTitle>
+              <div className="p-2 rounded-full bg-orange-500/20 group-hover:bg-orange-500/30 transition-colors duration-300">
+                <Target className="h-4 w-4 text-orange-400" />
+              </div>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-3">
+                {activeSub ? (
+                  <>
+                    <Badge className="bg-green-500/20 text-green-300 border-green-500/30">
+                      <div className="w-2 h-2 bg-green-400 rounded-full mr-2 animate-pulse"></div>
+                      Active Plan
+                    </Badge>
+                    <div className="text-sm text-orange-300">
+                      Earning daily crypto returns
+                    </div>
+                  </>
+                ) : (
+                  <>
+                    <Badge variant="outline" className="border-orange-500/30 text-orange-300">
+                      No Active Plan
+                    </Badge>
+                    <Button size="sm" className="bg-orange-500/20 hover:bg-orange-500/30 text-orange-300 border-orange-500/30" asChild>
+                      <Link href="/plans">
+                        <Target className="mr-1 h-3 w-3" />
+                        View Plans
+                      </Link>
+                    </Button>
+                  </>
+                )}
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+
+        {/* Charts and Analytics Section */}
+        <div className="grid gap-6 lg:grid-cols-3">
+          <Card className="lg:col-span-2 bg-gradient-to-br from-slate-800/80 to-slate-900/80 border-slate-700/50 backdrop-blur-sm">
+            <CardHeader>
+              <div className="flex items-center justify-between">
+                <div>
+                  <CardTitle className="text-xl text-white">Crypto Performance Analytics</CardTitle>
+                  <CardDescription className="text-gray-400">Daily earnings over the last 7 days</CardDescription>
+                </div>
+                <div className="p-2 rounded-full bg-blue-500/20">
+                  <BarChart3 className="h-5 w-5 text-blue-400" />
+                </div>
+              </div>
+            </CardHeader>
+            <CardContent>
+              <DailyReturnsChart data={data} />
+              <div className="mt-6 grid grid-cols-3 gap-4">
+                <div className="text-center p-3 bg-slate-700/30 rounded-lg">
+                  <div className="text-sm text-gray-400 mb-1">7-Day Total</div>
+                  <div className="text-lg font-bold text-white">${data.reduce((sum, d) => sum + d.earnings, 0).toFixed(2)}</div>
+                </div>
+                <div className="text-center p-3 bg-slate-700/30 rounded-lg">
+                  <div className="text-sm text-gray-400 mb-1">Daily Average</div>
+                  <div className="text-lg font-bold text-white">${(data.reduce((sum, d) => sum + d.earnings, 0) / 7).toFixed(2)}</div>
+                </div>
+                <div className="text-center p-3 bg-slate-700/30 rounded-lg">
+                  <div className="text-sm text-gray-400 mb-1">Best Day</div>
+                  <div className="text-lg font-bold text-green-400">${Math.max(...data.map(d => d.earnings)).toFixed(2)}</div>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+
+          <div className="space-y-6">
+            {/* Quick Actions */}
+            <Card className="bg-gradient-to-br from-slate-800/80 to-slate-900/80 border-slate-700/50 backdrop-blur-sm">
+              <CardHeader>
+                <CardTitle className="text-lg text-white flex items-center gap-2">
+                  <Zap className="h-5 w-5 text-blue-400" />
+                  Quick Actions
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-2">
+                <Button className="w-full justify-start bg-slate-700/30 hover:bg-slate-700/50 text-gray-300 hover:text-white border-0" asChild>
+                  <Link href="/active-plans">
+                    <BarChart3 className="mr-3 h-4 w-4 text-blue-400" />
+                    Active Plans
+                  </Link>
+                </Button>
+                <Button className="w-full justify-start bg-slate-700/30 hover:bg-slate-700/50 text-gray-300 hover:text-white border-0" asChild>
+                  <Link href="/plans">
+                    <Target className="mr-3 h-4 w-4 text-green-400" />
+                    Browse Investment Plans
+                  </Link>
+                </Button>
+                <Button className="w-full justify-start bg-slate-700/30 hover:bg-slate-700/50 text-gray-300 hover:text-white border-0" asChild>
+                  <Link href="/wallet/history">
+                    <Clock className="mr-3 h-4 w-4 text-purple-400" />
+                    Transaction History
+                  </Link>
+                </Button>
+                <Button className="w-full justify-start bg-slate-700/30 hover:bg-slate-700/50 text-gray-300 hover:text-white border-0" asChild>
+                  <Link href="/wallet">
+                    <Wallet className="mr-3 h-4 w-4 text-orange-400" />
+                    Wallet Overview
+                  </Link>
+                </Button>
+                <Button className="w-full justify-start bg-slate-700/30 hover:bg-slate-700/50 text-gray-300 hover:text-white border-0" asChild>
+                  <Link href="/referrals">
+                    <Users className="mr-3 h-4 w-4 text-pink-400" />
+                    Referral Program
+                  </Link>
+                </Button>
+                <SupportButton 
+                  className="w-full justify-start bg-slate-700/30 hover:bg-slate-700/50 text-gray-300 hover:text-white border-0"
+                >
+                  <Shield className="mr-3 h-4 w-4 text-cyan-400" />
+                  Contact Support
+                </SupportButton>
+              </CardContent>
+            </Card>
+
+            {/* Investment Summary */}
+            <Card className="bg-gradient-to-br from-slate-800/80 to-slate-900/80 border-slate-700/50 backdrop-blur-sm">
+              <CardHeader>
+                <CardTitle className="text-lg text-white flex items-center gap-2">
+                  <Bitcoin className="h-5 w-5 text-orange-400" />
+                  Investment Summary
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="space-y-3">
+                  <div className="flex justify-between items-center p-2 bg-slate-700/30 rounded-lg">
+                    <span className="text-gray-400 text-sm">Total Invested</span>
+                    <span className="font-semibold text-white">${totalDeposits.toFixed(2)}</span>
+                  </div>
+                  <div className="flex justify-between items-center p-2 bg-slate-700/30 rounded-lg">
+                    <span className="text-gray-400 text-sm">Total Earned</span>
+                    <span className="font-semibold text-green-400">${totalEarnings.toFixed(2)}</span>
+                  </div>
+                  <div className="flex justify-between items-center p-2 bg-slate-700/30 rounded-lg">
+                    <span className="text-gray-400 text-sm">Total Withdrawn</span>
+                    <span className="font-semibold text-white">${totalWithdrawals.toFixed(2)}</span>
+                  </div>
+                  <Separator className="bg-slate-700" />
+                  <div className="flex justify-between items-center p-3 bg-gradient-to-r from-blue-900/30 to-purple-900/30 rounded-lg border border-blue-700/30">
+                    <span className="text-white font-medium">Net Profit</span>
+                    <span className={`font-bold text-lg ${totalEarnings - totalWithdrawals >= 0 ? 'text-green-400' : 'text-red-400'}`}>
+                      ${(totalEarnings - totalWithdrawals).toFixed(2)}
+                    </span>
+                  </div>
+                </div>
+                
+                {totalInvested > 0 && (
+                  <div className="space-y-3">
+                    <div className="flex justify-between text-sm">
+                      <span className="text-gray-400">ROI Progress</span>
+                      <span className="font-semibold text-blue-400">{roi.toFixed(1)}%</span>
+                    </div>
+                    <Progress value={Math.min(roi, 100)} className="h-3 bg-slate-700" />
+                    <div className="text-xs text-gray-500 text-center">
+                      {roi >= 100 ? 'Target achieved! 🎉' : `${(100 - roi).toFixed(1)}% to target`}
+                    </div>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+          </div>
         </div>
       </div>
     </main>
