@@ -15,13 +15,26 @@ export async function POST(request: NextRequest) {
     
     const supabase = await getSupabaseServerClient();
     
+    // Get the site URL, fallback to production URL if not set
+    const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://we-earn-iota.vercel.app';
+    const redirectUrl = `${siteUrl}/reset-password`;
+    
+    console.log("Password reset request for email:", email);
+    console.log("Password reset redirect URL:", redirectUrl);
+    
     // Send password reset email
-    const { error } = await supabase.auth.resetPasswordForEmail(email, {
-      redirectTo: `${process.env.NEXT_PUBLIC_SITE_URL}/reset-password`,
+    const { data, error } = await supabase.auth.resetPasswordForEmail(email, {
+      redirectTo: redirectUrl,
     });
 
     if (error) {
       console.error("Password reset error:", error);
+      console.error("Error details:", JSON.stringify(error, null, 2));
+      
+      // For debugging - log more details but still return success for security
+      if (error.message?.includes('User not found')) {
+        console.log("User not found for email:", email);
+      }
       
       // Don't reveal if email exists or not for security
       // Always return success to prevent email enumeration
@@ -30,6 +43,9 @@ export async function POST(request: NextRequest) {
         { status: 200 }
       );
     }
+
+    console.log("Password reset email sent successfully for:", email);
+    console.log("Reset data:", data);
 
     return NextResponse.json(
       { message: "Password reset instructions sent successfully." },
