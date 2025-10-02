@@ -343,7 +343,7 @@ export default function HotWalletConnector({ amount, onSuccess, onError }: HotWa
           </div>
         )}
 
-        {isCorrectNetwork && usdtBalance && parseFloat(usdtBalance) < amount && (
+        {isCorrectNetwork && usdtBalance !== null && parseFloat(usdtBalance) < amount && (
           <div className="flex items-center space-x-2 p-3 bg-orange-900/20 border border-orange-700/50 rounded-lg">
             <AlertCircle className="h-4 w-4 text-orange-400" />
             <p className="text-sm text-orange-300">
@@ -354,7 +354,7 @@ export default function HotWalletConnector({ amount, onSuccess, onError }: HotWa
 
         <Button 
           onClick={sendUSDT}
-          disabled={isTransacting || !isCorrectNetwork || (usdtBalance && parseFloat(usdtBalance) < amount)}
+          disabled={isTransacting || !isCorrectNetwork || (usdtBalance !== null && parseFloat(usdtBalance) < amount)}
           className="w-full bg-gradient-to-r from-green-500 to-blue-500 hover:from-green-600 hover:to-blue-600 text-white font-semibold"
         >
           {isTransacting ? (
