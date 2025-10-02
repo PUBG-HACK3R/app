@@ -95,20 +95,17 @@ export function SiteHeader() {
       <div className="mx-auto flex h-16 max-w-7xl items-center justify-between px-6">
         {/* Logo Section */}
         <div className="flex items-center gap-8">
-          <Link href="/" className="flex items-center gap-3 font-bold text-xl group">
+          <Link href="/" className="flex items-center font-bold text-xl group">
             <div className="relative">
               <Image 
                 src="/logo.png" 
-                alt="WeEarn Logo" 
-                width={40} 
-                height={40} 
+                alt="EarningWe Logo" 
+                width={60} 
+                height={60} 
                 className="rounded-lg shadow-sm group-hover:shadow-md transition-shadow"
               />
               <div className="absolute inset-0 rounded-lg bg-gradient-to-br from-blue-600/20 to-purple-600/20 opacity-0 group-hover:opacity-100 transition-opacity"></div>
             </div>
-            <span className="bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
-              WeEarn
-            </span>
           </Link>
 
           {/* Desktop Navigation */}
@@ -251,17 +248,14 @@ export function SiteHeader() {
               <div className="flex flex-col h-full">
                 {/* Mobile Header */}
                 <div className="flex items-center justify-between p-6 border-b bg-gradient-to-r from-blue-50 to-purple-50 dark:from-blue-950 dark:to-purple-950">
-                  <div className="flex items-center gap-3">
+                  <div className="flex items-center">
                     <Image 
                       src="/logo.png" 
-                      alt="WeEarn Logo" 
-                      width={32} 
-                      height={32} 
+                      alt="EarningWe Logo" 
+                      width={48} 
+                      height={48} 
                       className="rounded-lg shadow-sm"
                     />
-                    <span className="font-bold text-lg bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
-                      WeEarn
-                    </span>
                   </div>
                   {user && (
                     <Badge variant="secondary" className="bg-green-100 text-green-700 dark:bg-green-900 dark:text-green-300">

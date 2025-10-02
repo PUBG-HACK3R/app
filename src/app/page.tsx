@@ -1,4 +1,5 @@
 import Link from "next/link";
+import Image from "next/image";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { SupportButton } from "@/components/support-button";
@@ -11,13 +12,14 @@ export default function Home() {
       <section className="relative bg-gradient-to-br from-blue-50 to-indigo-100 dark:from-gray-900 dark:to-gray-800 py-20">
         <div className="mx-auto max-w-7xl px-4">
           <div className="text-center space-y-8">
-            <div className="flex items-center justify-center gap-4 mb-6">
-              <div className="w-16 h-16 bg-gradient-to-br from-blue-600 to-purple-600 rounded-2xl flex items-center justify-center">
-                <span className="text-white font-bold text-2xl">W</span>
-              </div>
-              <h1 className="text-5xl md:text-6xl font-bold tracking-tight bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
-                WeEarn
-              </h1>
+            <div className="flex items-center justify-center mb-6">
+              <Image 
+                src="/hero_section_logo.png" 
+                alt="EarningWe Logo" 
+                width={200} 
+                height={200} 
+                className="rounded-2xl shadow-lg"
+              />
             </div>
             <h2 className="text-3xl md:text-4xl font-bold text-foreground mb-4">
               Smart Investment Platform

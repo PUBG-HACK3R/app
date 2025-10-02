@@ -15,13 +15,16 @@ import {
   AlertCircle,
   CheckCircle,
   Users,
-  CreditCard
+  CreditCard,
+  Clock,
+  TrendingUp
 } from "lucide-react";
 
 export function AdminTools() {
   const [setRoleLoading, setSetRoleLoading] = React.useState(false);
   const [topupLoading, setTopupLoading] = React.useState(false);
   const [testLoading, setTestLoading] = React.useState(false);
+  const [earningsLoading, setEarningsLoading] = React.useState(false);
   const [message, setMessage] = React.useState<{ type: 'success' | 'error', text: string } | null>(null);
 
   // Set Role Form
@@ -135,8 +138,43 @@ export function AdminTools() {
     }
   };
 
+  const handleProcessEarnings = async () => {
+    setEarningsLoading(true);
+    setMessage(null);
+
+    try {
+      const res = await fetch("/api/admin/process-daily-returns", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+      });
+
+      const data = await res.json();
+
+      if (res.ok) {
+        const { results } = data;
+        const successMessage = `Daily returns processed successfully! 
+          • Subscriptions processed: ${results.subscriptionsProcessed}
+          • Earnings credited: ${results.earningsCredited}
+          • Total amount credited: $${results.totalAmountCredited.toFixed(2)}
+          • Subscriptions deactivated: ${results.subscriptionsDeactivated}`;
+        
+        setMessage({ type: 'success', text: successMessage });
+        
+        if (results.errors && results.errors.length > 0) {
+          console.warn("Processing errors:", results.errors);
+        }
+      } else {
+        setMessage({ type: 'error', text: data.error || "Failed to process daily returns" });
+      }
+    } catch (err) {
+      setMessage({ type: 'error', text: "Network error occurred while processing earnings" });
+    } finally {
+      setEarningsLoading(false);
+    }
+  };
+
   return (
-    <div className="grid gap-6 lg:grid-cols-2">
+    <div className="grid gap-6 lg:grid-cols-3">
       {/* Set Admin Role */}
       <Card className="border-0 shadow-lg">
         <CardHeader>
@@ -292,9 +330,58 @@ export function AdminTools() {
         </CardContent>
       </Card>
 
+      {/* Process Daily Earnings */}
+      <Card className="border-0 shadow-lg">
+        <CardHeader>
+          <div className="flex items-center space-x-2">
+            <TrendingUp className="h-5 w-5 text-orange-600" />
+            <CardTitle>Process Daily Earnings</CardTitle>
+          </div>
+          <CardDescription>
+            Manually trigger daily returns processing for all active subscriptions
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <div className="space-y-4">
+            <div className="p-4 bg-orange-50 dark:bg-orange-950/20 rounded-lg border border-orange-200 dark:border-orange-800">
+              <div className="flex items-start space-x-2">
+                <AlertCircle className="h-5 w-5 text-orange-600 mt-0.5" />
+                <div className="text-sm text-orange-800 dark:text-orange-200">
+                  <p className="font-medium mb-1">What this does:</p>
+                  <ul className="list-disc list-inside space-y-1 text-xs">
+                    <li>Processes all active subscriptions due for earnings</li>
+                    <li>Credits daily returns to user balances</li>
+                    <li>Updates next earning dates</li>
+                    <li>Deactivates expired subscriptions</li>
+                  </ul>
+                </div>
+              </div>
+            </div>
+
+            <Button 
+              onClick={handleProcessEarnings} 
+              disabled={earningsLoading}
+              className="w-full bg-orange-600 hover:bg-orange-700"
+            >
+              {earningsLoading ? (
+                <>
+                  <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+                  Processing Earnings...
+                </>
+              ) : (
+                <>
+                  <TrendingUp className="mr-2 h-4 w-4" />
+                  Process Daily Returns
+                </>
+              )}
+            </Button>
+          </div>
+        </CardContent>
+      </Card>
+
       {/* Status Message */}
       {message && (
-        <div className="lg:col-span-2">
+        <div className="lg:col-span-3">
           <Card className={`border-0 shadow-lg ${
             message.type === 'success' 
               ? 'bg-green-50 dark:bg-green-950/20 border-green-200 dark:border-green-800' 
@@ -321,7 +408,7 @@ export function AdminTools() {
       )}
 
       {/* Database Test */}
-      <div className="lg:col-span-2">
+      <div className="lg:col-span-3">
         <Card className="border-0 shadow-lg bg-gray-50 dark:bg-gray-950/20">
           <CardHeader>
             <CardTitle className="text-gray-900 dark:text-gray-100">Database Test</CardTitle>
@@ -351,7 +438,7 @@ export function AdminTools() {
       </div>
 
       {/* Instructions */}
-      <div className="lg:col-span-2">
+      <div className="lg:col-span-3">
         <Card className="border-0 shadow-lg bg-blue-50 dark:bg-blue-950/20">
           <CardHeader>
             <CardTitle className="text-blue-900 dark:text-blue-100">Instructions</CardTitle>
@@ -377,6 +464,18 @@ export function AdminTools() {
                 2. Specify the amount to add to their balance<br/>
                 3. Optionally provide a reason for the top-up<br/>
                 4. The amount will be added as a deposit transaction
+              </p>
+            </div>
+            <Separator className="bg-blue-200 dark:bg-blue-800" />
+            <div>
+              <Badge variant="outline" className="bg-orange-100 text-orange-800 border-orange-300 dark:bg-orange-900 dark:text-orange-200 dark:border-orange-700 mb-2">
+                Process Daily Earnings
+              </Badge>
+              <p className="text-sm text-blue-700 dark:text-blue-300">
+                1. Click the button to manually trigger daily returns processing<br/>
+                2. All active subscriptions due for earnings will be processed<br/>
+                3. Daily returns will be credited to user balances<br/>
+                4. Expired subscriptions will be automatically deactivated
               </p>
             </div>
           </CardContent>
