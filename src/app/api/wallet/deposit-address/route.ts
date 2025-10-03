@@ -5,10 +5,19 @@ import { createClient } from '@supabase/supabase-js';
 const SUPABASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL!;
 const SUPABASE_SERVICE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY!;
 
-export async function GET() {
+export async function GET(request: Request) {
   try {
     const supabase = await getSupabaseServerClient();
     const serviceSupabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_KEY);
+    
+    // Get network parameter from URL
+    const { searchParams } = new URL(request.url);
+    const network = searchParams.get('network') || 'trc20';
+    
+    // Validate network
+    if (!['trc20', 'arbitrum'].includes(network)) {
+      return NextResponse.json({ error: "Invalid network" }, { status: 400 });
+    }
     
     // Get authenticated user
     const { data: { user }, error: authError } = await supabase.auth.getUser();
@@ -16,11 +25,12 @@ export async function GET() {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    // Get user's deposit address
+    // Get user's deposit address for the specified network
     const { data: depositAddress, error: addressError } = await supabase
       .from("user_deposit_addresses")
       .select("*")
       .eq("user_id", user.id)
+      .eq("network", network)
       .eq("is_active", true)
       .single();
 
@@ -30,7 +40,10 @@ export async function GET() {
         console.log(`Creating new deposit address for user: ${user.id}`);
 
         const { error: createError } = await serviceSupabase
-          .rpc('generate_user_deposit_address', { user_uuid: user.id });
+          .rpc('generate_user_deposit_address', { 
+            user_uuid: user.id,
+            network_type: network 
+          });
 
         if (createError) {
           console.error("Error creating deposit address:", createError);
@@ -45,6 +58,7 @@ export async function GET() {
           .from("user_deposit_addresses")
           .select("*")
           .eq("user_id", user.id)
+          .eq("network", network)
           .eq("is_active", true)
           .single();
 

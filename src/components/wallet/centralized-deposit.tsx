@@ -28,7 +28,10 @@ interface DepositAddressData {
   created_at: string;
 }
 
+type NetworkType = 'trc20' | 'arbitrum';
+
 export default function CentralizedDeposit({ amount, onSuccess, onError }: CentralizedDepositProps) {
+  const [selectedNetwork, setSelectedNetwork] = useState<NetworkType>('trc20');
   const [depositAddress, setDepositAddress] = useState<DepositAddressData | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [copied, setCopied] = useState(false);
@@ -36,14 +39,14 @@ export default function CentralizedDeposit({ amount, onSuccess, onError }: Centr
 
   useEffect(() => {
     fetchDepositAddress();
-  }, []);
+  }, [selectedNetwork]);
 
   const fetchDepositAddress = async () => {
     try {
       setIsLoading(true);
       setError(null);
 
-      const response = await fetch('/api/wallet/deposit-address');
+      const response = await fetch(`/api/wallet/deposit-address?network=${selectedNetwork}`);
       const data = await response.json();
 
       if (!response.ok) {
@@ -87,9 +90,18 @@ export default function CentralizedDeposit({ amount, onSuccess, onError }: Centr
   const openBlockExplorer = () => {
     if (!depositAddress) return;
     
-    // Open TRON block explorer
-    const explorerUrl = `https://tronscan.org/#/address/${depositAddress.address}`;
-    window.open(explorerUrl, '_blank');
+    let explorerUrl = '';
+    if (selectedNetwork === 'trc20') {
+      // Open TRON block explorer
+      explorerUrl = `https://tronscan.org/#/address/${depositAddress.address}`;
+    } else if (selectedNetwork === 'arbitrum') {
+      // Open Arbitrum block explorer
+      explorerUrl = `https://arbiscan.io/address/${depositAddress.address}`;
+    }
+    
+    if (explorerUrl) {
+      window.open(explorerUrl, '_blank');
+    }
   };
 
   if (isLoading) {
@@ -175,6 +187,32 @@ export default function CentralizedDeposit({ amount, onSuccess, onError }: Centr
           </Button>
         </div>
 
+        {/* Network Selection Buttons */}
+        <div className="flex justify-center space-x-3">
+          <Button
+            variant={selectedNetwork === 'trc20' ? 'default' : 'outline'}
+            size="sm"
+            onClick={() => setSelectedNetwork('trc20')}
+            className={selectedNetwork === 'trc20' 
+              ? 'bg-gradient-to-r from-red-500 to-red-600 hover:from-red-600 hover:to-red-700 text-white border-0' 
+              : 'border-red-500/50 text-red-300 hover:bg-red-500/10 hover:text-red-200'
+            }
+          >
+            TRC20
+          </Button>
+          <Button
+            variant={selectedNetwork === 'arbitrum' ? 'default' : 'outline'}
+            size="sm"
+            onClick={() => setSelectedNetwork('arbitrum')}
+            className={selectedNetwork === 'arbitrum' 
+              ? 'bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 text-white border-0' 
+              : 'border-blue-500/50 text-blue-300 hover:bg-blue-500/10 hover:text-blue-200'
+            }
+          >
+            ARB
+          </Button>
+        </div>
+
         {/* QR Code */}
         <div className="text-center">
           <div className="inline-block p-4 bg-white rounded-lg">
@@ -223,11 +261,14 @@ export default function CentralizedDeposit({ amount, onSuccess, onError }: Centr
             <span className="text-sm font-medium text-yellow-300">Important Instructions</span>
           </div>
           <ul className="text-sm text-yellow-200 space-y-1 ml-6 list-disc">
-            <li>Only send USDT TRC20 to this address</li>
+            <li>Only send USDT {selectedNetwork === 'trc20' ? 'TRC20' : 'on Arbitrum'} to this address</li>
             <li>Minimum deposit: $12 USDT</li>
             <li>Funds will be credited automatically after confirmation</li>
             <li>This address is unique to your account</li>
             <li>Do not send other cryptocurrencies to this address</li>
+            {selectedNetwork === 'arbitrum' && (
+              <li>Make sure you're using the Arbitrum network (Chain ID: 42161)</li>
+            )}
           </ul>
         </div>
 
