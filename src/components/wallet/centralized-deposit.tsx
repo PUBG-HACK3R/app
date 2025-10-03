@@ -87,8 +87,8 @@ export default function CentralizedDeposit({ amount, onSuccess, onError }: Centr
   const openBlockExplorer = () => {
     if (!depositAddress) return;
     
-    // Open Polygon block explorer
-    const explorerUrl = `https://polygonscan.com/address/${depositAddress.address}`;
+    // Open TRON block explorer
+    const explorerUrl = `https://tronscan.org/#/address/${depositAddress.address}`;
     window.open(explorerUrl, '_blank');
   };
 
@@ -223,7 +223,7 @@ export default function CentralizedDeposit({ amount, onSuccess, onError }: Centr
             <span className="text-sm font-medium text-yellow-300">Important Instructions</span>
           </div>
           <ul className="text-sm text-yellow-200 space-y-1 ml-6 list-disc">
-            <li>Only send USDT (TRC20 or Polygon) to this address</li>
+            <li>Only send USDT TRC20 to this address</li>
             <li>Minimum deposit: $12 USDT</li>
             <li>Funds will be credited automatically after confirmation</li>
             <li>This address is unique to your account</li>
