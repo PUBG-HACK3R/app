@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import "./globals.css";
 import { ThemeProvider } from "@/components/theme-provider";
 import { SiteHeader } from "@/components/site-header";
-import { SiteFooter } from "@/components/site-footer";
+import { ConditionalFooter } from "@/components/conditional-footer";
 import { TawkToChat } from "@/components/tawk-to-chat";
 import { ErrorBoundary } from "@/components/error-boundary";
 import { Toaster } from "sonner";
@@ -66,7 +66,7 @@ export default function RootLayout({
             <main className="flex-1">
               {children}
             </main>
-            <SiteFooter />
+            <ConditionalFooter />
             <TawkToChat />
             <Toaster />
           </ThemeProvider>

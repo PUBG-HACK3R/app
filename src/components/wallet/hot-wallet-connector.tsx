@@ -45,8 +45,13 @@ export default function HotWalletConnector({ amount, onSuccess, onError }: HotWa
 
   // Environment variables (these should be in your .env.local)
   const POLYGON_MUMBAI_CHAIN_ID = "0x13881"; // 80001 in hex
-  const USDT_ADDRESS = process.env.NEXT_PUBLIC_USDT_ADDRESS || "0x"; // Replace with actual USDT contract address
-  const HOT_WALLET_ADDRESS = process.env.NEXT_PUBLIC_HOT_WALLET_ADDRESS || "0x"; // Replace with your hot wallet address
+  const USDT_ADDRESS = process.env.NEXT_PUBLIC_USDT_ADDRESS;
+  const HOT_WALLET_ADDRESS = process.env.NEXT_PUBLIC_HOT_WALLET_ADDRESS;
+
+  // Check if environment variables are properly configured
+  const isConfigured = USDT_ADDRESS && HOT_WALLET_ADDRESS && 
+                      USDT_ADDRESS !== "0x" && HOT_WALLET_ADDRESS !== "0x" &&
+                      USDT_ADDRESS.length > 10 && HOT_WALLET_ADDRESS.length > 10;
 
   useEffect(() => {
     checkWalletConnection();
@@ -211,6 +216,62 @@ export default function HotWalletConnector({ amount, onSuccess, onError }: HotWa
   const copyAddress = (address: string) => {
     navigator.clipboard.writeText(address);
   };
+
+  // Show configuration error if environment variables are not set
+  if (!isConfigured) {
+    return (
+      <Card className="bg-gradient-to-br from-red-900/50 to-orange-900/50 border-red-700/50 backdrop-blur-sm">
+        <CardHeader>
+          <div className="flex items-center space-x-3">
+            <div className="p-3 rounded-full bg-red-500/20 border border-red-500/30">
+              <AlertCircle className="h-6 w-6 text-red-400" />
+            </div>
+            <div>
+              <CardTitle className="text-xl text-white">Hot Wallet Not Configured</CardTitle>
+              <CardDescription className="text-gray-400">
+                Environment variables are missing or invalid
+              </CardDescription>
+            </div>
+          </div>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div className="bg-red-900/20 border border-red-700/50 rounded-lg p-4">
+            <div className="text-sm text-red-300 space-y-2">
+              <p className="font-medium">Missing Configuration:</p>
+              <ul className="list-disc list-inside space-y-1 text-xs">
+                {!USDT_ADDRESS && <li>NEXT_PUBLIC_USDT_ADDRESS not set</li>}
+                {!HOT_WALLET_ADDRESS && <li>NEXT_PUBLIC_HOT_WALLET_ADDRESS not set</li>}
+                {USDT_ADDRESS === "0x" && <li>NEXT_PUBLIC_USDT_ADDRESS is placeholder value</li>}
+                {HOT_WALLET_ADDRESS === "0x" && <li>NEXT_PUBLIC_HOT_WALLET_ADDRESS is placeholder value</li>}
+              </ul>
+            </div>
+          </div>
+          
+          <div className="bg-blue-900/20 border border-blue-700/50 rounded-lg p-4">
+            <div className="text-sm text-blue-300">
+              <p className="font-medium mb-2">To fix this:</p>
+              <ol className="list-decimal list-inside space-y-1 text-xs">
+                <li>Add the required environment variables to your .env.local file</li>
+                <li>Set NEXT_PUBLIC_USDT_ADDRESS to the USDT contract address</li>
+                <li>Set NEXT_PUBLIC_HOT_WALLET_ADDRESS to your hot wallet address</li>
+                <li>Restart your development server</li>
+              </ol>
+            </div>
+          </div>
+
+          <div className="text-center">
+            <Button 
+              variant="outline" 
+              className="border-blue-500/50 text-blue-300 hover:bg-blue-500/10"
+              onClick={() => window.location.reload()}
+            >
+              Refresh Page
+            </Button>
+          </div>
+        </CardContent>
+      </Card>
+    );
+  }
 
   if (!walletAddress) {
     return (
