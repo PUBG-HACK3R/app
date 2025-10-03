@@ -1,11 +1,11 @@
-import { NextRequest, NextResponse } from "next/server";
+import { NextResponse } from "next/server";
 import { getSupabaseServerClient } from "@/lib/supabase/server";
 import { createClient } from '@supabase/supabase-js';
 
 const SUPABASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL!;
 const SUPABASE_SERVICE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY!;
 
-export async function GET(request: NextRequest) {
+export async function GET() {
   try {
     const supabase = await getSupabaseServerClient();
     const serviceSupabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_KEY);
@@ -29,7 +29,7 @@ export async function GET(request: NextRequest) {
       if (addressError.code === 'PGRST116') {
         console.log(`Creating new deposit address for user: ${user.id}`);
 
-        const { data: newAddressData, error: createError } = await serviceSupabase
+        const { error: createError } = await serviceSupabase
           .rpc('generate_user_deposit_address', { user_uuid: user.id });
 
         if (createError) {

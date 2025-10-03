@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from '@supabase/supabase-js';
-const TronWeb = require('tronweb');
+import TronWeb from 'tronweb';
 
 // TRON TRC20 USDT monitoring service
 // This endpoint should be called every 30 seconds by a cron job

@@ -7,7 +7,6 @@ import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import { 
   Copy,
-  QrCode,
   Wallet,
   Shield,
   Zap,
@@ -19,7 +18,6 @@ import {
 
 interface CentralizedDepositProps {
   amount: number;
-  onSuccess?: (txHash: string) => void;
   onError?: (error: string) => void;
 }
 
@@ -29,7 +27,7 @@ interface DepositAddressData {
   created_at: string;
 }
 
-export default function CentralizedDeposit({ amount, onSuccess, onError }: CentralizedDepositProps) {
+export default function CentralizedDeposit({ amount, onError }: CentralizedDepositProps) {
   const [depositAddress, setDepositAddress] = useState<DepositAddressData | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [copied, setCopied] = useState(false);
