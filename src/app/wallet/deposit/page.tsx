@@ -47,7 +47,7 @@ function DepositContent() {
     params.set("amount", amount);
     if (planName) params.set("plan", planName);
     
-    router.push(`/wallet/deposit/select?${params.toString()}`);
+    router.push(`/wallet/deposit/centralized?${params.toString()}`);
   };
 
   const quickAmounts = [12, 25, 50, 100, 250, 500];
@@ -145,7 +145,7 @@ function DepositContent() {
               className="w-full bg-gradient-to-r from-green-500 to-blue-500 hover:from-green-600 hover:to-blue-600 text-white font-semibold py-3"
               disabled={!amount || parseFloat(amount) < 12}
             >
-              Continue to Payment Methods
+              Get Deposit Address
             </Button>
 
             {/* Info */}

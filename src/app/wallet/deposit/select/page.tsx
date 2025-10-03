@@ -40,6 +40,13 @@ function DepositSelectContent() {
     router.push(`/wallet/deposit/hotwallet?${params.toString()}`);
   };
 
+  const handleCentralizedDeposit = () => {
+    const params = new URLSearchParams();
+    if (amount) params.set("amount", amount);
+    if (planName) params.set("plan", planName);
+    router.push(`/wallet/deposit/centralized?${params.toString()}`);
+  };
+
   return (
     <main className="min-h-screen bg-gradient-to-br from-slate-900 via-blue-900/10 to-slate-900">
       <div className="mx-auto max-w-4xl px-4 py-6 sm:py-8 space-y-6 sm:space-y-8">
@@ -137,54 +144,45 @@ function DepositSelectContent() {
           </Card>
 
           {/* Hot Wallet Option */}
-          <Card className="bg-gradient-to-br from-slate-800/80 to-slate-900/80 border-slate-700/50 backdrop-blur-sm hover:border-purple-500/50 transition-all duration-300 group cursor-pointer" onClick={handleHotWallet}>
-            <CardHeader>
-              <div className="flex items-center space-x-3">
-                <div className="p-3 rounded-full bg-gradient-to-r from-purple-500/20 to-pink-500/20 border border-purple-500/30 group-hover:border-purple-400/50 transition-colors">
-                  <Wallet className="h-8 w-8 text-purple-400" />
+            {/* Hot Wallet - Temporarily Disabled */}
+            <Card className="bg-gradient-to-br from-gray-800/50 to-gray-900/50 border-gray-700/50 backdrop-blur-sm opacity-50">
+              <CardHeader>
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center space-x-3">
+                    <div className="p-3 rounded-full bg-gray-600/20 border border-gray-600/30">
+                      <Wallet className="h-6 w-6 text-gray-500" />
+                    </div>
+                    <div>
+                      <CardTitle className="text-xl text-gray-400">Hot Wallet</CardTitle>
+                      <CardDescription className="text-gray-500">
+                        Direct wallet-to-wallet transfer
+                      </CardDescription>
+                    </div>
+                  </div>
+                  <Badge className="bg-yellow-500/20 text-yellow-400 border-yellow-500/30">
+                    Coming Soon
+                  </Badge>
                 </div>
-                <div>
-                  <CardTitle className="text-xl text-white group-hover:text-purple-300 transition-colors">Hot Wallet</CardTitle>
-                  <CardDescription className="text-gray-400">Direct wallet-to-wallet transfer</CardDescription>
-                </div>
-              </div>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="space-y-3">
-                <div className="flex items-center space-x-2">
-                  <Zap className="h-4 w-4 text-yellow-400" />
-                  <span className="text-sm text-gray-300">Instant confirmation</span>
-                </div>
-                <div className="flex items-center space-x-2">
-                  <Smartphone className="h-4 w-4 text-purple-400" />
-                  <span className="text-sm text-gray-300">MetaMask & TrustWallet</span>
-                </div>
-                <div className="flex items-center space-x-2">
-                  <TrendingUp className="h-4 w-4 text-green-400" />
-                  <span className="text-sm text-gray-300">Lower network fees</span>
-                </div>
-                <div className="flex items-center space-x-2">
-                  <Shield className="h-4 w-4 text-green-400" />
-                  <span className="text-sm text-gray-300">Direct blockchain transfer</span>
-                </div>
-              </div>
+              </CardHeader>
               
-              <div className="bg-purple-900/20 border border-purple-700/50 rounded-lg p-3">
-                <div className="text-sm text-purple-300 font-medium">For experienced users</div>
-                <div className="text-xs text-purple-400 mt-1">
-                  Requires MetaMask or TrustWallet connection
+              <CardContent className="space-y-4">
+                <div className="bg-yellow-900/20 border border-yellow-700/50 rounded-lg p-3">
+                  <div className="text-sm text-yellow-300">
+                    <span className="font-medium">🚧 Under Development</span>
+                    <br />
+                    We're implementing a new centralized deposit system for better user experience.
+                  </div>
                 </div>
-              </div>
 
-              <Button 
-                className="w-full bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 text-white font-semibold"
-                onClick={handleHotWallet}
-              >
-                <Wallet className="mr-2 h-4 w-4" />
-                Continue with Hot Wallet
-              </Button>
-            </CardContent>
-          </Card>
+                <Button 
+                  disabled
+                  className="w-full bg-gray-600 text-gray-400 cursor-not-allowed"
+                >
+                  <Wallet className="mr-2 h-4 w-4" />
+                  Temporarily Disabled
+                </Button>
+              </CardContent>
+            </Card>
         </div>
 
         {/* Comparison Table */}

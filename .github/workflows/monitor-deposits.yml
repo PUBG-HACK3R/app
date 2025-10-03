@@ -1,0 +1,17 @@
+name: Monitor Deposits
+
+on:
+  schedule:
+    # Runs every minute (GitHub Actions minimum)
+    - cron: '* * * * *'
+  workflow_dispatch: # Allow manual trigger
+
+jobs:
+  monitor:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Call TRON deposit monitoring endpoint
+        run: |
+          curl -X POST ${{ secrets.SITE_URL }}/api/cron/monitor-deposits-tron \
+            -H "Authorization: Bearer ${{ secrets.REVALIDATE_SECRET }}" \
+            -H "Content-Type: application/json"
