@@ -72,9 +72,12 @@ export async function POST(request: NextRequest) {
           const events = await usdtContract.queryFilter(filter, fromBlock, latestBlock);
 
           for (const event of events) {
+            // Type guard to ensure we have an EventLog with args
+            if (!('args' in event) || !event.args) continue;
+            
             const txHash = event.transactionHash;
-            const amount = parseFloat(ethers.formatUnits(event.args![2], 6));
-            const fromAddress = event.args![0];
+            const amount = parseFloat(ethers.formatUnits(event.args[2], 6));
+            const fromAddress = event.args[0];
 
             // Check if we already processed this transaction
             const { data: existingDeposit } = await supabase
