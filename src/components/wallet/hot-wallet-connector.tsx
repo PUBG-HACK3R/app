@@ -88,11 +88,16 @@ export default function HotWalletConnector({ amount, onSuccess, onError }: HotWa
   };
 
   const connectWallet = async () => {
+    console.log('Connect wallet clicked');
+    console.log('Window ethereum available:', typeof window.ethereum !== 'undefined');
+    
     if (typeof window.ethereum === 'undefined') {
+      console.log('No ethereum provider found');
       onError("MetaMask is not installed. Please install MetaMask or use TrustWallet.");
       return;
     }
 
+    console.log('Starting wallet connection...');
     setIsConnecting(true);
     try {
       // Request account access
