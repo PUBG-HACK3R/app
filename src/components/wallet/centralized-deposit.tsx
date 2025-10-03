@@ -18,6 +18,7 @@ import {
 
 interface CentralizedDepositProps {
   amount: number;
+  onSuccess?: (txHash: string) => void;
   onError?: (error: string) => void;
 }
 
@@ -27,7 +28,7 @@ interface DepositAddressData {
   created_at: string;
 }
 
-export default function CentralizedDeposit({ amount, onError }: CentralizedDepositProps) {
+export default function CentralizedDeposit({ amount, onSuccess, onError }: CentralizedDepositProps) {
   const [depositAddress, setDepositAddress] = useState<DepositAddressData | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [copied, setCopied] = useState(false);
