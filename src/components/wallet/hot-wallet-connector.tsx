@@ -156,7 +156,7 @@ export default function HotWalletConnector({ amount, onSuccess, onError }: HotWa
   };
 
   const fetchUSDTBalance = async () => {
-    if (!walletAddress || !isCorrectNetwork) return;
+    if (!walletAddress || !isCorrectNetwork || !USDT_ADDRESS) return;
 
     try {
       const provider = new ethers.BrowserProvider(window.ethereum);
@@ -174,7 +174,7 @@ export default function HotWalletConnector({ amount, onSuccess, onError }: HotWa
   };
 
   const sendUSDT = async () => {
-    if (!walletAddress || !isCorrectNetwork) {
+    if (!walletAddress || !isCorrectNetwork || !USDT_ADDRESS || !HOT_WALLET_ADDRESS) {
       onError("Please connect your wallet and switch to Polygon Mumbai network");
       return;
     }
