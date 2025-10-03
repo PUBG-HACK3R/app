@@ -64,9 +64,14 @@ export default function HotWalletConnector({ amount, onSuccess, onError }: HotWa
   }, [walletAddress, isCorrectNetwork]);
 
   const checkWalletConnection = async () => {
+    console.log('Checking wallet connection...');
+    console.log('Ethereum available:', typeof window.ethereum !== 'undefined');
+    
     if (typeof window.ethereum !== 'undefined') {
+      console.log('Ethereum provider found:', window.ethereum);
       try {
         const accounts = await window.ethereum.request({ method: 'eth_accounts' });
+        console.log('Existing accounts:', accounts);
         if (accounts.length > 0) {
           setWalletAddress(accounts[0]);
           await checkNetwork();
@@ -74,6 +79,8 @@ export default function HotWalletConnector({ amount, onSuccess, onError }: HotWa
       } catch (error) {
         console.error("Error checking wallet connection:", error);
       }
+    } else {
+      console.log('No ethereum provider detected');
     }
   };
 
@@ -90,10 +97,36 @@ export default function HotWalletConnector({ amount, onSuccess, onError }: HotWa
   const connectWallet = async () => {
     console.log('Connect wallet clicked');
     console.log('Window ethereum available:', typeof window.ethereum !== 'undefined');
+    console.log('User agent:', navigator.userAgent);
     
+    // Check if we're on mobile
+    const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+    console.log('Is mobile:', isMobile);
+    
+    // For mobile devices, try to open wallet apps directly
+    if (isMobile && typeof window.ethereum === 'undefined') {
+      console.log('Mobile device without ethereum provider, trying to open wallet apps...');
+      
+      // Try to open TrustWallet first
+      const trustWalletUrl = `https://link.trustwallet.com/open_url?coin_id=60&url=${encodeURIComponent(window.location.href)}`;
+      const metamaskUrl = `https://metamask.app.link/dapp/${window.location.host}${window.location.pathname}`;
+      
+      // Try TrustWallet first
+      window.location.href = trustWalletUrl;
+      
+      // Fallback to MetaMask after a short delay
+      setTimeout(() => {
+        window.location.href = metamaskUrl;
+      }, 1500);
+      
+      onError("Opening wallet app... If it doesn't open automatically, please open TrustWallet or MetaMask and navigate to this page.");
+      return;
+    }
+    
+    // For desktop or if ethereum is available
     if (typeof window.ethereum === 'undefined') {
-      console.log('No ethereum provider found');
-      onError("MetaMask is not installed. Please install MetaMask or use TrustWallet.");
+      console.log('No ethereum provider found on desktop');
+      onError("Please install MetaMask extension or use a mobile wallet app like TrustWallet.");
       return;
     }
 
@@ -312,23 +345,49 @@ export default function HotWalletConnector({ amount, onSuccess, onError }: HotWa
 
           <Separator className="bg-slate-700" />
 
-          <Button 
-            onClick={connectWallet}
-            disabled={isConnecting}
-            className="w-full bg-gradient-to-r from-purple-500 to-blue-500 hover:from-purple-600 hover:to-blue-600 text-white font-semibold"
-          >
-            {isConnecting ? (
-              <>
-                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                Connecting...
-              </>
-            ) : (
-              <>
-                <Wallet className="mr-2 h-4 w-4" />
-                Connect Wallet
-              </>
-            )}
-          </Button>
+          <div className="space-y-3">
+            <Button 
+              onClick={connectWallet}
+              disabled={isConnecting}
+              className="w-full bg-gradient-to-r from-purple-500 to-blue-500 hover:from-purple-600 hover:to-blue-600 text-white font-semibold"
+            >
+              {isConnecting ? (
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  Connecting...
+                </>
+              ) : (
+                <>
+                  <Wallet className="mr-2 h-4 w-4" />
+                  Connect Wallet
+                </>
+              )}
+            </Button>
+
+            {/* Mobile wallet buttons */}
+            <div className="grid grid-cols-2 gap-2 md:hidden">
+              <Button 
+                onClick={() => {
+                  const trustWalletUrl = `https://link.trustwallet.com/open_url?coin_id=60&url=${encodeURIComponent(window.location.href)}`;
+                  window.location.href = trustWalletUrl;
+                }}
+                variant="outline"
+                className="border-blue-500/50 text-blue-300 hover:bg-blue-500/10"
+              >
+                Open TrustWallet
+              </Button>
+              <Button 
+                onClick={() => {
+                  const metamaskUrl = `https://metamask.app.link/dapp/${window.location.host}${window.location.pathname}`;
+                  window.location.href = metamaskUrl;
+                }}
+                variant="outline"
+                className="border-orange-500/50 text-orange-300 hover:bg-orange-500/10"
+              >
+                Open MetaMask
+              </Button>
+            </div>
+          </div>
 
           <div className="text-xs text-gray-400 text-center">
             Supports MetaMask, TrustWallet, and other Web3 wallets
