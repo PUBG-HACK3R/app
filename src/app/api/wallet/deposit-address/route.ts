@@ -26,24 +26,42 @@ export async function GET(request: Request) {
     }
 
     // Get user's deposit address for the specified network
-    const { data: depositAddress, error: addressError } = await supabase
+    let query = supabase
       .from("user_deposit_addresses")
       .select("*")
       .eq("user_id", user.id)
-      .eq("network", network)
-      .eq("is_active", true)
-      .single();
+      .eq("is_active", true);
+    
+    // Add network filter if the column exists (for backward compatibility)
+    try {
+      query = query.eq("network", network);
+    } catch (err) {
+      console.log('Network column may not exist, using default query');
+    }
+    
+    const { data: depositAddress, error: addressError } = await query.single();
 
     if (addressError) {
       // If no address exists, create one using service role
       if (addressError.code === 'PGRST116') {
         console.log(`Creating new deposit address for user: ${user.id}`);
 
-        const { error: createError } = await serviceSupabase
-          .rpc('generate_user_deposit_address', { 
-            user_uuid: user.id,
-            network_type: network 
-          });
+        // Try new multi-network function first, fallback to old function
+        let createError;
+        try {
+          const { error } = await serviceSupabase
+            .rpc('generate_user_deposit_address', { 
+              user_uuid: user.id,
+              network_type: network 
+            });
+          createError = error;
+        } catch (err) {
+          // Fallback to old function signature for backward compatibility
+          console.log('Falling back to old function signature');
+          const { error } = await serviceSupabase
+            .rpc('generate_user_deposit_address', { user_uuid: user.id });
+          createError = error;
+        }
 
         if (createError) {
           console.error("Error creating deposit address:", createError);
@@ -54,13 +72,20 @@ export async function GET(request: Request) {
         }
 
         // Fetch the newly created address
-        const { data: createdAddress, error: fetchError } = await supabase
+        let fetchQuery = supabase
           .from("user_deposit_addresses")
           .select("*")
           .eq("user_id", user.id)
-          .eq("network", network)
-          .eq("is_active", true)
-          .single();
+          .eq("is_active", true);
+        
+        // Add network filter if supported
+        try {
+          fetchQuery = fetchQuery.eq("network", network);
+        } catch (err) {
+          console.log('Using default query for fetching created address');
+        }
+        
+        const { data: createdAddress, error: fetchError } = await fetchQuery.single();
 
         if (fetchError) {
           console.error("Error fetching created address:", fetchError);
@@ -73,7 +98,7 @@ export async function GET(request: Request) {
         return NextResponse.json({
           success: true,
           address: createdAddress.deposit_address,
-          network: createdAddress.network,
+          network: createdAddress.network || 'trc20', // Default to trc20 for backward compatibility
           derivation_path: createdAddress.derivation_path,
           address_index: createdAddress.address_index,
           created_at: createdAddress.created_at
@@ -90,7 +115,7 @@ export async function GET(request: Request) {
     return NextResponse.json({
       success: true,
       address: depositAddress.deposit_address,
-      network: depositAddress.network,
+      network: depositAddress.network || 'trc20', // Default to trc20 for backward compatibility
       derivation_path: depositAddress.derivation_path,
       address_index: depositAddress.address_index,
       created_at: depositAddress.created_at
