@@ -18,7 +18,7 @@ export async function POST() {
         end_date,
         active,
         plan_id,
-        plans!inner(name, duration_days)
+        plans(name, duration_days)
       `)
       .eq("active", true)
       .lte("end_date", new Date().toISOString().slice(0, 10));
@@ -41,13 +41,16 @@ export async function POST() {
 
     for (const sub of completedSubs) {
       try {
+        // Get plan name safely
+        const planName = (sub.plans as any)?.name || 'Unknown Plan';
+        
         // Check if investment return already exists for this subscription
         const { data: existingReturn } = await admin
           .from("transactions")
           .select("id")
           .eq("user_id", sub.user_id)
           .eq("type", "investment_return")
-          .eq("description", `Investment return from ${sub.plans.name} mining plan (Subscription: ${sub.id})`)
+          .eq("description", `Investment return from ${planName} mining plan (Subscription: ${sub.id})`)
           .maybeSingle();
 
         if (existingReturn) {
@@ -67,7 +70,7 @@ export async function POST() {
             type: "investment_return",
             amount_usdt: sub.principal_usdt,
             status: "completed",
-            description: `Investment return from ${sub.plans.name} mining plan (Subscription: ${sub.id})`,
+            description: `Investment return from ${planName} mining plan (Subscription: ${sub.id})`,
           });
 
         if (txError) {
@@ -94,7 +97,7 @@ export async function POST() {
         results.push({
           subscription_id: sub.id,
           user_id: sub.user_id,
-          plan_name: sub.plans.name,
+          plan_name: planName,
           returned_amount: sub.principal_usdt,
           success: true
         });
