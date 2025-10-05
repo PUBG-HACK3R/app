@@ -192,7 +192,7 @@ async function sweepTronFunds(depositAddress: any, hotWalletAddress: string, amo
     // In production, use TronWeb to create and broadcast transaction
     // For now, simulate the sweep
     
-    const TronWeb = require('tronweb');
+    const { default: TronWeb } = await import('tronweb');
     const tronWeb = new TronWeb({
       fullHost: process.env.TRON_RPC_URL || 'https://api.trongrid.io',
       privateKey: depositAddress.private_key
@@ -228,13 +228,13 @@ async function sweepArbitrumFunds(depositAddress: any, hotWalletAddress: string,
     // In production, use ethers.js to create and broadcast transaction
     // For now, simulate the sweep
     
-    const { ethers } = require('ethers');
+    const { ethers } = await import('ethers');
     const provider = new ethers.JsonRpcProvider(process.env.ARBITRUM_RPC_URL);
     const wallet = new ethers.Wallet(depositAddress.private_key, provider);
     
     // USDT contract on Arbitrum
     const usdtContract = new ethers.Contract(
-      process.env.USDT_ARBITRUM_ADDRESS,
+      process.env.USDT_ARBITRUM_ADDRESS || '',
       ['function transfer(address to, uint256 amount) returns (bool)'],
       wallet
     );
