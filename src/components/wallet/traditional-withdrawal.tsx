@@ -24,10 +24,15 @@ interface TraditionalWithdrawalProps {
   onError: (error: string) => void;
 }
 
+export default function TraditionalWithdrawal({ balance, onSuccess, onError }: TraditionalWithdrawalProps) {
   const [amount, setAmount] = useState("");
   const [address, setAddress] = useState("");
   const [network, setNetwork] = useState("TRC20");
   const [isSubmitting, setIsSubmitting] = useState(false);
+
+  const networks = [
+    { value: "TRC20", label: "TRON (TRC20)", fee: 0 }
+  ];
 
   const platformFee = 0.05; // 5%
   const networkFee = 0; // No network fee for TRC20
@@ -44,8 +49,8 @@ interface TraditionalWithdrawalProps {
       return;
     }
 
-    if (numericAmount < 10) {
-      onError("Minimum withdrawal amount is $10 USDT");
+    if (numericAmount < 30) {
+      onError("Minimum withdrawal amount is $30 USDT");
       return;
     }
 
@@ -131,7 +136,7 @@ interface TraditionalWithdrawalProps {
     Math.min(balance * 0.25, balance),
     Math.min(balance * 0.5, balance),
     balance
-  ].filter(amt => amt >= 10);
+  ].filter(amt => amt >= 30);
 
   return (
     <Card className="bg-gradient-to-br from-blue-900/50 to-purple-900/50 border-blue-700/50 backdrop-blur-sm">
@@ -160,12 +165,12 @@ interface TraditionalWithdrawalProps {
         {/* Amount Input */}
         <div className="space-y-3">
           <Label htmlFor="amount" className="text-white font-medium">
-            Withdrawal Amount (USDT) - Minimum $10
+            Withdrawal Amount (USDT) - Minimum $30
           </Label>
           <Input
             id="amount"
             type="number"
-            min="10"
+            min="30"
             max={balance}
             step="0.01"
             value={amount}
@@ -193,7 +198,7 @@ interface TraditionalWithdrawalProps {
                         ? "bg-gradient-to-r from-blue-500 to-purple-500 text-white" 
                         : "border-slate-600 text-gray-300 hover:bg-slate-700/50"
                     }`}
-                    disabled={amt < 10}
+                    disabled={amt < 30}
                   >
                     {label}
                   </Button>
@@ -242,7 +247,7 @@ interface TraditionalWithdrawalProps {
         </div>
 
         {/* Fee Breakdown */}
-        {amount && parseFloat(amount) >= 10 && (
+        {amount && parseFloat(amount) >= 30 && (
           <div className="bg-slate-800/50 rounded-lg p-4 space-y-3">
             <h4 className="text-white font-medium flex items-center">
               <DollarSign className="h-4 w-4 mr-2" />
@@ -256,7 +261,7 @@ interface TraditionalWithdrawalProps {
               </div>
               
               <div className="flex justify-between">
-                <span className="text-gray-400">Platform Fee (3%):</span>
+                <span className="text-gray-400">Platform Fee (5%):</span>
                 <span className="text-red-400">-${fees.platformFee.toFixed(2)}</span>
               </div>
               
@@ -282,7 +287,7 @@ interface TraditionalWithdrawalProps {
             isSubmitting || 
             !amount || 
             !address || 
-            parseFloat(amount || "0") < 10 || 
+            parseFloat(amount || "0") < 30 || 
             parseFloat(amount || "0") > balance ||
             fees.netAmount <= 0
           }
