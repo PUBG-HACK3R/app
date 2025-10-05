@@ -6,7 +6,11 @@
     },
     {
       "path": "/api/monitor/deposits",
-      "schedule": "*/5 * * * *"
+      "schedule": "0 1 * * *"
+    },
+    {
+      "path": "/api/plans/complete",
+      "schedule": "0 2 * * *"
     }
   ]
 }
