@@ -5,9 +5,13 @@ export const dynamic = "force-dynamic";
 
 export async function POST() {
   try {
-    const baseUrl = process.env.VERCEL_URL 
-      ? `https://${process.env.VERCEL_URL}` 
-      : 'http://localhost:3000';
+    // Get the base URL - Vercel provides VERCEL_URL without protocol
+    let baseUrl = 'http://localhost:3000';
+    if (process.env.VERCEL_URL) {
+      baseUrl = process.env.VERCEL_URL.startsWith('http') 
+        ? process.env.VERCEL_URL 
+        : `https://${process.env.VERCEL_URL}`;
+    }
       
     const results = {
       earnings: null as any,
@@ -17,7 +21,9 @@ export async function POST() {
 
     // Process daily earnings
     try {
-      const earningsResponse = await fetch(`${baseUrl}/api/cron/daily-earnings`, {
+      const earningsUrl = `${baseUrl}/api/cron/daily-earnings`;
+      console.log('Calling earnings URL:', earningsUrl);
+      const earningsResponse = await fetch(earningsUrl, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' }
       });
@@ -34,7 +40,9 @@ export async function POST() {
 
     // Process plan completions
     try {
-      const completionsResponse = await fetch(`${baseUrl}/api/plans/complete`, {
+      const completionsUrl = `${baseUrl}/api/plans/complete`;
+      console.log('Calling completions URL:', completionsUrl);
+      const completionsResponse = await fetch(completionsUrl, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' }
       });
