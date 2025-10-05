@@ -35,7 +35,7 @@ interface DepositAddressData {
   isNew?: boolean;
 }
 
-type NetworkType = 'TRON' | 'ARBITRUM';
+type NetworkType = 'trc20' | 'arbitrum';
 
 export default function CentralizedDeposit({ amount, onSuccess, onError }: CentralizedDepositProps) {
   const [selectedNetwork, setSelectedNetwork] = useState<NetworkType>('trc20');
@@ -63,7 +63,14 @@ export default function CentralizedDeposit({ amount, onSuccess, onError }: Centr
       setDepositAddress({
         address: data.address,
         network: data.network,
-        created_at: data.created_at
+        networkName: data.networkName || (selectedNetwork === 'trc20' ? 'TRON (TRC20)' : 'Arbitrum'),
+        symbol: data.symbol || 'USDT',
+        contractAddress: data.contractAddress || '',
+        hotWallet: data.hotWallet || '',
+        created_at: data.created_at,
+        balance: data.balance || 0,
+        totalReceived: data.totalReceived || 0,
+        isNew: data.isNew || false
       });
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : 'Failed to load deposit address';
