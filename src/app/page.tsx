@@ -41,6 +41,7 @@ export default function MiningLandingPage() {
       </nav>
 
       {/* Hero Section */}
+      <section className="py-20 px-4">
         <div className="max-w-7xl mx-auto text-center">
           <div className="mb-8">
             <Badge className="bg-orange-500/20 text-orange-300 border-orange-500/30 mb-4">
