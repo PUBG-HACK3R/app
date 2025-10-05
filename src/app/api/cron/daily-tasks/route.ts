@@ -6,9 +6,9 @@ export const dynamic = "force-dynamic";
 export async function POST() {
   try {
     const results = {
-      earnings: null,
-      planCompletions: null,
-      errors: []
+      earnings: null as any,
+      planCompletions: null as any,
+      errors: [] as string[]
     };
 
     // Process daily earnings
