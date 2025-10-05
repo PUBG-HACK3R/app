@@ -18,8 +18,18 @@ export async function POST(request: Request) {
     } = await supabase.auth.getUser();
     if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
-    const role = (user.app_metadata as any)?.role || (user.user_metadata as any)?.role || "user";
-    if (role !== "admin") return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+    // Check admin role directly using admin client (same method as admin page)
+    const adminClient = getSupabaseAdminClient();
+    const { data: profile, error: adminCheckError } = await adminClient
+      .from("profiles")
+      .select("role")
+      .eq("user_id", user.id)
+      .single();
+
+    if (adminCheckError || !profile || profile.role !== 'admin') {
+      console.log("Approve withdrawal API - Profile error or not admin:", adminCheckError, profile?.role);
+      return NextResponse.json({ error: "Forbidden - Admin access required" }, { status: 403 });
+    }
 
     const body = await request.json();
     const { id } = ApproveSchema.parse(body);
@@ -56,29 +66,25 @@ export async function POST(request: Request) {
     }
 
     // Approve withdrawal and insert transaction
-    const now = new Date().toISOString();
     const { error: updErr } = await admin
       .from("withdrawals")
-      .update({ status: "approved", approved_by: user.id, approved_at: now })
+      .update({ status: "approved" })
       .eq("id", wd.id);
     if (updErr) return NextResponse.json({ error: updErr.message }, { status: 400 });
 
-    // Idempotency: avoid duplicate withdrawal transaction for same reference
-    const { data: existing } = await admin
-      .from("transactions")
-      .select("id")
-      .eq("type", "withdrawal")
-      .eq("reference_id", wd.id)
-      .maybeSingle();
+    // Create withdrawal transaction record
+    const description = `Withdrawal approved by admin: ${user.id}`;
+    const { error: txErr } = await admin.from("transactions").insert({
+      user_id: wd.user_id,
+      type: "withdrawal",
+      amount_usdt: amount,
+      status: "completed",
+      description: description
+    });
 
-    if (!existing) {
-      await admin.from("transactions").insert({
-        user_id: wd.user_id,
-        type: "withdrawal",
-        amount_usdt: amount,
-        reference_id: wd.id,
-        meta: { approved_by: user.id, approved_at: now },
-      });
+    if (txErr) {
+      console.error("Error creating withdrawal transaction:", txErr);
+      // Don't fail the approval, just log the error
     }
 
     const newBal = currentBal - amount;

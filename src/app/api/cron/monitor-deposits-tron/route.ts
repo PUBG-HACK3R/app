@@ -8,10 +8,11 @@ import TronWeb from 'tronweb';
 const REVALIDATE_SECRET = process.env.REVALIDATE_SECRET;
 const SUPABASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL!;
 const SUPABASE_SERVICE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY!;
-const RPC_URL = process.env.RPC_URL!;
-const HOT_PRIVATE_KEY = process.env.HOT_PRIVATE_KEY!;
-const USDT_ADDRESS = process.env.USDT_ADDRESS!; // TR7NHqjeKQxGTCi8q8ZY4pL8otSzgjLj6t
-const MAIN_HOT_WALLET = process.env.HOT_WALLET_ADDRESS!;
+// TRON Network specific configuration
+const TRON_RPC_URL = process.env.TRON_RPC_URL!;
+const TRON_PRIVATE_KEY = process.env.TRON_PRIVATE_KEY!;
+const USDT_TRC20_ADDRESS = process.env.USDT_TRC20_ADDRESS!; // TR7NHqjeKQxGTCi8q8ZY4pL8otSzgjLj6t
+const HOT_WALLET_TRC20_ADDRESS = process.env.HOT_WALLET_TRC20_ADDRESS!;
 
 export async function POST(request: NextRequest) {
   try {
@@ -27,8 +28,8 @@ export async function POST(request: NextRequest) {
     
     // Initialize TronWeb
     const tronWeb = new TronWeb({
-      fullHost: RPC_URL,
-      privateKey: HOT_PRIVATE_KEY
+      fullHost: TRON_RPC_URL,
+      privateKey: TRON_PRIVATE_KEY
     });
 
     // Get all active deposit addresses
@@ -52,7 +53,7 @@ export async function POST(request: NextRequest) {
     for (const addressData of addresses || []) {
       try {
         // Get USDT contract instance
-        const contract = await tronWeb.contract().at(USDT_ADDRESS);
+        const contract = await tronWeb.contract().at(USDT_TRC20_ADDRESS);
         
         // Get USDT balance (6 decimals for USDT TRC20)
         const balance = await contract.balanceOf(addressData.deposit_address).call();
@@ -75,7 +76,7 @@ export async function POST(request: NextRequest) {
             );
 
             for (const transfer of transfers || []) {
-              if (transfer.token_info && transfer.token_info.address === USDT_ADDRESS) {
+              if (transfer.token_info && transfer.token_info.address === USDT_TRC20_ADDRESS) {
                 const txHash = transfer.transaction_id;
                 const amount = parseFloat(transfer.value) / 1000000; // Convert to USDT (6 decimals)
                 const fromAddress = tronWeb.address.fromHex(transfer.from);
@@ -128,20 +129,20 @@ export async function POST(request: NextRequest) {
 
               // Create temporary wallet for this address
               const tempPrivateKey = tronWeb.utils.crypto.keccak256(
-                Buffer.from(addressData.deposit_address + HOT_PRIVATE_KEY, 'utf8')
+                Buffer.from(addressData.deposit_address + TRON_PRIVATE_KEY, 'utf8')
               ).toString('hex');
               
               const tempTronWeb = new TronWeb({
-                fullHost: RPC_URL,
+                fullHost: TRON_RPC_URL,
                 privateKey: tempPrivateKey
               });
 
-              const tempContract = await tempTronWeb.contract().at(USDT_ADDRESS);
+              const tempContract = await tempTronWeb.contract().at(USDT_TRC20_ADDRESS);
               
               // Transfer USDT to main hot wallet
               const transferAmount = Math.floor(balanceInUsdt * 1000000); // Convert to smallest unit
               const transferTx = await tempContract.transfer(
-                MAIN_HOT_WALLET,
+                HOT_WALLET_TRC20_ADDRESS,
                 transferAmount
               ).send();
               

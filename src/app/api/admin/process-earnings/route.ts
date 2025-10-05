@@ -16,13 +16,18 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    // Check if user is admin
-    const role = (user.app_metadata as any)?.role || (user.user_metadata as any)?.role || "user";
-    if (role !== "admin") {
+    // Check if user is admin using profiles table
+    const admin = getSupabaseAdminClient();
+    const { data: profile } = await admin
+      .from("profiles")
+      .select("role")
+      .eq("user_id", user.id)
+      .single();
+    
+    if (!profile || profile.role !== "admin") {
       return NextResponse.json({ error: "Admin access required" }, { status: 403 });
     }
 
-    const admin = getSupabaseAdminClient();
     const now = new Date();
     const nowIso = now.toISOString();
     const today = now.toISOString().slice(0, 10); // YYYY-MM-DD

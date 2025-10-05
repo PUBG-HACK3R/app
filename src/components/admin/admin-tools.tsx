@@ -6,68 +6,21 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { Badge } from "@/components/ui/badge";
-import { Separator } from "@/components/ui/separator";
 import { 
-  UserPlus, 
   DollarSign, 
-  Shield, 
   AlertCircle,
   CheckCircle,
-  Users,
-  CreditCard,
-  Clock,
-  TrendingUp
+  CreditCard
 } from "lucide-react";
 
 export function AdminTools() {
-  const [setRoleLoading, setSetRoleLoading] = React.useState(false);
   const [topupLoading, setTopupLoading] = React.useState(false);
-  const [testLoading, setTestLoading] = React.useState(false);
-  const [earningsLoading, setEarningsLoading] = React.useState(false);
   const [message, setMessage] = React.useState<{ type: 'success' | 'error', text: string } | null>(null);
-
-  // Set Role Form
-  const [roleUserId, setRoleUserId] = React.useState("");
-  const [role, setRole] = React.useState<"user" | "admin">("admin");
-  const [adminSecret, setAdminSecret] = React.useState("");
 
   // Top-up Form
   const [topupUserId, setTopupUserId] = React.useState("");
   const [topupAmount, setTopupAmount] = React.useState("");
   const [topupReason, setTopupReason] = React.useState("");
-
-  const handleSetRole = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setSetRoleLoading(true);
-    setMessage(null);
-
-    try {
-      const res = await fetch("/api/admin/set-role", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          userId: roleUserId,
-          role,
-          adminSecret,
-        }),
-      });
-
-      const data = await res.json();
-
-      if (res.ok) {
-        setMessage({ type: 'success', text: data.message });
-        setRoleUserId("");
-        setAdminSecret("");
-      } else {
-        setMessage({ type: 'error', text: data.error || "Failed to set role" });
-      }
-    } catch (err) {
-      setMessage({ type: 'error', text: "Network error occurred" });
-    } finally {
-      setSetRoleLoading(false);
-    }
-  };
 
   const handleTopup = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -106,182 +59,34 @@ export function AdminTools() {
     }
   };
 
-  const handleTestDatabase = async () => {
-    setTestLoading(true);
-    setMessage(null);
-
-    try {
-      const res = await fetch("/api/admin/test-db");
-      const data = await res.json();
-
-      if (res.ok) {
-        const tests = data.tests;
-        const allPassed = Object.values(tests).every((test: any) => test.success);
-        
-        if (allPassed) {
-          setMessage({ type: 'success', text: "All database tests passed! Top-up functionality should work." });
-        } else {
-          const failedTests = Object.entries(tests)
-            .filter(([_, test]: [string, any]) => !test.success)
-            .map(([name, test]: [string, any]) => `${name}: ${test.error}`)
-            .join(", ");
-          setMessage({ type: 'error', text: `Database tests failed: ${failedTests}` });
-        }
-        console.log("Database test results:", data);
-      } else {
-        setMessage({ type: 'error', text: data.error || "Database test failed" });
-      }
-    } catch (err) {
-      setMessage({ type: 'error', text: "Network error during database test" });
-    } finally {
-      setTestLoading(false);
-    }
-  };
-
-  const handleProcessEarnings = async () => {
-    setEarningsLoading(true);
-    setMessage(null);
-
-    try {
-      const res = await fetch("/api/admin/process-daily-returns", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-      });
-
-      const data = await res.json();
-
-      if (res.ok) {
-        const { results } = data;
-        const successMessage = `Daily returns processed successfully! 
-          • Subscriptions processed: ${results.subscriptionsProcessed}
-          • Earnings credited: ${results.earningsCredited}
-          • Total amount credited: $${results.totalAmountCredited.toFixed(2)}
-          • Subscriptions deactivated: ${results.subscriptionsDeactivated}`;
-        
-        setMessage({ type: 'success', text: successMessage });
-        
-        if (results.errors && results.errors.length > 0) {
-          console.warn("Processing errors:", results.errors);
-        }
-      } else {
-        setMessage({ type: 'error', text: data.error || "Failed to process daily returns" });
-      }
-    } catch (err) {
-      setMessage({ type: 'error', text: "Network error occurred while processing earnings" });
-    } finally {
-      setEarningsLoading(false);
-    }
-  };
-
   return (
-    <div className="grid gap-6 lg:grid-cols-3">
-      {/* Set Admin Role */}
-      <Card className="border-0 shadow-lg">
-        <CardHeader>
-          <div className="flex items-center space-x-2">
-            <Shield className="h-5 w-5 text-blue-600" />
-            <CardTitle>Set User Role</CardTitle>
-          </div>
-          <CardDescription>
-            Grant or revoke admin access for users
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          <form onSubmit={handleSetRole} className="space-y-4">
-            <div className="space-y-2">
-              <Label htmlFor="roleUserId">User ID</Label>
-              <Input
-                id="roleUserId"
-                type="text"
-                placeholder="Enter user UUID"
-                value={roleUserId}
-                onChange={(e) => setRoleUserId(e.target.value)}
-                required
-              />
-              <p className="text-xs text-muted-foreground">
-                Get user ID from debug-user page or Supabase dashboard
-              </p>
-            </div>
-
-            <div className="space-y-2">
-              <Label>Role</Label>
-              <div className="flex space-x-2">
-                <Button
-                  type="button"
-                  variant={role === "admin" ? "default" : "outline"}
-                  size="sm"
-                  onClick={() => setRole("admin")}
-                >
-                  <Shield className="h-4 w-4 mr-1" />
-                  Admin
-                </Button>
-                <Button
-                  type="button"
-                  variant={role === "user" ? "default" : "outline"}
-                  size="sm"
-                  onClick={() => setRole("user")}
-                >
-                  <Users className="h-4 w-4 mr-1" />
-                  User
-                </Button>
-              </div>
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="adminSecret">Admin Secret</Label>
-              <Input
-                id="adminSecret"
-                type="password"
-                placeholder="Enter admin secret"
-                value={adminSecret}
-                onChange={(e) => setAdminSecret(e.target.value)}
-                required
-              />
-              <p className="text-xs text-muted-foreground">
-                Set ADMIN_SECRET in your .env.local (default: admin123)
-              </p>
-            </div>
-
-            <Button type="submit" disabled={setRoleLoading} className="w-full">
-              {setRoleLoading ? (
-                <>
-                  <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
-                  Setting Role...
-                </>
-              ) : (
-                <>
-                  <UserPlus className="mr-2 h-4 w-4" />
-                  Set {role === "admin" ? "Admin" : "User"} Role
-                </>
-              )}
-            </Button>
-          </form>
-        </CardContent>
-      </Card>
-
-      {/* User Top-up */}
+    <div className="grid gap-6 lg:grid-cols-1">
+      {/* User Top-up - Only Component */}
       <Card className="border-0 shadow-lg">
         <CardHeader>
           <div className="flex items-center space-x-2">
             <CreditCard className="h-5 w-5 text-green-600" />
-            <CardTitle>User Top-up</CardTitle>
+            <CardTitle>Miner Balance Top-up</CardTitle>
           </div>
           <CardDescription>
-            Add funds to a user's wallet balance
+            Add USDT funds to a miner's wallet balance for mining operations
           </CardDescription>
         </CardHeader>
         <CardContent>
           <form onSubmit={handleTopup} className="space-y-4">
             <div className="space-y-2">
-              <Label htmlFor="topupUserId">User ID</Label>
+              <Label htmlFor="topupUserId">Miner User ID</Label>
               <Input
                 id="topupUserId"
                 type="text"
-                placeholder="Enter user UUID"
+                placeholder="Enter miner UUID from user management"
                 value={topupUserId}
                 onChange={(e) => setTopupUserId(e.target.value)}
                 required
               />
+              <p className="text-xs text-muted-foreground">
+                Copy the UUID from the User Management section above
+              </p>
             </div>
 
             <div className="space-y-2">
@@ -306,7 +111,7 @@ export function AdminTools() {
               <Label htmlFor="topupReason">Reason (Optional)</Label>
               <Textarea
                 id="topupReason"
-                placeholder="e.g., Bonus payment, Compensation, etc."
+                placeholder="e.g., Mining bonus, Compensation, Referral reward, etc."
                 value={topupReason}
                 onChange={(e: React.ChangeEvent<HTMLTextAreaElement>) => setTopupReason(e.target.value)}
                 rows={2}
@@ -322,7 +127,7 @@ export function AdminTools() {
               ) : (
                 <>
                   <DollarSign className="mr-2 h-4 w-4" />
-                  Top-up User
+                  Top-up Miner Balance
                 </>
               )}
             </Button>
@@ -330,157 +135,54 @@ export function AdminTools() {
         </CardContent>
       </Card>
 
-      {/* Process Daily Earnings */}
-      <Card className="border-0 shadow-lg">
-        <CardHeader>
-          <div className="flex items-center space-x-2">
-            <TrendingUp className="h-5 w-5 text-orange-600" />
-            <CardTitle>Process Daily Earnings</CardTitle>
-          </div>
-          <CardDescription>
-            Manually trigger daily returns processing for all active subscriptions
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          <div className="space-y-4">
-            <div className="p-4 bg-orange-50 dark:bg-orange-950/20 rounded-lg border border-orange-200 dark:border-orange-800">
-              <div className="flex items-start space-x-2">
-                <AlertCircle className="h-5 w-5 text-orange-600 mt-0.5" />
-                <div className="text-sm text-orange-800 dark:text-orange-200">
-                  <p className="font-medium mb-1">What this does:</p>
-                  <ul className="list-disc list-inside space-y-1 text-xs">
-                    <li>Processes all active subscriptions due for earnings</li>
-                    <li>Credits daily returns to user balances</li>
-                    <li>Updates next earning dates</li>
-                    <li>Deactivates expired subscriptions</li>
-                  </ul>
-                </div>
-              </div>
-            </div>
-
-            <Button 
-              onClick={handleProcessEarnings} 
-              disabled={earningsLoading}
-              className="w-full bg-orange-600 hover:bg-orange-700"
-            >
-              {earningsLoading ? (
-                <>
-                  <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
-                  Processing Earnings...
-                </>
+      {/* Status Message */}
+      {message && (
+        <Card className={`border-0 shadow-lg ${
+          message.type === 'success' 
+            ? 'bg-green-50 dark:bg-green-950/20 border-green-200 dark:border-green-800' 
+            : 'bg-red-50 dark:bg-red-950/20 border-red-200 dark:border-red-800'
+        }`}>
+          <CardContent className="p-4">
+            <div className="flex items-center space-x-2">
+              {message.type === 'success' ? (
+                <CheckCircle className="h-5 w-5 text-green-600" />
               ) : (
-                <>
-                  <TrendingUp className="mr-2 h-4 w-4" />
-                  Process Daily Returns
-                </>
+                <AlertCircle className="h-5 w-5 text-red-600" />
               )}
-            </Button>
+              <span className={`font-medium ${
+                message.type === 'success' 
+                  ? 'text-green-900 dark:text-green-100' 
+                  : 'text-red-900 dark:text-red-100'
+              }`}>
+                {message.text}
+              </span>
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
+      {/* Instructions */}
+      <Card className="border-0 shadow-lg bg-blue-50 dark:bg-blue-950/20">
+        <CardHeader>
+          <CardTitle className="text-blue-900 dark:text-blue-100">How to Top-up Miners</CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-3">
+          <div className="text-sm text-blue-700 dark:text-blue-300">
+            <p className="font-medium mb-2">🔹 Step-by-step process:</p>
+            <ol className="list-decimal list-inside space-y-1 ml-2">
+              <li>Find the miner in the User Management section above</li>
+              <li>Click "Copy UUID for Top-up" to copy their user ID</li>
+              <li>Paste the UUID in the "Miner User ID" field</li>
+              <li>Enter the USDT amount to add to their balance</li>
+              <li>Optionally add a reason for the top-up</li>
+              <li>Click "Top-up Miner Balance" to process</li>
+            </ol>
+            <p className="mt-3 text-xs bg-blue-100 dark:bg-blue-900 p-2 rounded">
+              💡 The funds will be added as a deposit transaction and immediately available for mining investments.
+            </p>
           </div>
         </CardContent>
       </Card>
-
-      {/* Status Message */}
-      {message && (
-        <div className="lg:col-span-3">
-          <Card className={`border-0 shadow-lg ${
-            message.type === 'success' 
-              ? 'bg-green-50 dark:bg-green-950/20 border-green-200 dark:border-green-800' 
-              : 'bg-red-50 dark:bg-red-950/20 border-red-200 dark:border-red-800'
-          }`}>
-            <CardContent className="p-4">
-              <div className="flex items-center space-x-2">
-                {message.type === 'success' ? (
-                  <CheckCircle className="h-5 w-5 text-green-600" />
-                ) : (
-                  <AlertCircle className="h-5 w-5 text-red-600" />
-                )}
-                <span className={`font-medium ${
-                  message.type === 'success' 
-                    ? 'text-green-900 dark:text-green-100' 
-                    : 'text-red-900 dark:text-red-100'
-                }`}>
-                  {message.text}
-                </span>
-              </div>
-            </CardContent>
-          </Card>
-        </div>
-      )}
-
-      {/* Database Test */}
-      <div className="lg:col-span-3">
-        <Card className="border-0 shadow-lg bg-gray-50 dark:bg-gray-950/20">
-          <CardHeader>
-            <CardTitle className="text-gray-900 dark:text-gray-100">Database Test</CardTitle>
-            <CardDescription>Test database connectivity and transaction functionality</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <Button 
-              onClick={handleTestDatabase} 
-              disabled={testLoading}
-              variant="outline"
-              className="w-full"
-            >
-              {testLoading ? (
-                <>
-                  <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-gray-600 mr-2"></div>
-                  Testing Database...
-                </>
-              ) : (
-                <>
-                  <Shield className="mr-2 h-4 w-4" />
-                  Test Database Connection
-                </>
-              )}
-            </Button>
-          </CardContent>
-        </Card>
-      </div>
-
-      {/* Instructions */}
-      <div className="lg:col-span-3">
-        <Card className="border-0 shadow-lg bg-blue-50 dark:bg-blue-950/20">
-          <CardHeader>
-            <CardTitle className="text-blue-900 dark:text-blue-100">Instructions</CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-3">
-            <div>
-              <Badge variant="outline" className="bg-blue-100 text-blue-800 border-blue-300 dark:bg-blue-900 dark:text-blue-200 dark:border-blue-700 mb-2">
-                Set Admin Role
-              </Badge>
-              <p className="text-sm text-blue-700 dark:text-blue-300">
-                1. Get the user ID from <code>/debug-user</code> page or Supabase dashboard<br/>
-                2. Set ADMIN_SECRET in your .env.local file<br/>
-                3. Use the form to grant admin access to users
-              </p>
-            </div>
-            <Separator className="bg-blue-200 dark:bg-blue-800" />
-            <div>
-              <Badge variant="outline" className="bg-green-100 text-green-800 border-green-300 dark:bg-green-900 dark:text-green-200 dark:border-green-700 mb-2">
-                User Top-up
-              </Badge>
-              <p className="text-sm text-blue-700 dark:text-blue-300">
-                1. Enter the user's UUID<br/>
-                2. Specify the amount to add to their balance<br/>
-                3. Optionally provide a reason for the top-up<br/>
-                4. The amount will be added as a deposit transaction
-              </p>
-            </div>
-            <Separator className="bg-blue-200 dark:bg-blue-800" />
-            <div>
-              <Badge variant="outline" className="bg-orange-100 text-orange-800 border-orange-300 dark:bg-orange-900 dark:text-orange-200 dark:border-orange-700 mb-2">
-                Process Daily Earnings
-              </Badge>
-              <p className="text-sm text-blue-700 dark:text-blue-300">
-                1. Click the button to manually trigger daily returns processing<br/>
-                2. All active subscriptions due for earnings will be processed<br/>
-                3. Daily returns will be credited to user balances<br/>
-                4. Expired subscriptions will be automatically deactivated
-              </p>
-            </div>
-          </CardContent>
-        </Card>
-      </div>
     </div>
   );
 }

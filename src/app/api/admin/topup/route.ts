@@ -20,9 +20,18 @@ export async function POST(request: Request) {
     } = await supabase.auth.getUser();
     if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
-    // Check if user is admin
-    const role = (user.app_metadata as any)?.role || (user.user_metadata as any)?.role || "user";
-    if (role !== "admin") return NextResponse.json({ error: "Forbidden - Admin access required" }, { status: 403 });
+    // Check admin role directly using admin client (same method as admin page)
+    const adminClient = getSupabaseAdminClient();
+    const { data: profile, error: adminCheckError } = await adminClient
+      .from("profiles")
+      .select("role")
+      .eq("user_id", user.id)
+      .single();
+
+    if (adminCheckError || !profile || profile.role !== 'admin') {
+      console.log("Topup API - Profile error or not admin:", adminCheckError, profile?.role);
+      return NextResponse.json({ error: "Forbidden - Admin access required" }, { status: 403 });
+    }
 
     const body = await request.json();
     const { userId, amount, reason } = TopupSchema.parse(body);
@@ -59,18 +68,13 @@ export async function POST(request: Request) {
     const newAmount = currentAmount + amount;
 
     // Create a deposit transaction for the top-up
+    const description = `Admin top-up: ${reason || "Manual balance adjustment"} (by admin: ${user.id})`;
     const { data: txData, error: txError } = await admin.from("transactions").insert({
       user_id: userId,
       type: "deposit",
       amount_usdt: amount,
-      reference_id: null, // Admin top-ups don't have external reference
-      meta: { 
-        admin_topup: true, 
-        reason: reason || "Manual balance adjustment",
-        admin_id: user.id,
-        timestamp: new Date().toISOString(),
-        reference: `admin-topup-${Date.now()}` // Store our reference in meta
-      },
+      status: "completed",
+      description: description
     }).select();
 
     if (txError) {

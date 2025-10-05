@@ -19,8 +19,18 @@ export async function POST(request: Request) {
     } = await supabase.auth.getUser();
     if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
-    const role = (user.app_metadata as any)?.role || (user.user_metadata as any)?.role || "user";
-    if (role !== "admin") return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+    // Check admin role directly using admin client (same method as admin page)
+    const adminClient = getSupabaseAdminClient();
+    const { data: profile, error: adminCheckError } = await adminClient
+      .from("profiles")
+      .select("role")
+      .eq("user_id", user.id)
+      .single();
+
+    if (adminCheckError || !profile || profile.role !== 'admin') {
+      console.log("Reject withdrawal API - Profile error or not admin:", adminCheckError, profile?.role);
+      return NextResponse.json({ error: "Forbidden - Admin access required" }, { status: 403 });
+    }
 
     const body = await request.json();
     const { id, reason } = RejectSchema.parse(body);
@@ -36,18 +46,27 @@ export async function POST(request: Request) {
     if (wdErr || !wd) return NextResponse.json({ error: wdErr?.message || "Withdrawal not found" }, { status: 404 });
     if (wd.status !== "pending") return NextResponse.json({ error: "Withdrawal is not pending" }, { status: 400 });
 
-    // Reject withdrawal
-    const now = new Date().toISOString();
+    // Reject withdrawal (only update status - other columns don't exist)
     const { error: updErr } = await admin
       .from("withdrawals")
-      .update({ 
-        status: "rejected", 
-        approved_by: user.id, 
-        approved_at: now,
-        rejection_reason: reason
-      })
+      .update({ status: "rejected" })
       .eq("id", wd.id);
     if (updErr) return NextResponse.json({ error: updErr.message }, { status: 400 });
+
+    // Log the rejection reason in a transaction record for audit trail
+    const description = `Withdrawal rejected by admin ${user.id}: ${reason}`;
+    const { error: logErr } = await admin.from("transactions").insert({
+      user_id: wd.user_id,
+      type: "withdrawal",
+      amount_usdt: 0, // No actual amount since it's rejected
+      status: "rejected",
+      description: description
+    });
+
+    if (logErr) {
+      console.error("Error logging rejection:", logErr);
+      // Don't fail the rejection, just log the error
+    }
 
     // Note: We don't create a withdrawal transaction or update balances for rejected withdrawals
     // The user keeps their balance since the withdrawal was not processed

@@ -50,15 +50,30 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: "You already have an active subscription" }, { status: 400 });
     }
 
-    // Get current balance from balances table
-    const { data: balanceData } = await admin
-      .from("balances")
-      .select("available_usdt")
-      .eq("user_id", user.id)
-      .maybeSingle();
+    // Get current balance from transactions
+    const { data: allTx } = await admin
+      .from("transactions")
+      .select("type, amount_usdt")
+      .eq("user_id", user.id);
 
-    const currentBalance = Number(balanceData?.available_usdt || 0);
-    const planPrice = Number(plan.price_usdt);
+    const totalEarnings = (allTx || [])
+      .filter((t) => t.type === "earning")
+      .reduce((acc, t) => acc + Number(t.amount_usdt || 0), 0);
+    const totalDeposits = (allTx || [])
+      .filter((t) => t.type === "deposit")
+      .reduce((acc, t) => acc + Number(t.amount_usdt || 0), 0);
+    const totalInvestments = (allTx || [])
+      .filter((t) => t.type === "investment")
+      .reduce((acc, t) => acc + Number(t.amount_usdt || 0), 0);
+    const totalReturns = (allTx || [])
+      .filter((t) => t.type === "investment_return")
+      .reduce((acc, t) => acc + Number(t.amount_usdt || 0), 0);
+    const totalWithdrawals = (allTx || [])
+      .filter((t) => t.type === "withdrawal")
+      .reduce((acc, t) => acc + Number(t.amount_usdt || 0), 0);
+    
+    const currentBalance = totalDeposits + totalEarnings + totalReturns - totalInvestments - totalWithdrawals;
+    const planPrice = Number(plan.min_amount);
 
     if (currentBalance < planPrice) {
       return NextResponse.json({ 
@@ -113,14 +128,8 @@ export async function POST(request: Request) {
         user_id: user.id,
         type: "investment",
         amount_usdt: planPrice,
-        reference_id: subscription.id,
-        meta: { 
-          plan_purchase: true,
-          plan_id: planId,
-          plan_name: plan.name,
-          subscription_id: subscription.id,
-          timestamp: new Date().toISOString()
-        },
+        status: "completed",
+        description: `Purchased ${plan.name} mining plan - ${plan.duration_days} days at ${plan.roi_daily_percent}% daily ROI`,
       });
 
     if (txError) {
@@ -128,17 +137,8 @@ export async function POST(request: Request) {
       // Don't fail the request, but log the error
     }
 
-    // Update balance
+    // No need to update profiles table balance since we calculate from transactions
     const newBalance = currentBalance - planPrice;
-    const { error: balanceError } = await admin
-      .from("balances")
-      .update({ available_usdt: newBalance })
-      .eq("user_id", user.id);
-
-    if (balanceError) {
-      console.error("Error updating balance:", balanceError);
-      // Don't fail the request, but log the error
-    }
 
     return NextResponse.json({
       success: true,

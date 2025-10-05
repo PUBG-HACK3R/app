@@ -25,10 +25,17 @@ interface CentralizedDepositProps {
 interface DepositAddressData {
   address: string;
   network: string;
+  networkName: string;
+  symbol: string;
+  contractAddress: string;
+  hotWallet: string;
   created_at: string;
+  balance: number;
+  totalReceived: number;
+  isNew?: boolean;
 }
 
-type NetworkType = 'trc20' | 'arbitrum';
+type NetworkType = 'TRON' | 'ARBITRUM';
 
 export default function CentralizedDeposit({ amount, onSuccess, onError }: CentralizedDepositProps) {
   const [selectedNetwork, setSelectedNetwork] = useState<NetworkType>('trc20');
@@ -261,8 +268,7 @@ export default function CentralizedDeposit({ amount, onSuccess, onError }: Centr
             <span className="text-sm font-medium text-yellow-300">Important Instructions</span>
           </div>
           <ul className="text-sm text-yellow-200 space-y-1 ml-6 list-disc">
-            <li>Only send USDT {selectedNetwork === 'trc20' ? 'TRC20' : 'on Arbitrum'} to this address</li>
-            <li>Minimum deposit: $12 USDT</li>
+            <li>Only send USDT {selectedNetwork === 'trc20' ? 'TRC20 (TRON)' : 'on Arbitrum'} to this address</li>
             <li>Funds will be credited automatically after confirmation</li>
             <li>This address is unique to your account</li>
             <li>Do not send other cryptocurrencies to this address</li>

@@ -142,230 +142,116 @@ export default async function ActivePlansPage() {
   };
 
   return (
-    <main className="mx-auto max-w-6xl px-4 py-8 space-y-8">
-      {/* Header */}
-      <div className="flex items-center justify-between">
-        <div className="space-y-1">
-          <div className="flex items-center gap-3">
-            <Button variant="ghost" size="sm" asChild>
-              <Link href="/dashboard">
-                <ArrowLeft className="h-4 w-4 mr-2" />
-                Back to Dashboard
-              </Link>
-            </Button>
-          </div>
-          <h1 className="text-3xl font-bold tracking-tight">Active Investment Plans</h1>
-          <p className="text-muted-foreground">Monitor your active investments and track returns</p>
-        </div>
-        <div className="flex gap-3">
-          <Button asChild variant="outline">
-            <Link href="/plans">
-              <PiggyBank className="h-4 w-4 mr-2" />
-              Browse Plans
-            </Link>
-          </Button>
-        </div>
-      </div>
+    <div className="min-h-screen bg-gradient-to-br from-gray-900 via-blue-900/20 to-gray-900 pt-16 pb-20">
+      <div className="px-4 py-6 space-y-6">
 
-      {subscriptionsWithEarnings.length === 0 ? (
-        <Card className="border-0 shadow-lg">
-          <CardContent className="p-12 text-center">
-            <div className="space-y-4">
-              <div className="w-16 h-16 bg-muted rounded-full flex items-center justify-center mx-auto">
-                <PiggyBank className="h-8 w-8 text-muted-foreground" />
-              </div>
-              <div className="space-y-2">
-                <h3 className="text-xl font-semibold">No Active Plans</h3>
-                <p className="text-muted-foreground max-w-md mx-auto">
-                  You don't have any active investment plans yet. Browse our available plans to start earning.
-                </p>
-              </div>
-              <Button asChild size="lg" className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700">
-                <Link href="/plans">
-                  <TrendingUp className="h-4 w-4 mr-2" />
-                  Explore Investment Plans
-                </Link>
-              </Button>
+        {/* Welcome Message */}
+        <div className="text-center mb-6">
+          <h1 className="text-2xl font-bold text-white mb-2">My Investments</h1>
+          <p className="text-gray-400">Track your active investment plans</p>
+        </div>
+
+        {subscriptionsWithEarnings.length === 0 ? (
+          <div className="bg-gradient-to-br from-gray-800/50 to-gray-900/50 rounded-3xl border border-gray-700/30 p-8 text-center">
+            <div className="w-16 h-16 bg-blue-500/20 rounded-full flex items-center justify-center mx-auto mb-4">
+              <PiggyBank className="h-8 w-8 text-blue-400" />
             </div>
-          </CardContent>
-        </Card>
-      ) : (
-        <div className="space-y-6">
-          {/* Summary Cards */}
-          <div className="grid gap-6 md:grid-cols-3">
-            <Card className="border-0 shadow-lg bg-gradient-to-br from-blue-50 to-blue-100 dark:from-blue-950 dark:to-blue-900">
-              <CardContent className="p-6">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="text-sm text-blue-700 dark:text-blue-300">Active Plans</p>
-                    <p className="text-2xl font-bold text-blue-900 dark:text-blue-100">
-                      {subscriptionsWithEarnings.length}
-                    </p>
-                  </div>
-                  <div className="p-3 bg-blue-100 dark:bg-blue-900 rounded-full">
-                    <PiggyBank className="h-6 w-6 text-blue-600 dark:text-blue-400" />
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-
-            <Card className="border-0 shadow-lg bg-gradient-to-br from-green-50 to-green-100 dark:from-green-950 dark:to-green-900">
-              <CardContent className="p-6">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="text-sm text-green-700 dark:text-green-300">Total Invested</p>
-                    <p className="text-2xl font-bold text-green-900 dark:text-green-100">
-                      ${subscriptionsWithEarnings.reduce((sum, sub) => sum + Number(sub.principal_usdt), 0).toFixed(2)}
-                    </p>
-                  </div>
-                  <div className="p-3 bg-green-100 dark:bg-green-900 rounded-full">
-                    <DollarSign className="h-6 w-6 text-green-600 dark:text-green-400" />
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-
-            <Card className="border-0 shadow-lg bg-gradient-to-br from-purple-50 to-purple-100 dark:from-purple-950 dark:to-purple-900">
-              <CardContent className="p-6">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="text-sm text-purple-700 dark:text-purple-300">Total Earned</p>
-                    <p className="text-2xl font-bold text-purple-900 dark:text-purple-100">
-                      ${subscriptionsWithEarnings.reduce((sum, sub) => sum + (sub.total_earned || 0), 0).toFixed(2)}
-                    </p>
-                  </div>
-                  <div className="p-3 bg-purple-100 dark:bg-purple-900 rounded-full">
-                    <TrendingUp className="h-6 w-6 text-purple-600 dark:text-purple-400" />
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
+            <h3 className="text-xl font-bold text-white mb-2">No Active Plans</h3>
+            <p className="text-gray-400 mb-6">
+              You don't have any investments yet. Start investing to earn daily returns!
+            </p>
+            <Link href="/plans">
+              <Button className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white px-6 py-3 rounded-2xl">
+                <TrendingUp className="h-4 w-4 mr-2" />
+                Start Investing
+              </Button>
+            </Link>
+          </div>
+        ) : (
+          <div>
+          {/* Summary Stats */}
+          <div className="grid grid-cols-3 gap-4 mb-6">
+            <div className="bg-gradient-to-br from-blue-900/50 to-blue-800/50 rounded-2xl border border-blue-700/30 p-4 text-center">
+              <div className="text-2xl font-bold text-white">{subscriptionsWithEarnings.length}</div>
+              <div className="text-sm text-blue-200">Active Plans</div>
+            </div>
+            <div className="bg-gradient-to-br from-green-900/50 to-green-800/50 rounded-2xl border border-green-700/30 p-4 text-center">
+              <div className="text-2xl font-bold text-white">
+                ${subscriptionsWithEarnings.reduce((sum, sub) => sum + Number(sub.principal_usdt), 0).toFixed(0)}
+              </div>
+              <div className="text-sm text-green-200">Invested</div>
+            </div>
+            <div className="bg-gradient-to-br from-purple-900/50 to-purple-800/50 rounded-2xl border border-purple-700/30 p-4 text-center">
+              <div className="text-2xl font-bold text-white">
+                ${subscriptionsWithEarnings.reduce((sum, sub) => sum + (sub.total_earned || 0), 0).toFixed(0)}
+              </div>
+              <div className="text-sm text-purple-200">Earned</div>
+            </div>
           </div>
 
-          {/* Active Plans */}
-          <div className="space-y-6">
+          {/* Active Plans - Simplified */}
+          <div className="space-y-4">
             {subscriptionsWithEarnings.map((subscription) => {
               const progress = calculateProgress(subscription.start_date, subscription.end_date);
               const daysRemaining = calculateDaysRemaining(subscription.end_date);
-              const totalReturn = calculateTotalReturn(Number(subscription.principal_usdt), subscription.total_earned || 0);
               const dailyEarning = (Number(subscription.principal_usdt) * Number(subscription.roi_daily_percent)) / 100;
-              const projectedTotal = Number(subscription.principal_usdt) + (dailyEarning * (subscription.plan?.duration_days || 0));
 
               return (
-                <Card key={subscription.id} className="border-0 shadow-lg hover:shadow-xl transition-shadow">
-                  <CardHeader>
-                    <div className="flex items-center justify-between">
-                      <div className="space-y-1">
-                        <CardTitle className="text-xl flex items-center gap-2">
-                          <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
-                          {subscription.plan?.name}
-                        </CardTitle>
-                        <CardDescription>
-                          {subscription.plan?.description || "Investment plan with competitive returns"}
-                        </CardDescription>
-                      </div>
-                      <Badge variant="secondary" className="bg-green-100 text-green-700 dark:bg-green-900 dark:text-green-300">
-                        <CheckCircle className="h-3 w-3 mr-1" />
-                        Active
-                      </Badge>
+                <div key={subscription.id} className="bg-gradient-to-br from-gray-800/50 to-gray-900/50 rounded-3xl border border-gray-700/30 p-6">
+                  {/* Plan Header */}
+                  <div className="flex items-center justify-between mb-4">
+                    <div>
+                      <h3 className="text-lg font-bold text-white flex items-center gap-2">
+                        <div className="w-2 h-2 bg-green-400 rounded-full animate-pulse"></div>
+                        {subscription.plan?.name}
+                      </h3>
+                      <p className="text-gray-400 text-sm">Active Investment</p>
                     </div>
-                  </CardHeader>
-                  <CardContent className="space-y-6">
-                    {/* Progress Bar */}
-                    <div className="space-y-2">
-                      <div className="flex items-center justify-between text-sm">
-                        <span className="text-muted-foreground">Investment Progress</span>
-                        <span className="font-medium">{progress}% Complete</span>
+                    <div className="text-right">
+                      <div className="text-lg font-bold text-green-400">
+                        ${(subscription.total_earned || 0).toFixed(2)}
                       </div>
-                      <Progress value={progress} className="h-2" />
-                      <div className="flex items-center justify-between text-xs text-muted-foreground">
-                        <span>Started: {new Date(subscription.start_date).toLocaleDateString()}</span>
-                        <span>Ends: {new Date(subscription.end_date).toLocaleDateString()}</span>
-                      </div>
+                      <div className="text-gray-400 text-sm">Earned</div>
                     </div>
+                  </div>
 
-                    <Separator />
-
-                    {/* Investment Details */}
-                    <div className="grid gap-6 md:grid-cols-2">
-                      <div className="space-y-4">
-                        <h4 className="font-semibold flex items-center gap-2">
-                          <DollarSign className="h-4 w-4 text-blue-500" />
-                          Investment Details
-                        </h4>
-                        <div className="space-y-3">
-                          <div className="flex justify-between">
-                            <span className="text-sm text-muted-foreground">Principal Amount</span>
-                            <span className="font-medium">${Number(subscription.principal_usdt).toFixed(2)}</span>
-                          </div>
-                          <div className="flex justify-between">
-                            <span className="text-sm text-muted-foreground">Daily ROI</span>
-                            <span className="font-medium text-green-600">{Number(subscription.roi_daily_percent).toFixed(2)}%</span>
-                          </div>
-                          <div className="flex justify-between">
-                            <span className="text-sm text-muted-foreground">Daily Earning</span>
-                            <span className="font-medium text-green-600">${dailyEarning.toFixed(2)}</span>
-                          </div>
-                          <div className="flex justify-between">
-                            <span className="text-sm text-muted-foreground">Duration</span>
-                            <span className="font-medium">{subscription.plan?.duration_days} days</span>
-                          </div>
-                        </div>
-                      </div>
-
-                      <div className="space-y-4">
-                        <h4 className="font-semibold flex items-center gap-2">
-                          <BarChart3 className="h-4 w-4 text-purple-500" />
-                          Performance
-                        </h4>
-                        <div className="space-y-3">
-                          <div className="flex justify-between">
-                            <span className="text-sm text-muted-foreground">Total Earned</span>
-                            <span className="font-medium text-green-600">${(subscription.total_earned || 0).toFixed(2)}</span>
-                          </div>
-                          <div className="flex justify-between">
-                            <span className="text-sm text-muted-foreground">Total Return</span>
-                            <span className="font-medium text-purple-600">{totalReturn.toFixed(2)}%</span>
-                          </div>
-                          <div className="flex justify-between">
-                            <span className="text-sm text-muted-foreground">Projected Total</span>
-                            <span className="font-medium text-blue-600">${projectedTotal.toFixed(2)}</span>
-                          </div>
-                          <div className="flex justify-between">
-                            <span className="text-sm text-muted-foreground">Days Remaining</span>
-                            <span className="font-medium flex items-center gap-1">
-                              <Clock className="h-3 w-3" />
-                              {daysRemaining}
-                            </span>
-                          </div>
-                        </div>
-                      </div>
+                  {/* Progress Bar */}
+                  <div className="mb-4">
+                    <div className="flex justify-between text-sm text-gray-400 mb-2">
+                      <span>Progress</span>
+                      <span>{progress}%</span>
                     </div>
-
-                    {/* Next Earning */}
-                    <div className="bg-gradient-to-r from-yellow-50 to-orange-50 dark:from-yellow-950/20 dark:to-orange-950/20 rounded-lg p-4 border border-yellow-200 dark:border-yellow-800">
-                      <div className="flex items-center justify-between">
-                        <div className="flex items-center gap-2">
-                          <Zap className="h-4 w-4 text-yellow-600" />
-                          <span className="text-sm font-medium text-yellow-800 dark:text-yellow-200">Next Earning</span>
-                        </div>
-                        <div className="text-right">
-                          <div className="text-sm font-medium text-yellow-800 dark:text-yellow-200">
-                            ${dailyEarning.toFixed(2)}
-                          </div>
-                          <div className="text-xs text-yellow-600 dark:text-yellow-400">
-                            {new Date(subscription.next_earning_at).toLocaleDateString()}
-                          </div>
-                        </div>
-                      </div>
+                    <div className="w-full bg-gray-700 rounded-full h-2">
+                      <div className="bg-gradient-to-r from-blue-500 to-purple-600 h-2 rounded-full" style={{width: `${progress}%`}}></div>
                     </div>
-                  </CardContent>
-                </Card>
+                  </div>
+
+                  {/* Key Info */}
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <div className="text-sm text-gray-400">Invested</div>
+                      <div className="text-lg font-semibold text-white">${Number(subscription.principal_usdt).toFixed(2)}</div>
+                    </div>
+                    <div>
+                      <div className="text-sm text-gray-400">Daily Earning</div>
+                      <div className="text-lg font-semibold text-green-400">${dailyEarning.toFixed(2)}</div>
+                    </div>
+                    <div>
+                      <div className="text-sm text-gray-400">Days Left</div>
+                      <div className="text-lg font-semibold text-white">{daysRemaining}</div>
+                    </div>
+                    <div>
+                      <div className="text-sm text-gray-400">Daily Rate</div>
+                      <div className="text-lg font-semibold text-blue-400">{Number(subscription.roi_daily_percent).toFixed(1)}%</div>
+                    </div>
+                  </div>
+                </div>
               );
             })}
           </div>
-        </div>
-      )}
-    </main>
+          </div>
+        )}
+      </div>
+    </div>
   );
 }

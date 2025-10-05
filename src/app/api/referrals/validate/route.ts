@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { getSupabaseServerClient } from "@/lib/supabase/server";
+import { getSupabaseAdminClient } from "@/lib/supabase/admin";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -13,10 +13,10 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: "Referral code is required" }, { status: 400 });
     }
 
-    const supabase = await getSupabaseServerClient();
+    const admin = getSupabaseAdminClient();
 
     // Find the referrer by referral code
-    const { data: referrer, error: referrerError } = await supabase
+    const { data: referrer, error: referrerError } = await admin
       .from("profiles")
       .select("user_id, email, referral_code")
       .eq("referral_code", referralCode.toUpperCase())

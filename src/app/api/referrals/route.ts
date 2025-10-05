@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { getSupabaseServerClient } from "@/lib/supabase/server";
+import { getSupabaseAdminClient } from "@/lib/supabase/admin";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -14,10 +15,12 @@ export async function GET(request: Request) {
     
     if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
-    // Get user's referral code and stats
-    const { data: profile, error: profileError } = await supabase
+    const admin = getSupabaseAdminClient();
+
+    // Get user's profile with referral info
+    const { data: profile, error: profileError } = await admin
       .from("profiles")
-      .select("referral_code, total_referrals, total_referral_earnings, referred_by")
+      .select("referral_code, referred_by, email")
       .eq("user_id", user.id)
       .single();
 
@@ -25,65 +28,44 @@ export async function GET(request: Request) {
       return NextResponse.json({ error: profileError.message }, { status: 400 });
     }
 
-    // Get referrals made by this user
-    const { data: referrals, error: referralsError } = await supabase
+    // Generate referral code if it doesn't exist
+    let referralCode = profile.referral_code;
+    if (!referralCode) {
+      referralCode = `REF${user.id.substring(0, 8).toUpperCase()}`;
+      await admin
+        .from("profiles")
+        .update({ referral_code: referralCode })
+        .eq("user_id", user.id);
+    }
+
+    // Get referrals made by this user (people who used this user's referral code)
+    const { data: referrals, error: referralsError } = await admin
       .from("referrals")
       .select(`
         id,
         referred_id,
-        referral_code,
+        commission_rate,
+        total_earned,
         created_at,
-        status,
-        profiles!referrals_referred_id_fkey(email)
+        profiles!referrals_referred_id_fkey(email, created_at)
       `)
       .eq("referrer_id", user.id)
       .order("created_at", { ascending: false });
 
-    if (referralsError) {
-      return NextResponse.json({ error: referralsError.message }, { status: 400 });
-    }
-
-    // Get commission history
-    const { data: commissions, error: commissionsError } = await supabase
-      .from("referral_commissions")
-      .select(`
-        id,
-        referred_id,
-        commission_amount,
-        commission_percentage,
-        source_amount,
-        source_type,
-        created_at,
-        status,
-        profiles!referral_commissions_referred_id_fkey(email)
-      `)
-      .eq("referrer_id", user.id)
-      .order("created_at", { ascending: false })
-      .limit(50);
-
-    if (commissionsError) {
-      return NextResponse.json({ error: commissionsError.message }, { status: 400 });
-    }
-
-    // Calculate pending and paid commissions
-    const pendingCommissions = (commissions || [])
-      .filter(c => c.status === 'pending')
-      .reduce((sum, c) => sum + Number(c.commission_amount), 0);
-    
-    const paidCommissions = (commissions || [])
-      .filter(c => c.status === 'paid')
-      .reduce((sum, c) => sum + Number(c.commission_amount), 0);
+    // Calculate totals
+    const totalReferrals = referrals?.length || 0;
+    const totalEarnings = referrals?.reduce((sum, ref) => sum + Number(ref.total_earned || 0), 0) || 0;
 
     return NextResponse.json({
-      referralCode: profile.referral_code,
-      totalReferrals: profile.total_referrals || 0,
-      totalEarnings: Number(profile.total_referral_earnings || 0),
-      pendingCommissions,
-      paidCommissions,
+      referralCode: referralCode,
+      totalReferrals: totalReferrals,
+      totalEarnings: totalEarnings,
+      pendingCommissions: 0, // We'll implement this later
+      paidCommissions: totalEarnings,
       referredBy: profile.referred_by,
       referrals: referrals || [],
-      commissions: commissions || [],
-      referralLink: `${process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000'}/signup?ref=${profile.referral_code}`
+      commissions: [], // We'll implement commission tracking later
+      referralLink: `${process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000'}/signup?ref=${referralCode}`
     });
   } catch (err: any) {
     return NextResponse.json({ error: err.message || "Unexpected error" }, { status: 500 });

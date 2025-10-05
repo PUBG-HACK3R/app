@@ -218,7 +218,17 @@ export default function HotWalletWithdrawal({ balance, onSuccess, onError }: Hot
           <div className="space-y-3">
             <div className="flex justify-between items-center">
               <span className="text-sm text-gray-400">Amount:</span>
-              <span className="text-sm text-white font-semibold">${pendingWithdrawal.amount} USDT</span>
+              <span className="text-sm text-white font-semibold">${Number(pendingWithdrawal.amount).toFixed(2)} USDT</span>
+            </div>
+            
+            <div className="flex justify-between items-center">
+              <span className="text-sm text-gray-400">Fee (3%):</span>
+              <span className="text-sm text-red-400 font-semibold">-${(Number(pendingWithdrawal.amount) * 0.03).toFixed(2)} USDT</span>
+            </div>
+            
+            <div className="flex justify-between items-center">
+              <span className="text-sm text-gray-400">You'll Receive:</span>
+              <span className="text-sm text-green-400 font-bold">${(Number(pendingWithdrawal.amount) * 0.97).toFixed(2)} USDT</span>
             </div>
             
             <div className="flex justify-between items-center">
@@ -406,13 +416,13 @@ export default function HotWalletWithdrawal({ balance, onSuccess, onError }: Hot
               <span className="font-medium">${parseFloat(amount).toFixed(2)}</span>
             </div>
             <div className="flex justify-between text-sm">
-              <span className="text-gray-600 dark:text-gray-400">Network Fee:</span>
-              <span className="font-medium text-green-600">Free</span>
+              <span className="text-gray-600 dark:text-gray-400">Platform Fee (3%):</span>
+              <span className="font-medium text-red-600">-${(parseFloat(amount) * 0.03).toFixed(2)}</span>
             </div>
             <Separator className="bg-blue-200 dark:bg-blue-800" />
             <div className="flex justify-between text-sm">
               <span className="text-gray-600 dark:text-gray-400">You'll Receive:</span>
-              <span className="font-bold text-green-600">${parseFloat(amount).toFixed(2)}</span>
+              <span className="font-bold text-green-600">${(parseFloat(amount) * 0.97).toFixed(2)}</span>
             </div>
           </div>
         )}
@@ -437,8 +447,8 @@ export default function HotWalletWithdrawal({ balance, onSuccess, onError }: Hot
 
         <div className="space-y-2">
           <div className="flex items-center space-x-2">
-            <CheckCircle className="h-4 w-4 text-green-400" />
-            <span className="text-sm text-gray-300">No processing fees</span>
+            <TrendingDown className="h-4 w-4 text-orange-400" />
+            <span className="text-sm text-gray-300">3% platform fee</span>
           </div>
           <div className="flex items-center space-x-2">
             <Clock className="h-4 w-4 text-blue-400" />

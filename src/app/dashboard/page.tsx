@@ -1,392 +1,210 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
-import { getSupabaseServerClient } from "@/lib/supabase/server";
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
+import { requireAuth } from "@/lib/auth-helpers";
+import { getSupabaseAdminClient } from "@/lib/supabase/admin";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Progress } from "@/components/ui/progress";
-import { Separator } from "@/components/ui/separator";
-import { SupportButton } from "@/components/support-button";
-import { CryptoTicker } from "@/components/crypto-ticker";
-import { DailyReturnsChart, type DailyReturnsDatum } from "@/components/charts/daily-returns";
+import { HorizontalPlans } from "@/components/auto-scroll-plans";
 import { 
-  TrendingUp, 
-  TrendingDown, 
   Wallet, 
-  PiggyBank, 
   ArrowUpRight, 
   ArrowDownRight,
-  DollarSign,
-  BarChart3,
-  Target,
-  Calendar,
-  Clock,
+  TrendingUp,
+  Eye,
   Bitcoin,
-  Coins,
-  Shield,
-  Zap,
-  Users
+  Target,
+  Users,
+  Gift
 } from "lucide-react";
 
 export default async function DashboardPage() {
-  const supabase = await getSupabaseServerClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-  if (!user) {
-    redirect("/login?next=/dashboard");
-  }
+  try {
+    // Use standardized auth helper
+    const authUser = await requireAuth();
+    const admin = getSupabaseAdminClient();
 
-  // Fetch all user transactions to compute balance and earnings
-  const { data: allTx } = await supabase
-    .from("transactions")
-    .select("type, amount_usdt, created_at")
-    .eq("user_id", user.id);
+    // Fetch all user transactions to compute balance and earnings
+    const { data: allTx } = await admin
+      .from("transactions")
+      .select("type, amount_usdt, created_at")
+      .eq("user_id", authUser.id);
 
-  const totalEarnings = (allTx || [])
-    .filter((t) => t.type === "earning")
-    .reduce((acc, t) => acc + Number(t.amount_usdt || 0), 0);
-  const totalDeposits = (allTx || [])
-    .filter((t) => t.type === "deposit")
-    .reduce((acc, t) => acc + Number(t.amount_usdt || 0), 0);
-  const totalWithdrawals = (allTx || [])
-    .filter((t) => t.type === "withdrawal")
-    .reduce((acc, t) => acc + Number(t.amount_usdt || 0), 0);
-  const walletBalance = totalDeposits + totalEarnings - totalWithdrawals;
+    interface Transaction {
+      type: string;
+      amount_usdt: number;
+    }
 
-  // Active subscription status
-  const { data: activeSub } = await supabase
-    .from("subscriptions")
-    .select("id, plan_id, end_date, active")
-    .eq("user_id", user.id)
-    .eq("active", true)
-    .limit(1)
-    .maybeSingle();
+    const totalEarnings = (allTx || [])
+      .filter((t: Transaction) => t.type === "earning")
+      .reduce((acc: number, t: Transaction) => acc + Number(t.amount_usdt || 0), 0) || 0;
+    const totalDeposits = (allTx || [])
+      .filter((t: Transaction) => t.type === "deposit")
+      .reduce((acc: number, t: Transaction) => acc + Number(t.amount_usdt || 0), 0) || 0;
+    const totalInvestments = (allTx || [])
+      .filter((t: Transaction) => t.type === "investment")
+      .reduce((acc: number, t: Transaction) => acc + Number(t.amount_usdt || 0), 0) || 0;
+    const totalReturns = (allTx || [])
+      .filter((t: Transaction) => t.type === "investment_return")
+      .reduce((acc: number, t: Transaction) => acc + Number(t.amount_usdt || 0), 0) || 0;
+    const totalWithdrawals = (allTx || [])
+      .filter((t: Transaction) => t.type === "withdrawal")
+      .reduce((acc: number, t: Transaction) => acc + Number(t.amount_usdt || 0), 0) || 0;
+    const walletBalance = (totalDeposits + totalEarnings + totalReturns - totalInvestments - totalWithdrawals) || 0;
 
-  // Build last 7 days earnings chart
-  const since = new Date();
-  since.setUTCDate(since.getUTCDate() - 6);
-  since.setUTCHours(0, 0, 0, 0);
-  const { data: earningsTx } = await supabase
-    .from("transactions")
-    .select("amount_usdt, created_at")
-    .eq("user_id", user.id)
-    .eq("type", "earning")
-    .gte("created_at", since.toISOString())
-    .order("created_at", { ascending: true });
+    // Fetch investment plans
+    const { data: plans } = await admin
+      .from("plans")
+      .select("*")
+      .eq("is_active", true)
+      .order("min_amount", { ascending: true });
 
-  // Prepare map of day label -> sum
-  const dayLabels = [0, 1, 2, 3, 4, 5, 6].map((i) => {
-    const d = new Date(since);
-    d.setUTCDate(since.getUTCDate() + i);
-    return d;
-  });
-  const sumsByDay = new Map<string, number>();
-  for (const d of dayLabels) {
-    const label = d.toLocaleDateString("en-US", { weekday: "short" });
-    sumsByDay.set(label, 0);
-  }
-  for (const tx of earningsTx || []) {
-    const d = new Date(tx.created_at as string);
-    const label = d.toLocaleDateString("en-US", { weekday: "short" });
-    sumsByDay.set(label, (sumsByDay.get(label) || 0) + Number(tx.amount_usdt || 0));
-  }
-  const data: DailyReturnsDatum[] = dayLabels.map((d) => ({
-    day: d.toLocaleDateString("en-US", { weekday: "short" }),
-    earnings: Number((sumsByDay.get(d.toLocaleDateString("en-US", { weekday: "short" })) || 0).toFixed(2)),
-  }));
+    // Get all active subscriptions for this user
+    const { data: userSubscriptions } = await admin
+      .from("subscriptions")
+      .select("plan_id, active")
+      .eq("user_id", authUser.id)
+      .eq("active", true);
 
-  // Calculate performance metrics
-  const todayEarnings = data[data.length - 1]?.earnings || 0;
-  const yesterdayEarnings = data[data.length - 2]?.earnings || 0;
-  const earningsChange = todayEarnings - yesterdayEarnings;
-  const earningsChangePercent = yesterdayEarnings > 0 ? (earningsChange / yesterdayEarnings) * 100 : 0;
-  
-  // Calculate ROI if there's an active subscription
-  const totalInvested = totalDeposits;
-  const roi = totalInvested > 0 ? (totalEarnings / totalInvested) * 100 : 0;
+    // Get the active subscription for checking if user has any active plan
+    const { data: activeSub } = await admin
+      .from("subscriptions")
+      .select("id, plan_id, end_date, active")
+      .eq("user_id", authUser.id)
+      .eq("active", true)
+      .limit(1)
+      .maybeSingle();
+
+    // Create a set of plan IDs that user has subscriptions for
+    const userPlanIds = new Set(userSubscriptions?.map(sub => sub.plan_id) || []);
 
   return (
-    <main className="min-h-screen bg-gradient-to-br from-slate-900 via-blue-900/10 to-slate-900">
-      <div className="mx-auto max-w-7xl px-4 py-6 sm:py-8 space-y-6 sm:space-y-8">
-        {/* Crypto Ticker */}
-        <div className="bg-gradient-to-r from-slate-800/80 to-slate-900/80 backdrop-blur-sm rounded-xl border border-slate-700/50">
-          <CryptoTicker variant="dashboard" />
-        </div>
+    <div className="min-h-screen bg-gradient-to-br from-gray-900 via-orange-900/10 to-gray-900 pt-16 pb-20">
 
-        {/* Header Section */}
-        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 sm:gap-6">
-          <div className="space-y-2">
-            <h1 className="text-2xl sm:text-3xl lg:text-4xl font-bold text-white">
-              Crypto Portfolio 
-              <span className="block sm:inline bg-gradient-to-r from-blue-400 to-purple-400 bg-clip-text text-transparent">
-                Dashboard
-              </span>
-            </h1>
-            <p className="text-gray-400 text-sm sm:text-base">Monitor your investments and track crypto earnings in real-time</p>
+      <div className="px-4 py-6 space-y-6">
+        {/* Balance Section */}
+        <div className="relative">
+          <div className="flex items-center justify-between mb-2">
+            <div className="flex items-center gap-2 text-gray-400">
+              <span className="text-sm">Balance</span>
+              <Eye className="w-4 h-4" />
+            </div>
+            <div className="absolute top-0 right-0">
+              <div className="w-16 h-16 bg-gradient-to-br from-orange-500/20 to-red-600/20 rounded-full flex items-center justify-center">
+                <div className="w-12 h-12 bg-gradient-to-br from-orange-500 to-red-600 rounded-full flex items-center justify-center">
+                  <Bitcoin className="w-6 h-6 text-white" />
+                </div>
+              </div>
+            </div>
           </div>
-          <div className="flex justify-center sm:justify-end gap-3">
-            <Button size="lg" className="bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-600 hover:to-emerald-700 text-white shadow-lg transform hover:scale-105 transition-all duration-200" asChild>
-              <Link href="/wallet/deposit">
-                <ArrowDownRight className="mr-2 h-4 w-4" />
-                Deposit
-              </Link>
-            </Button>
-            <Button size="lg" className="bg-gradient-to-r from-orange-500 to-red-600 hover:from-orange-600 hover:to-red-700 text-white shadow-lg transform hover:scale-105 transition-all duration-200" asChild>
-              <Link href="/wallet/withdraw">
-                <ArrowUpRight className="mr-2 h-4 w-4" />
-                Withdraw
-              </Link>
-            </Button>
+          
+          <div className="text-4xl font-bold text-white mb-1">
+            ${walletBalance.toFixed(2)}
+          </div>
+          <div className="text-gray-400 text-sm">
+            USDT Balance
           </div>
         </div>
 
-        {/* Key Metrics Cards */}
-        <div className="grid gap-4 sm:gap-6 grid-cols-1 sm:grid-cols-2 lg:grid-cols-4">
-          {/* Portfolio Value Card */}
-          <Card className="bg-gradient-to-br from-blue-900/50 to-blue-800/50 border-blue-700/50 backdrop-blur-sm hover:border-blue-500/70 transition-all duration-300 group">
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-3">
-              <CardTitle className="text-sm font-medium text-blue-200">Portfolio Value</CardTitle>
-              <div className="flex items-center gap-2">
-                <div className="p-2 rounded-full bg-blue-500/20 group-hover:bg-blue-500/30 transition-colors duration-300">
-                  <Wallet className="h-4 w-4 text-blue-400" />
-                </div>
-              </div>
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl sm:text-3xl font-bold text-white mb-2">${walletBalance.toFixed(2)}</div>
-              <div className="flex items-center gap-2">
-                <Badge className="bg-blue-500/20 text-blue-300 border-blue-500/30 text-xs">
-                  <Coins className="h-3 w-3 mr-1" />
-                  USDT
-                </Badge>
-                <div className="flex items-center gap-1 text-xs text-blue-300">
-                  <Shield className="h-3 w-3" />
-                  Secured
-                </div>
-              </div>
-            </CardContent>
-          </Card>
+        {/* Action Buttons */}
+        <div className="grid grid-cols-4 gap-4">
+          <Link href="/wallet/deposit" className="flex flex-col items-center gap-2 p-4 bg-gray-800/50 rounded-2xl border border-gray-700/50 hover:border-gray-600/50 transition-all">
+            <div className="w-12 h-12 bg-gradient-to-br from-green-500 to-emerald-600 rounded-2xl flex items-center justify-center">
+              <ArrowDownRight className="w-6 h-6 text-white" />
+            </div>
+            <span className="text-white text-sm font-medium">Deposit</span>
+          </Link>
 
-          {/* Total Returns Card */}
-          <Card className="bg-gradient-to-br from-green-900/50 to-green-800/50 border-green-700/50 backdrop-blur-sm hover:border-green-500/70 transition-all duration-300 group">
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-3">
-              <CardTitle className="text-sm font-medium text-green-200">Total Returns</CardTitle>
-              <div className="p-2 rounded-full bg-green-500/20 group-hover:bg-green-500/30 transition-colors duration-300">
-                <TrendingUp className="h-4 w-4 text-green-400" />
-              </div>
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl sm:text-3xl font-bold text-white mb-2">${totalEarnings.toFixed(2)}</div>
-              <div className="flex items-center gap-2">
-                <Badge className="bg-green-500/20 text-green-300 border-green-500/30 text-xs">
-                  +{roi.toFixed(1)}% ROI
-                </Badge>
-                <div className="text-xs text-green-300">All-time</div>
-              </div>
-            </CardContent>
-          </Card>
+          <Link href="/wallet/withdraw" className="flex flex-col items-center gap-2 p-4 bg-gray-800/50 rounded-2xl border border-gray-700/50 hover:border-gray-600/50 transition-all">
+            <div className="w-12 h-12 bg-gradient-to-br from-orange-500 to-red-600 rounded-2xl flex items-center justify-center">
+              <ArrowUpRight className="w-6 h-6 text-white" />
+            </div>
+            <span className="text-white text-sm font-medium">Withdraw</span>
+          </Link>
 
-          {/* Today's Earnings Card */}
-          <Card className="bg-gradient-to-br from-purple-900/50 to-purple-800/50 border-purple-700/50 backdrop-blur-sm hover:border-purple-500/70 transition-all duration-300 group">
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-3">
-              <CardTitle className="text-sm font-medium text-purple-200">Today's Earnings</CardTitle>
-              <div className="flex items-center gap-1">
-                <div className="p-2 rounded-full bg-purple-500/20 group-hover:bg-purple-500/30 transition-colors duration-300">
-                  <Zap className="h-4 w-4 text-purple-400" />
-                </div>
-                <Bitcoin className="h-4 w-4 text-orange-400" />
-              </div>
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl sm:text-3xl font-bold text-white mb-2">${todayEarnings.toFixed(2)}</div>
-              <div className="flex items-center gap-2">
-                <div className="flex items-center gap-1">
-                  {earningsChange >= 0 ? (
-                    <TrendingUp className="h-3 w-3 text-green-400" />
-                  ) : (
-                    <TrendingDown className="h-3 w-3 text-red-400" />
-                  )}
-                  <span className={`text-xs font-medium ${
-                    earningsChange >= 0 ? 'text-green-400' : 'text-red-400'
-                  }`}>
-                    {earningsChange >= 0 ? '+' : ''}{earningsChangePercent.toFixed(1)}%
-                  </span>
-                </div>
-                <span className="text-xs text-purple-300">vs yesterday</span>
-              </div>
-            </CardContent>
-          </Card>
+          <Link href="/referrals" className="flex flex-col items-center gap-2 p-4 bg-gray-800/50 rounded-2xl border border-gray-700/50 hover:border-gray-600/50 transition-all">
+            <div className="w-12 h-12 bg-gradient-to-br from-purple-500 to-pink-600 rounded-2xl flex items-center justify-center">
+              <Users className="w-6 h-6 text-white" />
+            </div>
+            <span className="text-white text-sm font-medium">Invite</span>
+          </Link>
 
-          {/* Investment Status Card */}
-          <Card className="bg-gradient-to-br from-orange-900/50 to-orange-800/50 border-orange-700/50 backdrop-blur-sm hover:border-orange-500/70 transition-all duration-300 group">
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-3">
-              <CardTitle className="text-sm font-medium text-orange-200">Investment Status</CardTitle>
-              <div className="p-2 rounded-full bg-orange-500/20 group-hover:bg-orange-500/30 transition-colors duration-300">
-                <Target className="h-4 w-4 text-orange-400" />
-              </div>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-3">
-                {activeSub ? (
-                  <>
-                    <Badge className="bg-green-500/20 text-green-300 border-green-500/30">
-                      <div className="w-2 h-2 bg-green-400 rounded-full mr-2 animate-pulse"></div>
-                      Active Plan
-                    </Badge>
-                    <div className="text-sm text-orange-300">
-                      Earning daily crypto returns
-                    </div>
-                  </>
-                ) : (
-                  <>
-                    <Badge variant="outline" className="border-orange-500/30 text-orange-300">
-                      No Active Plan
-                    </Badge>
-                    <Button size="sm" className="bg-orange-500/20 hover:bg-orange-500/30 text-orange-300 border-orange-500/30" asChild>
-                      <Link href="/plans">
-                        <Target className="mr-1 h-3 w-3" />
-                        View Plans
-                      </Link>
-                    </Button>
-                  </>
-                )}
-              </div>
-            </CardContent>
-          </Card>
+          <Link href="/wallet/history" className="flex flex-col items-center gap-2 p-4 bg-gray-800/50 rounded-2xl border border-gray-700/50 hover:border-gray-600/50 transition-all">
+            <div className="w-12 h-12 bg-gradient-to-br from-blue-500 to-cyan-600 rounded-2xl flex items-center justify-center">
+              <TrendingUp className="w-6 h-6 text-white" />
+            </div>
+            <span className="text-white text-sm font-medium">History</span>
+          </Link>
         </div>
 
-        {/* Charts and Analytics Section */}
-        <div className="grid gap-6 lg:grid-cols-3">
-          <Card className="lg:col-span-2 bg-gradient-to-br from-slate-800/80 to-slate-900/80 border-slate-700/50 backdrop-blur-sm">
-            <CardHeader>
-              <div className="flex items-center justify-between">
-                <div>
-                  <CardTitle className="text-xl text-white">Crypto Performance Analytics</CardTitle>
-                  <CardDescription className="text-gray-400">Daily earnings over the last 7 days</CardDescription>
-                </div>
-                <div className="p-2 rounded-full bg-blue-500/20">
-                  <BarChart3 className="h-5 w-5 text-blue-400" />
-                </div>
-              </div>
-            </CardHeader>
-            <CardContent>
-              <DailyReturnsChart data={data} />
-              <div className="mt-6 grid grid-cols-3 gap-4">
-                <div className="text-center p-3 bg-slate-700/30 rounded-lg">
-                  <div className="text-sm text-gray-400 mb-1">7-Day Total</div>
-                  <div className="text-lg font-bold text-white">${data.reduce((sum, d) => sum + d.earnings, 0).toFixed(2)}</div>
-                </div>
-                <div className="text-center p-3 bg-slate-700/30 rounded-lg">
-                  <div className="text-sm text-gray-400 mb-1">Daily Average</div>
-                  <div className="text-lg font-bold text-white">${(data.reduce((sum, d) => sum + d.earnings, 0) / 7).toFixed(2)}</div>
-                </div>
-                <div className="text-center p-3 bg-slate-700/30 rounded-lg">
-                  <div className="text-sm text-gray-400 mb-1">Best Day</div>
-                  <div className="text-lg font-bold text-green-400">${Math.max(...data.map(d => d.earnings)).toFixed(2)}</div>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
+        {/* Mining Plans - Horizontal Scroll */}
+        <div className="space-y-4">
+          <div className="flex items-center justify-between">
+            <h2 className="text-xl font-bold text-white">Mining Plans</h2>
+            <Link href="/plans" className="text-orange-400 text-sm font-medium">
+              View All →
+            </Link>
+          </div>
+          
+          <HorizontalPlans 
+            plans={(plans || []).map(plan => ({
+              ...plan,
+              user_has_subscription: userPlanIds.has(plan.id)
+            }))} 
+          />
+        </div>
 
-          <div className="space-y-6">
-            {/* Quick Actions */}
-            <Card className="bg-gradient-to-br from-slate-800/80 to-slate-900/80 border-slate-700/50 backdrop-blur-sm">
-              <CardHeader>
-                <CardTitle className="text-lg text-white flex items-center gap-2">
-                  <Zap className="h-5 w-5 text-blue-400" />
-                  Quick Actions
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-2">
-                <Button className="w-full justify-start bg-slate-700/30 hover:bg-slate-700/50 text-gray-300 hover:text-white border-0" asChild>
-                  <Link href="/active-plans">
-                    <BarChart3 className="mr-3 h-4 w-4 text-blue-400" />
-                    Active Plans
-                  </Link>
-                </Button>
-                <Button className="w-full justify-start bg-slate-700/30 hover:bg-slate-700/50 text-gray-300 hover:text-white border-0" asChild>
-                  <Link href="/plans">
-                    <Target className="mr-3 h-4 w-4 text-green-400" />
-                    Browse Investment Plans
-                  </Link>
-                </Button>
-                <Button className="w-full justify-start bg-slate-700/30 hover:bg-slate-700/50 text-gray-300 hover:text-white border-0" asChild>
-                  <Link href="/wallet/history">
-                    <Clock className="mr-3 h-4 w-4 text-purple-400" />
-                    Transaction History
-                  </Link>
-                </Button>
-                <Button className="w-full justify-start bg-slate-700/30 hover:bg-slate-700/50 text-gray-300 hover:text-white border-0" asChild>
-                  <Link href="/wallet">
-                    <Wallet className="mr-3 h-4 w-4 text-orange-400" />
-                    Wallet Overview
-                  </Link>
-                </Button>
-                <Button className="w-full justify-start bg-slate-700/30 hover:bg-slate-700/50 text-gray-300 hover:text-white border-0" asChild>
-                  <Link href="/referrals">
-                    <Users className="mr-3 h-4 w-4 text-pink-400" />
-                    Referral Program
-                  </Link>
-                </Button>
-                <SupportButton 
-                  className="w-full justify-start bg-slate-700/30 hover:bg-slate-700/50 text-gray-300 hover:text-white border-0"
-                >
-                  <Shield className="mr-3 h-4 w-4 text-cyan-400" />
-                  Contact Support
-                </SupportButton>
-              </CardContent>
-            </Card>
+        {/* Stats Cards */}
+        <div className="grid grid-cols-2 gap-4">
+          <div className="bg-gradient-to-br from-green-900/50 to-green-800/50 rounded-2xl border border-green-700/50 p-4">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 bg-green-500/20 rounded-xl flex items-center justify-center">
+                <TrendingUp className="w-5 h-5 text-green-400" />
+              </div>
+              <div>
+                <div className="text-sm text-green-200">Mining Earned</div>
+                <div className="text-xl font-bold text-white">${totalEarnings.toFixed(2)}</div>
+              </div>
+            </div>
+          </div>
 
-            {/* Investment Summary */}
-            <Card className="bg-gradient-to-br from-slate-800/80 to-slate-900/80 border-slate-700/50 backdrop-blur-sm">
-              <CardHeader>
-                <CardTitle className="text-lg text-white flex items-center gap-2">
-                  <Bitcoin className="h-5 w-5 text-orange-400" />
-                  Investment Summary
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <div className="space-y-3">
-                  <div className="flex justify-between items-center p-2 bg-slate-700/30 rounded-lg">
-                    <span className="text-gray-400 text-sm">Total Invested</span>
-                    <span className="font-semibold text-white">${totalDeposits.toFixed(2)}</span>
-                  </div>
-                  <div className="flex justify-between items-center p-2 bg-slate-700/30 rounded-lg">
-                    <span className="text-gray-400 text-sm">Total Earned</span>
-                    <span className="font-semibold text-green-400">${totalEarnings.toFixed(2)}</span>
-                  </div>
-                  <div className="flex justify-between items-center p-2 bg-slate-700/30 rounded-lg">
-                    <span className="text-gray-400 text-sm">Total Withdrawn</span>
-                    <span className="font-semibold text-white">${totalWithdrawals.toFixed(2)}</span>
-                  </div>
-                  <Separator className="bg-slate-700" />
-                  <div className="flex justify-between items-center p-3 bg-gradient-to-r from-blue-900/30 to-purple-900/30 rounded-lg border border-blue-700/30">
-                    <span className="text-white font-medium">Net Profit</span>
-                    <span className={`font-bold text-lg ${totalEarnings - totalWithdrawals >= 0 ? 'text-green-400' : 'text-red-400'}`}>
-                      ${(totalEarnings - totalWithdrawals).toFixed(2)}
-                    </span>
-                  </div>
-                </div>
-                
-                {totalInvested > 0 && (
-                  <div className="space-y-3">
-                    <div className="flex justify-between text-sm">
-                      <span className="text-gray-400">ROI Progress</span>
-                      <span className="font-semibold text-blue-400">{roi.toFixed(1)}%</span>
-                    </div>
-                    <Progress value={Math.min(roi, 100)} className="h-3 bg-slate-700" />
-                    <div className="text-xs text-gray-500 text-center">
-                      {roi >= 100 ? 'Target achieved! 🎉' : `${(100 - roi).toFixed(1)}% to target`}
-                    </div>
-                  </div>
-                )}
-              </CardContent>
-            </Card>
+          <div className="bg-gradient-to-br from-blue-900/50 to-blue-800/50 rounded-2xl border border-blue-700/50 p-4">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 bg-blue-500/20 rounded-xl flex items-center justify-center">
+                <Target className="w-5 h-5 text-blue-400" />
+              </div>
+              <div>
+                <div className="text-sm text-blue-200">Active Miners</div>
+                <div className="text-xl font-bold text-white">{activeSub ? '1' : '0'}</div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Promotional Banner */}
+        <div className="bg-gradient-to-r from-orange-600 to-red-600 rounded-2xl p-4">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 bg-white/20 rounded-xl flex items-center justify-center">
+                <Gift className="w-5 h-5 text-white" />
+              </div>
+              <div>
+                <div className="text-white font-bold">Mining Referrals</div>
+                <div className="text-orange-100 text-sm">Earn 5% commission</div>
+              </div>
+            </div>
+            <Link href="/referrals">
+              <Button size="sm" className="bg-white/20 hover:bg-white/30 text-white border-0">
+                Learn More
+              </Button>
+            </Link>
           </div>
         </div>
       </div>
-    </main>
+    </div>
   );
+  } catch (error) {
+    console.error("Dashboard error:", error);
+    redirect("/login?next=/dashboard");
+  }
 }
 

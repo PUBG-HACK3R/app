@@ -79,7 +79,7 @@ export function AnimatedCounter({
 
   return (
     <span className={className}>
-      {prefix}{count.toLocaleString()}{suffix}
+      {prefix}{(count || 0).toLocaleString()}{suffix}
     </span>
   );
 }

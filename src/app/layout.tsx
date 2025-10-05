@@ -1,9 +1,8 @@
 import type { Metadata } from "next";
 import "./globals.css";
 import { ThemeProvider } from "@/components/theme-provider";
-import { SiteHeader } from "@/components/site-header";
-import { ConditionalFooter } from "@/components/conditional-footer";
-import { TawkToChat } from "@/components/tawk-to-chat";
+import { ConditionalBottomNav } from "@/components/conditional-bottom-nav";
+import { ConditionalHeader } from "@/components/conditional-header";
 import { ErrorBoundary } from "@/components/error-boundary";
 import { Toaster } from "sonner";
 
@@ -62,12 +61,11 @@ export default function RootLayout({
       <body className="font-sans min-h-screen antialiased flex flex-col">
         <ErrorBoundary>
           <ThemeProvider attribute="class" defaultTheme="system" enableSystem disableTransitionOnChange>
-            <SiteHeader />
+            <ConditionalHeader />
             <main className="flex-1">
               {children}
             </main>
-            <ConditionalFooter />
-            <TawkToChat />
+            <ConditionalBottomNav />
             <Toaster />
           </ThemeProvider>
         </ErrorBoundary>

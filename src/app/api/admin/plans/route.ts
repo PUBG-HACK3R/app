@@ -1,24 +1,12 @@
 import { NextRequest, NextResponse } from "next/server";
-import { getSupabaseServerClient } from "@/lib/supabase/server";
+import { requireAdmin } from "@/lib/auth-helpers";
 import { getSupabaseAdminClient } from "@/lib/supabase/admin";
 
 // GET - Fetch all plans (admin only)
 export async function GET() {
   try {
-    const supabase = await getSupabaseServerClient();
-    const {
-      data: { user },
-    } = await supabase.auth.getUser();
-
-    if (!user) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-    }
-
-    // Check if user is admin
-    const role = (user.app_metadata as any)?.role || (user.user_metadata as any)?.role || "user";
-    if (role !== "admin") {
-      return NextResponse.json({ error: "Admin access required" }, { status: 403 });
-    }
+    // Use standardized auth helper
+    await requireAdmin();
 
     // Use admin client to fetch all plans (including inactive ones)
     const admin = getSupabaseAdminClient();
@@ -42,36 +30,45 @@ export async function GET() {
 // POST - Create new plan (admin only)
 export async function POST(request: NextRequest) {
   try {
-    const supabase = await getSupabaseServerClient();
-    const {
-      data: { user },
-    } = await supabase.auth.getUser();
-
-    if (!user) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-    }
-
-    // Check if user is admin
-    const role = (user.app_metadata as any)?.role || (user.user_metadata as any)?.role || "user";
-    if (role !== "admin") {
-      return NextResponse.json({ error: "Admin access required" }, { status: 403 });
-    }
+    // Use standardized auth helper
+    await requireAdmin();
 
     const body = await request.json();
-    const { name, price_usdt, roi_daily_percent, duration_days, is_active = true } = body;
+    const { 
+      name, 
+      description,
+      min_amount, 
+      max_amount,
+      roi_daily_percent, 
+      duration_days,
+      category_id,
+      mining_type,
+      hash_rate,
+      power_consumption,
+      risk_level,
+      features,
+      is_active = true 
+    } = body;
 
     // Validate required fields
-    if (!name || !price_usdt || !roi_daily_percent || !duration_days) {
+    if (!name || !min_amount || !max_amount || !roi_daily_percent || !duration_days) {
       return NextResponse.json(
-        { error: "Missing required fields: name, price_usdt, roi_daily_percent, duration_days" },
+        { error: "Missing required fields: name, min_amount, max_amount, roi_daily_percent, duration_days" },
         { status: 400 }
       );
     }
 
     // Validate numeric values
-    if (price_usdt <= 0 || roi_daily_percent <= 0 || duration_days <= 0) {
+    if (min_amount <= 0 || max_amount <= 0 || roi_daily_percent <= 0 || duration_days <= 0) {
       return NextResponse.json(
-        { error: "Price, ROI, and duration must be positive numbers" },
+        { error: "Amounts, ROI, and duration must be positive numbers" },
+        { status: 400 }
+      );
+    }
+
+    if (min_amount > max_amount) {
+      return NextResponse.json(
+        { error: "Minimum amount cannot be greater than maximum amount" },
         { status: 400 }
       );
     }
@@ -82,9 +79,17 @@ export async function POST(request: NextRequest) {
       .from("plans")
       .insert({
         name,
-        price_usdt: parseFloat(price_usdt),
+        description: description || '',
+        min_amount: parseFloat(min_amount),
+        max_amount: parseFloat(max_amount),
         roi_daily_percent: parseFloat(roi_daily_percent),
         duration_days: parseInt(duration_days),
+        category_id: category_id || null,
+        mining_type: mining_type || 'ASIC Mining',
+        hash_rate: hash_rate || '0 TH/s',
+        power_consumption: power_consumption || '0W',
+        risk_level: risk_level || 'Medium',
+        features: JSON.stringify(features || []),
         is_active,
       })
       .select()

@@ -85,7 +85,8 @@ export function PlanPurchaseButton({
 
       if (response.ok) {
         toast.success(`Successfully purchased ${planName}!`);
-        router.push('/dashboard');
+        // Refresh the current page to update the button status
+        window.location.reload();
       } else {
         if (data.error === 'Insufficient balance') {
           router.push(`/wallet/deposit?plan=${planId}&amount=${planPrice}`);

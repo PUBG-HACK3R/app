@@ -4,6 +4,15 @@
 @import "../styles/crypto-animations.css";
 @custom-variant dark (&:is(.dark *));
 
+/* Hide scrollbars for modern app design */
+.scrollbar-hide {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+.scrollbar-hide::-webkit-scrollbar {
+  display: none;
+}
+
 :root {
   --background: oklch(1 0 0);
   --foreground: oklch(0.145 0 0);

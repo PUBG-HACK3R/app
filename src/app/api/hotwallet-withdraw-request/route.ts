@@ -83,7 +83,7 @@ export async function POST(request: NextRequest) {
 
     // Check for existing pending withdrawal
     const { data: pendingWithdrawal } = await supabase
-      .from("hotwallet_withdrawals")
+      .from("withdrawals")
       .select("id")
       .eq("user_id", user.id)
       .eq("status", "pending")
@@ -91,18 +91,26 @@ export async function POST(request: NextRequest) {
 
     if (pendingWithdrawal) {
       return NextResponse.json(
-        { error: "You already have a pending hot wallet withdrawal request" },
+        { error: "You already have a pending withdrawal request" },
         { status: 409 }
       );
     }
 
-    // Create withdrawal request
+    // Calculate fees (3% withdrawal fee)
+    const feePercent = 0.03; // 3%
+    const fee = numericAmount * feePercent;
+    const netAmount = numericAmount - fee;
+
+    // Create withdrawal request in standard withdrawals table
     const { data: withdrawal, error: withdrawalError } = await supabase
-      .from("hotwallet_withdrawals")
+      .from("withdrawals")
       .insert({
         user_id: user.id,
-        amount: numericAmount,
-        to_address: toAddress,
+        amount_usdt: numericAmount,
+        fee_usdt: fee,
+        net_amount_usdt: netAmount,
+        address: toAddress,
+        network: "TRC20",
         status: "pending"
       })
       .select()
@@ -120,8 +128,10 @@ export async function POST(request: NextRequest) {
       success: true,
       withdrawal: {
         id: withdrawal.id,
-        amount: withdrawal.amount,
-        to_address: withdrawal.to_address,
+        amount: withdrawal.amount_usdt,
+        fee: withdrawal.fee_usdt,
+        net_amount: withdrawal.net_amount_usdt,
+        to_address: withdrawal.address,
         status: withdrawal.status,
         created_at: withdrawal.created_at
       }

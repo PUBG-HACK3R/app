@@ -5,31 +5,59 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { PendingWithdrawalsTable, type PendingWithdrawal } from "@/components/admin/pending-withdrawals-table";
 import { AdminTools } from "@/components/admin/admin-tools";
 import { UserManagement } from "@/components/admin/user-management";
-import { PlanManagement } from "@/components/admin/plan-management";
+import { AdvancedPlanManagement } from "@/components/admin/plan-management-advanced";
 
 export default async function AdminPage() {
-  const supabase = await getSupabaseServerClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-  if (!user) redirect("/login?next=/admin");
+  try {
+    // Direct auth check for more reliable admin access
+    const supabase = await getSupabaseServerClient();
+    const { data: { user }, error: authError } = await supabase.auth.getUser();
+    
+    if (authError || !user) {
+      console.log("Admin page - Auth error:", authError);
+      redirect("/login?next=/admin");
+    }
 
-  // Prefer app_metadata.role or user_metadata.role, fallback to 'user'
-  const role = (user.app_metadata as any)?.role || (user.user_metadata as any)?.role || "user";
-  if (role !== "admin") redirect("/dashboard");
+    // Check admin role directly using admin client
+    const adminClient = getSupabaseAdminClient();
+    const { data: profile, error: profileError } = await adminClient
+      .from("profiles")
+      .select("role")
+      .eq("user_id", user.id)
+      .single();
+
+    if (profileError || !profile || profile.role !== 'admin') {
+      console.log("Admin page - Profile error or not admin:", profileError, profile?.role);
+      redirect("/dashboard");
+    }
 
   // Load admin overview metrics using service role (bypasses RLS)
   const admin = getSupabaseAdminClient();
-  const { data: overview } = await admin.from("admin_overview").select("*").maybeSingle();
+  
+  // Get real-time data directly from tables
+  const { data: deposits } = await admin
+    .from("transactions")
+    .select("amount_usdt")
+    .eq("type", "deposit");
+    
+  const { data: withdrawals } = await admin
+    .from("transactions")
+    .select("amount_usdt")
+    .eq("type", "withdrawal");
+    
+  const { data: earnings } = await admin
+    .from("transactions")
+    .select("amount_usdt")
+    .eq("type", "earning");
+
   const { count: pendingWithdrawalsCount } = await admin
     .from("withdrawals")
     .select("id", { count: "exact", head: true })
     .eq("status", "pending");
 
-  const totalUsers = Number((overview as any)?.total_users || 0);
-  const totalDeposits = Number((overview as any)?.total_deposits || 0);
-  const totalWithdrawals = Number((overview as any)?.total_withdrawals || 0);
-  const totalEarnings = Number((overview as any)?.total_earnings || 0);
+  const totalDeposits = (deposits || []).reduce((sum, t) => sum + Number(t.amount_usdt || 0), 0);
+  const totalWithdrawalsAmount = (withdrawals || []).reduce((sum, t) => sum + Number(t.amount_usdt || 0), 0);
+  const totalEarnings = (earnings || []).reduce((sum, t) => sum + Number(t.amount_usdt || 0), 0);
 
   // Fetch pending withdrawals with new fields
   const { data: pendingList } = await admin
@@ -50,67 +78,58 @@ export default async function AdminPage() {
     .lt("expires_at", urgentThreshold.toISOString());
 
   return (
-    <main className="mx-auto max-w-7xl px-4 py-8 space-y-6">
+    <main className="mx-auto max-w-7xl px-4 py-8 space-y-6 bg-gradient-to-br from-gray-900 via-orange-900/10 to-gray-900 min-h-screen">
       <div>
-        <h1 className="text-2xl font-semibold">Admin Panel</h1>
-        <p className="text-muted-foreground">Overview and management tools.</p>
+        <h1 className="text-2xl font-semibold text-white">Mining Operations Admin</h1>
+        <p className="text-gray-400">Bitcoin mining platform management and oversight.</p>
       </div>
 
-      <div className="grid gap-4 md:grid-cols-5">
-        <Card>
+      <div className="grid gap-4 md:grid-cols-4">
+        <Card className="bg-gray-800/50 border-gray-700/50">
           <CardHeader>
-            <CardTitle>Total Users</CardTitle>
-            <CardDescription>Registered</CardDescription>
+            <CardTitle className="text-white">Mining Deposits</CardTitle>
+            <CardDescription className="text-gray-400">All time USDT</CardDescription>
           </CardHeader>
           <CardContent>
-            <div className="text-3xl font-bold">{totalUsers}</div>
+            <div className="text-3xl font-bold text-green-400">${totalDeposits.toFixed(2)}</div>
           </CardContent>
         </Card>
-        <Card>
+        <Card className="bg-gray-800/50 border-gray-700/50">
           <CardHeader>
-            <CardTitle>Deposits</CardTitle>
-            <CardDescription>All time</CardDescription>
+            <CardTitle className="text-white">Mining Payouts</CardTitle>
+            <CardDescription className="text-gray-400">Pending approval</CardDescription>
           </CardHeader>
           <CardContent>
-            <div className="text-3xl font-bold">{totalDeposits.toFixed(2)}</div>
+            <div className="text-3xl font-bold text-yellow-400">{pendingWithdrawalsCount ?? 0}</div>
           </CardContent>
         </Card>
-        <Card>
+        <Card className={urgentWithdrawalsCount && urgentWithdrawalsCount > 0 ? "border-red-500 bg-red-950/20" : "bg-gray-800/50 border-gray-700/50"}>
           <CardHeader>
-            <CardTitle>Withdrawals</CardTitle>
-            <CardDescription>Pending approval</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="text-3xl font-bold">{pendingWithdrawalsCount ?? 0}</div>
-          </CardContent>
-        </Card>
-        <Card className={urgentWithdrawalsCount && urgentWithdrawalsCount > 0 ? "border-red-500 bg-red-50 dark:bg-red-950/20" : ""}>
-          <CardHeader>
-            <CardTitle className={urgentWithdrawalsCount && urgentWithdrawalsCount > 0 ? "text-red-700 dark:text-red-300" : ""}>
-              Urgent Withdrawals
+            <CardTitle className={urgentWithdrawalsCount && urgentWithdrawalsCount > 0 ? "text-red-300" : "text-white"}>
+              Urgent Payouts
             </CardTitle>
-            <CardDescription className={urgentWithdrawalsCount && urgentWithdrawalsCount > 0 ? "text-red-600 dark:text-red-400" : ""}>
+            <CardDescription className={urgentWithdrawalsCount && urgentWithdrawalsCount > 0 ? "text-red-400" : "text-gray-400"}>
               Expiring soon
             </CardDescription>
           </CardHeader>
           <CardContent>
-            <div className={`text-3xl font-bold ${urgentWithdrawalsCount && urgentWithdrawalsCount > 0 ? "text-red-700 dark:text-red-300 animate-pulse" : ""}`}>
+            <div className={`text-3xl font-bold ${urgentWithdrawalsCount && urgentWithdrawalsCount > 0 ? "text-red-300 animate-pulse" : "text-red-400"}`}>
               {urgentWithdrawalsCount ?? 0}
             </div>
             {urgentWithdrawalsCount && urgentWithdrawalsCount > 0 && (
-              <div className="text-xs text-red-600 dark:text-red-400 mt-1">
+              <div className="text-xs text-red-400 mt-1">
                 ⚠️ Action required
               </div>
             )}
           </CardContent>
         </Card>
-        <Card>
+        <Card className="bg-gray-800/50 border-gray-700/50">
           <CardHeader>
-            <CardTitle>Profits</CardTitle>
-            <CardDescription>All time</CardDescription>
+            <CardTitle className="text-white">Mining Rewards</CardTitle>
+            <CardDescription className="text-gray-400">Total distributed</CardDescription>
           </CardHeader>
           <CardContent>
-            <div className="text-3xl font-bold">{totalEarnings.toFixed(2)}</div>
+            <div className="text-3xl font-bold text-blue-400">{totalEarnings.toFixed(2)}</div>
           </CardContent>
         </Card>
       </div>
@@ -119,23 +138,25 @@ export default async function AdminPage() {
       <UserManagement />
 
       {/* Plan Management */}
-      <PlanManagement />
+      <AdvancedPlanManagement />
 
       {/* Admin Tools */}
-      <Card>
+      <Card className="bg-gray-800/50 border-gray-700/50">
         <CardHeader>
-          <CardTitle>Admin Tools</CardTitle>
-          <CardDescription>User management and system administration</CardDescription>
+          <CardTitle className="text-white">💰 Miner Balance Management</CardTitle>
+          <CardDescription className="text-gray-400">Top-up miner balances for mining investments and operations</CardDescription>
         </CardHeader>
         <CardContent>
           <AdminTools />
         </CardContent>
       </Card>
 
-      <Card>
+      <Card className="bg-gray-800/50 border-gray-700/50">
         <CardHeader>
-          <CardTitle>Pending Withdrawals</CardTitle>
-          <CardDescription>Approve user withdrawal requests</CardDescription>
+          <CardTitle className="text-white">⚡ Mining Payout Management</CardTitle>
+          <CardDescription className="text-gray-400">
+            Process and approve miner withdrawal requests with real-time urgency tracking
+          </CardDescription>
         </CardHeader>
         <CardContent>
           <PendingWithdrawalsTable initial={pending} />
@@ -143,5 +164,9 @@ export default async function AdminPage() {
       </Card>
     </main>
   );
+  } catch (error) {
+    console.error("Admin page error:", error);
+    redirect("/login?next=/admin");
+  }
 }
 

@@ -25,20 +25,41 @@ export async function PUT(
     }
 
     const body = await request.json();
-    const { name, price_usdt, roi_daily_percent, duration_days, is_active } = body;
+    const { 
+      name, 
+      description,
+      min_amount, 
+      max_amount,
+      roi_daily_percent, 
+      duration_days,
+      category_id,
+      mining_type,
+      hash_rate,
+      power_consumption,
+      risk_level,
+      features,
+      is_active 
+    } = body;
 
     // Validate required fields
-    if (!name || !price_usdt || !roi_daily_percent || !duration_days) {
+    if (!name || !min_amount || !max_amount || !roi_daily_percent || !duration_days) {
       return NextResponse.json(
-        { error: "Missing required fields: name, price_usdt, roi_daily_percent, duration_days" },
+        { error: "Missing required fields: name, min_amount, max_amount, roi_daily_percent, duration_days" },
         { status: 400 }
       );
     }
 
     // Validate numeric values
-    if (price_usdt <= 0 || roi_daily_percent <= 0 || duration_days <= 0) {
+    if (min_amount <= 0 || max_amount <= 0 || roi_daily_percent <= 0 || duration_days <= 0) {
       return NextResponse.json(
-        { error: "Price, ROI, and duration must be positive numbers" },
+        { error: "Amounts, ROI, and duration must be positive numbers" },
+        { status: 400 }
+      );
+    }
+
+    if (min_amount > max_amount) {
+      return NextResponse.json(
+        { error: "Minimum amount cannot be greater than maximum amount" },
         { status: 400 }
       );
     }
@@ -49,9 +70,17 @@ export async function PUT(
       .from("plans")
       .update({
         name,
-        price_usdt: parseFloat(price_usdt),
+        description: description || '',
+        min_amount: parseFloat(min_amount),
+        max_amount: parseFloat(max_amount),
         roi_daily_percent: parseFloat(roi_daily_percent),
         duration_days: parseInt(duration_days),
+        category_id: category_id || null,
+        mining_type: mining_type || 'ASIC Mining',
+        hash_rate: hash_rate || '0 TH/s',
+        power_consumption: power_consumption || '0W',
+        risk_level: risk_level || 'Medium',
+        features: JSON.stringify(features || []),
         is_active: is_active !== undefined ? is_active : true,
       })
       .eq("id", id)

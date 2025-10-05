@@ -18,14 +18,14 @@ export async function GET() {
 
     const admin = getSupabaseAdminClient();
 
-    // Get balance from balances table
-    const { data: balanceData } = await admin
-      .from("balances")
-      .select("available_usdt")
+    // Get balance from profiles table
+    const { data: profileData } = await admin
+      .from("profiles")
+      .select("balance_usdt")
       .eq("user_id", user.id)
       .maybeSingle();
 
-    const balance = Number(balanceData?.available_usdt || 0);
+    const balance = Number(profileData?.balance_usdt || 0);
 
     // Also check if user has an active subscription
     const { data: activeSub } = await admin

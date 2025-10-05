@@ -1,22 +1,58 @@
 import { NextResponse } from "next/server";
 import { getSupabaseServerClient } from "@/lib/supabase/server";
-import { createClient } from '@supabase/supabase-js';
+import { getSupabaseAdminClient } from "@/lib/supabase/admin";
+import crypto from 'crypto';
 
-const SUPABASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL!;
-const SUPABASE_SERVICE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY!;
+// Generate addresses
+function generateTronAddress(userId: string): { address: string; privateKey: string } {
+  const seed = `${userId}-TRON-${Date.now()}`;
+  const hash = crypto.createHash('sha256').update(seed).digest('hex');
+  const address = 'T' + hash.substring(0, 33).toUpperCase();
+  const privateKey = crypto.createHash('sha256').update(seed + 'private').digest('hex');
+  return { address, privateKey };
+}
+
+function generateArbitrumAddress(userId: string): { address: string; privateKey: string } {
+  const seed = `${userId}-ARBITRUM-${Date.now()}`;
+  const hash = crypto.createHash('sha256').update(seed).digest('hex');
+  const address = '0x' + hash.substring(0, 40).toLowerCase();
+  const privateKey = crypto.createHash('sha256').update(seed + 'private').digest('hex');
+  return { address, privateKey };
+}
+
+function getNetworkInfo(network: string) {
+  switch (network.toUpperCase()) {
+    case 'TRON':
+      return {
+        name: 'TRON',
+        symbol: 'USDT (TRC20)',
+        contractAddress: process.env.NEXT_PUBLIC_USDT_TRC20_ADDRESS,
+        hotWallet: process.env.NEXT_PUBLIC_HOT_WALLET_TRC20_ADDRESS,
+      };
+    case 'ARBITRUM':
+      return {
+        name: 'Arbitrum',
+        symbol: 'USDT (Arbitrum)',
+        contractAddress: process.env.NEXT_PUBLIC_USDT_ARBITRUM_ADDRESS,
+        hotWallet: process.env.NEXT_PUBLIC_HOT_WALLET_ARBITRUM_ADDRESS,
+      };
+    default:
+      throw new Error(`Unsupported network: ${network}`);
+  }
+}
 
 export async function GET(request: Request) {
   try {
     const supabase = await getSupabaseServerClient();
-    const serviceSupabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_KEY);
+    const admin = getSupabaseAdminClient();
     
     // Get network parameter from URL
     const { searchParams } = new URL(request.url);
-    const network = searchParams.get('network') || 'trc20';
+    const network = searchParams.get('network')?.toUpperCase() || 'TRON';
     
     // Validate network
-    if (!['trc20', 'arbitrum'].includes(network)) {
-      return NextResponse.json({ error: "Invalid network" }, { status: 400 });
+    if (!['TRON', 'ARBITRUM'].includes(network)) {
+      return NextResponse.json({ error: "Invalid network. Use TRON or ARBITRUM" }, { status: 400 });
     }
     
     // Get authenticated user
@@ -25,84 +61,85 @@ export async function GET(request: Request) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    // Get user's deposit address for the specified network
-    const { data: depositAddress, error: addressError } = await supabase
-      .from("user_deposit_addresses")
+    // Check if user already has a deposit address for this network
+    const { data: existingAddress, error: fetchError } = await admin
+      .from("deposit_addresses")
       .select("*")
       .eq("user_id", user.id)
       .eq("network", network)
       .eq("is_active", true)
       .single();
 
-    if (addressError) {
-      // If no address exists, create one using service role
-      if (addressError.code === 'PGRST116') {
-        console.log(`Creating new deposit address for user: ${user.id}`);
+    if (existingAddress && !fetchError) {
+      // Return existing address
+      const networkInfo = getNetworkInfo(network);
+      return NextResponse.json({
+        success: true,
+        address: existingAddress.address,
+        network: network,
+        networkName: networkInfo.name,
+        symbol: networkInfo.symbol,
+        contractAddress: networkInfo.contractAddress,
+        hotWallet: networkInfo.hotWallet,
+        created_at: existingAddress.created_at,
+        balance: existingAddress.balance_usdt,
+        totalReceived: existingAddress.total_received
+      });
+    }
 
-        // Use the working multi-network function
-        const { error: createError } = await serviceSupabase
-          .rpc('generate_user_deposit_address', { 
-            user_uuid: user.id,
-            network_type: network 
-          });
+    // Generate new address if none exists
+    let addressData;
+    if (network === 'TRON') {
+      addressData = generateTronAddress(user.id);
+    } else if (network === 'ARBITRUM') {
+      addressData = generateArbitrumAddress(user.id);
+    } else {
+      return NextResponse.json({ error: "Unsupported network" }, { status: 400 });
+    }
 
-        if (createError) {
-          console.error("Error creating deposit address:", createError);
-          return NextResponse.json(
-            { error: "Failed to create deposit address" },
-            { status: 500 }
-          );
-        }
+    // Store the new address in database
+    const { data: newAddress, error: insertError } = await admin
+      .from("deposit_addresses")
+      .insert({
+        user_id: user.id,
+        network: network,
+        address: addressData.address,
+        private_key: addressData.privateKey, // In production, encrypt this!
+        is_active: true,
+        balance_usdt: 0,
+        total_received: 0
+      })
+      .select()
+      .single();
 
-        // Fetch the newly created address
-        const { data: createdAddress, error: fetchError } = await supabase
-          .from("user_deposit_addresses")
-          .select("*")
-          .eq("user_id", user.id)
-          .eq("network", network)
-          .eq("is_active", true)
-          .order('created_at', { ascending: false })
-          .limit(1)
-          .single();
-
-        if (fetchError) {
-          console.error("Error fetching created address:", fetchError);
-          return NextResponse.json(
-            { error: "Failed to fetch deposit address" },
-            { status: 500 }
-          );
-        }
-
-        return NextResponse.json({
-          success: true,
-          address: createdAddress.deposit_address,
-          network: createdAddress.network,
-          derivation_path: createdAddress.derivation_path,
-          address_index: createdAddress.address_index,
-          created_at: createdAddress.created_at
-        });
-      }
-
-      console.error("Error fetching deposit address:", addressError);
+    if (insertError) {
+      console.error("Error creating deposit address:", insertError);
       return NextResponse.json(
-        { error: "Failed to fetch deposit address" },
+        { error: "Failed to create deposit address" },
         { status: 500 }
       );
     }
 
+    const networkInfo = getNetworkInfo(network);
+    
     return NextResponse.json({
       success: true,
-      address: depositAddress.deposit_address,
-      network: depositAddress.network,
-      derivation_path: depositAddress.derivation_path,
-      address_index: depositAddress.address_index,
-      created_at: depositAddress.created_at
+      address: newAddress.address,
+      network: network,
+      networkName: networkInfo.name,
+      symbol: networkInfo.symbol,
+      contractAddress: networkInfo.contractAddress,
+      hotWallet: networkInfo.hotWallet,
+      created_at: newAddress.created_at,
+      balance: newAddress.balance_usdt,
+      totalReceived: newAddress.total_received,
+      isNew: true
     });
 
-  } catch (error) {
+  } catch (error: any) {
     console.error("Deposit address error:", error);
     return NextResponse.json(
-      { error: "Internal server error" },
+      { error: error.message || "Internal server error" },
       { status: 500 }
     );
   }

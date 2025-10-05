@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { getSupabaseAdminClient } from "@/lib/supabase/admin";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -16,21 +17,30 @@ import {
   Zap,
   Crown,
   Bitcoin,
-  Coins
+  Coins,
+  Cpu,
+  Activity,
+  Factory
 } from "lucide-react";
 
 interface DatabasePlan {
   id: string;
   name: string;
-  price_usdt: number;
+  min_amount: number;
+  max_amount: number;
   roi_daily_percent: number;
   duration_days: number;
   is_active: boolean;
+  mining_type?: string;
+  hash_rate?: string;
+  power_consumption?: string;
+  risk_level?: string;
+  features?: string;
   created_at: string;
   updated_at: string;
 }
 
-interface PlanDisplay extends DatabasePlan {
+interface PlanDisplay extends Omit<DatabasePlan, 'features'> {
   description: string;
   features: string[];
   popular: boolean;
@@ -39,67 +49,147 @@ interface PlanDisplay extends DatabasePlan {
   bgGradient: string;
 }
 
-// Plan display configurations
-const planConfigs: Record<string, Omit<PlanDisplay, keyof DatabasePlan>> = {
-  default: {
-    description: "A great investment opportunity with competitive returns",
-    features: ["Daily returns", "24/7 Support", "Secure wallet", "Analytics"],
+// Bitcoin Mining Plan display configurations
+const planConfigs: Record<string, {description: string; features: string[]; popular: boolean; icon: any; gradient: string; bgGradient: string}> = {
+  "microbitcoinminer": {
+    description: "Perfect starter plan for new miners. Low risk, steady returns with shared ASIC mining.",
+    features: ["Shared ASIC Mining", "Daily Payouts", "24/7 Support", "Mobile Monitoring"],
     popular: false,
-    icon: Target,
-    gradient: "from-blue-500 to-blue-600",
-    bgGradient: "from-blue-50 to-blue-100 dark:from-blue-950 dark:to-blue-900"
+    icon: Bitcoin,
+    gradient: "from-orange-500 to-orange-600",
+    bgGradient: "from-orange-50 to-orange-100 dark:from-orange-950 dark:to-orange-900"
   },
-  starter: {
-    description: "Perfect for beginners looking to start their investment journey",
-    features: ["Daily returns", "24/7 Support", "Basic analytics", "Secure wallet"],
-    popular: false,
-    icon: Target,
-    gradient: "from-blue-500 to-blue-600",
-    bgGradient: "from-blue-50 to-blue-100 dark:from-blue-950 dark:to-blue-900"
-  },
-  pro: {
-    description: "Ideal for experienced investors seeking higher returns",
-    features: ["Higher daily returns", "Priority support", "Advanced analytics", "Portfolio insights", "Risk management"],
+  "basicbitcoinminer": {
+    description: "Popular choice for beginners. Dedicated mining power with good daily returns.",
+    features: ["Dedicated Mining", "Real-time Stats", "Daily Rewards", "Email Notifications"],
     popular: true,
-    icon: TrendingUp,
+    icon: Bitcoin,
+    gradient: "from-blue-500 to-blue-600",
+    bgGradient: "from-blue-50 to-blue-100 dark:from-blue-950 dark:to-blue-900"
+  },
+  "advancedbitcoinminer": {
+    description: "Professional mining with latest hardware. Higher returns for serious miners.",
+    features: ["ASIC S19 Mining", "Priority Support", "Advanced Analytics", "Auto-compound Option"],
+    popular: false,
+    icon: Zap,
+    gradient: "from-purple-500 to-purple-600",
+    bgGradient: "from-purple-50 to-purple-100 dark:from-purple-950 dark:to-purple-900"
+  },
+  "bitcoinprominer": {
+    description: "Professional Bitcoin mining operation with latest S19 Pro miners.",
+    features: ["ASIC S19 Pro", "Advanced Cooling", "Priority Support", "Real-time Analytics"],
+    popular: false,
+    icon: Crown,
     gradient: "from-green-500 to-green-600",
     bgGradient: "from-green-50 to-green-100 dark:from-green-950 dark:to-green-900"
   },
-  elite: {
-    description: "Premium plan for serious investors with maximum returns",
-    features: ["Maximum daily returns", "VIP support", "Premium analytics", "Personal advisor", "Custom strategies", "Exclusive insights"],
+  "bitcoinenterprisefarm": {
+    description: "Large-scale Bitcoin mining farm with industrial-grade equipment.",
+    features: ["Industrial ASIC Farm", "Renewable Energy", "Dedicated Support", "Custom Mining Pool"],
     popular: false,
     icon: Crown,
+    gradient: "from-red-500 to-red-600",
+    bgGradient: "from-red-50 to-red-100 dark:from-red-950 dark:to-red-900"
+  },
+  default: {
+    description: "Professional Bitcoin mining with enterprise-grade equipment",
+    features: ["Daily mining rewards", "24/7 Monitoring", "Secure mining", "Real-time stats"],
+    popular: false,
+    icon: Bitcoin,
+    gradient: "from-orange-500 to-red-500",
+    bgGradient: "from-orange-50 to-orange-100 dark:from-orange-950 dark:to-orange-900"
+  },
+  "bitcoin starter miner": {
+    description: "Entry-level Bitcoin mining with ASIC S19 miners. Perfect for beginners.",
+    features: ["ASIC S19 Miners", "24/7 Monitoring", "Daily Payouts", "Mining Pool Access"],
+    popular: false,
+    icon: Cpu,
+    gradient: "from-blue-500 to-blue-600",
+    bgGradient: "from-blue-50 to-blue-100 dark:from-blue-950 dark:to-blue-900"
+  },
+  "bitcoin pro miner": {
+    description: "Professional Bitcoin mining with S19 Pro miners and optimized cooling.",
+    features: ["ASIC S19 Pro", "Advanced Cooling", "Priority Support", "Real-time Analytics", "Mining Optimization"],
+    popular: true,
+    icon: Activity,
+    gradient: "from-green-500 to-green-600",
+    bgGradient: "from-green-50 to-green-100 dark:from-green-950 dark:to-green-900"
+  },
+  "bitcoin enterprise farm": {
+    description: "Large-scale Bitcoin mining farm with industrial equipment and renewable energy.",
+    features: ["Industrial ASIC Farm", "Renewable Energy", "Dedicated Support", "Custom Mining Pool", "Advanced Analytics", "Insurance Coverage"],
+    popular: false,
+    icon: Factory,
     gradient: "from-purple-500 to-purple-600",
     bgGradient: "from-purple-50 to-purple-100 dark:from-purple-950 dark:to-purple-900"
+  },
+  "ethereum gpu miner": {
+    description: "High-performance GPU mining for Ethereum with RTX 4090 rigs.",
+    features: ["RTX 4090 GPUs", "Ethereum Mining", "Auto-switching", "Overclocking", "24/7 Monitoring"],
+    popular: false,
+    icon: Zap,
+    gradient: "from-indigo-500 to-indigo-600",
+    bgGradient: "from-indigo-50 to-indigo-100 dark:from-indigo-950 dark:to-indigo-900"
+  },
+  "cloud mining starter": {
+    description: "Hassle-free cloud mining without hardware maintenance.",
+    features: ["No Hardware Needed", "Remote Mining", "Instant Start", "Multiple Cryptocurrencies", "Mobile App"],
+    popular: false,
+    icon: Target,
+    gradient: "from-cyan-500 to-cyan-600",
+    bgGradient: "from-cyan-50 to-cyan-100 dark:from-cyan-950 dark:to-cyan-900"
+  },
+  "defi yield farming": {
+    description: "Automated DeFi yield farming across multiple protocols.",
+    features: ["Multi-Protocol Staking", "Automated Compounding", "Liquidity Mining", "Risk Management", "Real-time Yields"],
+    popular: false,
+    icon: Crown,
+    gradient: "from-pink-500 to-pink-600",
+    bgGradient: "from-pink-50 to-pink-100 dark:from-pink-950 dark:to-pink-900"
+  },
+  "multi-coin miner": {
+    description: "Diversified mining across profitable altcoins with automatic profit switching.",
+    features: ["Multi-Algorithm Mining", "Profit Switching", "Diverse Coin Portfolio", "Risk Diversification", "Advanced Analytics"],
+    popular: false,
+    icon: Coins,
+    gradient: "from-amber-500 to-amber-600",
+    bgGradient: "from-amber-50 to-amber-100 dark:from-amber-950 dark:to-amber-900"
   }
 };
 
 async function getPlans(): Promise<PlanDisplay[]> {
   try {
-    const response = await fetch(`${process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000'}/api/plans`, {
-      cache: 'no-store' // Always fetch fresh data
-    });
+    // Fetch plans directly from database using admin client
+    const admin = getSupabaseAdminClient();
+    const { data: dbPlans, error } = await admin
+      .from("plans")
+      .select("*")
+      .eq("is_active", true)
+      .order("min_amount", { ascending: true });
     
-    if (!response.ok) {
-      throw new Error('Failed to fetch plans');
+    if (error) {
+      console.error('Database error fetching plans:', error);
+      return [];
     }
     
-    const data = await response.json();
-    const plans: DatabasePlan[] = data.plans || [];
+    if (!dbPlans || dbPlans.length === 0) {
+      console.log('No plans found in database');
+      return [];
+    }
     
     // Transform database plans to display plans
-    return plans.map((plan, index) => {
+    return dbPlans.map((plan, index) => {
       const planKey = plan.name.toLowerCase().replace(/\s+/g, '');
       const config = planConfigs[planKey] || planConfigs.default;
       
       // Mark middle plan as popular if there are 3 plans
-      const isPopular = plans.length === 3 && index === 1 ? true : config.popular;
+      const isPopular = dbPlans.length === 3 && index === 1 ? true : config.popular;
       
       return {
         ...plan,
         ...config,
-        popular: isPopular
+        popular: isPopular,
+        features: config.features // Ensure features is properly mapped
       };
     });
   } catch (error) {
@@ -112,33 +202,33 @@ async function getPlans(): Promise<PlanDisplay[]> {
 export default async function PlansPage() {
   const plans = await getPlans();
   return (
-    <main className="min-h-screen bg-gradient-to-br from-slate-900 via-purple-900/20 to-slate-900">
+    <div className="min-h-screen bg-gradient-to-br from-gray-900 via-orange-900/10 to-gray-900 pt-16 pb-20">
       <div className="mx-auto max-w-7xl px-4 py-8 sm:py-12 space-y-8 sm:space-y-12">
         {/* Header Section */}
         <div className="text-center space-y-4 sm:space-y-6">
-          <div className="inline-flex items-center space-x-2 bg-gradient-to-r from-blue-500/20 to-purple-500/20 backdrop-blur-sm border border-blue-500/30 text-blue-300 px-4 py-2 rounded-full text-sm font-medium">
+          <div className="inline-flex items-center space-x-2 bg-gradient-to-r from-orange-500/20 to-red-500/20 backdrop-blur-sm border border-orange-500/30 text-orange-300 px-4 py-2 rounded-full text-sm font-medium">
             <Bitcoin className="h-4 w-4" />
-            <span>Crypto Investment Opportunities</span>
+            <span>Bitcoin Mining Plans</span>
           </div>
           <h1 className="text-3xl sm:text-4xl lg:text-5xl font-bold tracking-tight text-white">
             Choose Your 
-            <span className="block bg-gradient-to-r from-blue-400 via-purple-400 to-pink-400 bg-clip-text text-transparent">
-              Crypto Investment Plan
+            <span className="block bg-gradient-to-r from-orange-400 via-red-400 to-yellow-400 bg-clip-text text-transparent">
+              Bitcoin Mining Plan
             </span>
           </h1>
           <p className="text-lg sm:text-xl text-gray-300 max-w-3xl mx-auto leading-relaxed">
-            Start building your crypto wealth with our AI-powered investment portfolios. 
-            Each plan offers <span className="text-green-400 font-semibold">guaranteed daily returns</span> with complete transparency.
+            Start earning Bitcoin through our professional mining operations. 
+            Each plan offers <span className="text-green-400 font-semibold">daily mining rewards</span> with enterprise-grade equipment.
           </p>
         </div>
 
         {/* Plans Grid */}
         {plans.length === 0 ? (
           <div className="text-center py-12">
-            <div className="bg-gradient-to-br from-slate-800/80 to-slate-900/80 backdrop-blur-sm border border-slate-700/50 rounded-xl p-8">
-              <h3 className="text-xl font-semibold mb-2 text-white">No Investment Plans Available</h3>
+            <div className="bg-gradient-to-br from-gray-800/80 to-gray-900/80 backdrop-blur-sm border border-gray-700/50 rounded-xl p-8">
+              <h3 className="text-xl font-semibold mb-2 text-white">No Mining Plans Available</h3>
               <p className="text-gray-400">
-                We're currently updating our crypto investment plans. Please check back soon.
+                We're currently setting up our Bitcoin mining operations. Please check back soon.
               </p>
             </div>
           </div>
@@ -146,9 +236,9 @@ export default async function PlansPage() {
           <div className="grid gap-6 sm:gap-8 sm:grid-cols-2 lg:grid-cols-3">
             {plans.map((plan) => {
             const Icon = plan.icon;
-            const totalReturn = (plan.price_usdt * (plan.roi_daily_percent / 100) * plan.duration_days).toFixed(2);
-            const totalProfit = (parseFloat(totalReturn) - plan.price_usdt).toFixed(2);
-            const totalROI = ((parseFloat(totalProfit) / plan.price_usdt) * 100).toFixed(1);
+            const totalReturn = (plan.min_amount * (plan.roi_daily_percent / 100) * plan.duration_days).toFixed(2);
+            const totalProfit = (parseFloat(totalReturn) - plan.min_amount).toFixed(2);
+            const totalROI = ((parseFloat(totalProfit) / plan.min_amount) * 100).toFixed(1);
             
             return (
               <Card 
@@ -179,7 +269,7 @@ export default async function PlansPage() {
                 <CardContent className="space-y-6">
                   {/* Pricing */}
                   <div className="text-center space-y-2">
-                    <div className="text-3xl sm:text-4xl font-bold text-white">${plan.price_usdt}</div>
+                    <div className="text-3xl sm:text-4xl font-bold text-white">${plan.min_amount} - ${plan.max_amount}</div>
                     <div className="text-sm text-gray-400 flex items-center justify-center gap-1">
                       <Coins className="h-4 w-4" />
                       Minimum USDT Investment
@@ -187,34 +277,34 @@ export default async function PlansPage() {
                   </div>
                   
                   {/* Key Metrics */}
-                  <div className="grid grid-cols-2 gap-3 sm:gap-4 p-4 bg-slate-700/30 rounded-lg border border-slate-600/30">
+                  <div className="grid grid-cols-2 gap-3 sm:gap-4 p-4 bg-gray-700/30 rounded-lg border border-gray-600/30">
                     <div className="text-center">
                       <div className="text-lg font-bold text-green-400">{plan.roi_daily_percent}%</div>
-                      <div className="text-xs text-gray-400">Daily ROI</div>
+                      <div className="text-xs text-gray-400">Daily Mining</div>
                     </div>
                     <div className="text-center">
                       <div className="text-lg font-bold text-blue-400">{plan.duration_days} days</div>
                       <div className="text-xs text-gray-400">Duration</div>
                     </div>
                     <div className="text-center">
-                      <div className="text-lg font-bold text-purple-400">${totalReturn}</div>
-                      <div className="text-xs text-gray-400">Total Return</div>
+                      <div className="text-lg font-bold text-orange-400">${totalReturn}</div>
+                      <div className="text-xs text-gray-400">Total Earned</div>
                     </div>
                     <div className="text-center">
-                      <div className="text-lg font-bold text-orange-400">+{totalROI}%</div>
-                      <div className="text-xs text-gray-400">Total ROI</div>
+                      <div className="text-lg font-bold text-yellow-400">+{totalROI}%</div>
+                      <div className="text-xs text-gray-400">Total Profit</div>
                     </div>
                   </div>
                   
-                  {/* ROI Progress Visualization */}
-                  <div className="space-y-3 p-4 bg-gradient-to-r from-green-900/20 to-blue-900/20 rounded-lg border border-green-500/20">
+                  {/* Mining Progress Visualization */}
+                  <div className="space-y-3 p-4 bg-gradient-to-r from-orange-900/20 to-red-900/20 rounded-lg border border-orange-500/20">
                     <div className="flex justify-between text-sm">
-                      <span className="text-gray-300">Expected Profit</span>
+                      <span className="text-gray-300">Mining Profit</span>
                       <span className="font-bold text-green-400">${totalProfit}</span>
                     </div>
-                    <Progress value={parseFloat(totalROI)} className="h-3 bg-slate-700" />
+                    <Progress value={parseFloat(totalROI)} className="h-3 bg-gray-700" />
                     <div className="text-xs text-center text-gray-400">
-                      {totalROI}% total return over {plan.duration_days} days
+                      {totalROI}% total mining profit over {plan.duration_days} days
                     </div>
                   </div>
                   
@@ -238,15 +328,15 @@ export default async function PlansPage() {
                   <PlanPurchaseButton
                     planId={plan.id}
                     planName={plan.name}
-                    planPrice={plan.price_usdt}
+                    planPrice={plan.min_amount}
                     gradient={plan.gradient}
                   />
                   
-                  {/* Risk Disclaimer */}
+                  {/* Mining Disclaimer */}
                   <div className="flex items-start space-x-2 p-3 bg-amber-900/20 border border-amber-700/30 rounded-lg">
                     <Shield className="h-4 w-4 text-amber-400 mt-0.5 flex-shrink-0" />
                     <p className="text-xs text-amber-300">
-                      Crypto investments carry risk. Returns are projected based on AI trading algorithms and historical performance.
+                      Mining returns depend on network difficulty and Bitcoin price. Estimates based on current mining conditions.
                     </p>
                   </div>
                 </CardContent>
@@ -258,37 +348,37 @@ export default async function PlansPage() {
       
         {/* Additional Information */}
         <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3 mt-12 sm:mt-16">
-          <Card className="bg-gradient-to-br from-blue-900/50 to-blue-800/50 border-blue-700/50 backdrop-blur-sm text-center p-6 hover:border-blue-500/70 transition-all duration-300 group">
-            <div className="p-3 rounded-full bg-blue-500/20 w-fit mx-auto mb-4 group-hover:bg-blue-500/30 transition-colors duration-300">
-              <Shield className="h-10 w-10 text-blue-400" />
+          <Card className="bg-gradient-to-br from-orange-900/50 to-orange-800/50 border-orange-700/50 backdrop-blur-sm text-center p-6 hover:border-orange-500/70 transition-all duration-300 group">
+            <div className="p-3 rounded-full bg-orange-500/20 w-fit mx-auto mb-4 group-hover:bg-orange-500/30 transition-colors duration-300">
+              <Cpu className="h-10 w-10 text-orange-400" />
             </div>
-            <h3 className="text-lg font-semibold mb-2 text-white">Military-Grade Security</h3>
-            <p className="text-sm text-blue-200">
-              Your crypto investments are protected with advanced encryption, cold storage, and multi-signature wallets.
+            <h3 className="text-lg font-semibold mb-2 text-white">Latest ASIC Miners</h3>
+            <p className="text-sm text-orange-200">
+              State-of-the-art ASIC S19 Pro miners with maximum efficiency and hash rate for optimal Bitcoin mining.
             </p>
           </Card>
           
           <Card className="bg-gradient-to-br from-green-900/50 to-green-800/50 border-green-700/50 backdrop-blur-sm text-center p-6 hover:border-green-500/70 transition-all duration-300 group">
             <div className="p-3 rounded-full bg-green-500/20 w-fit mx-auto mb-4 group-hover:bg-green-500/30 transition-colors duration-300">
-              <Clock className="h-10 w-10 text-green-400" />
+              <Zap className="h-10 w-10 text-green-400" />
             </div>
-            <h3 className="text-lg font-semibold mb-2 text-white">Automated Daily Returns</h3>
+            <h3 className="text-lg font-semibold mb-2 text-white">Renewable Energy</h3>
             <p className="text-sm text-green-200">
-              AI-powered trading algorithms generate daily profits, automatically credited to your USDT wallet balance.
+              100% renewable energy sources for sustainable and profitable Bitcoin mining operations.
             </p>
           </Card>
           
-          <Card className="bg-gradient-to-br from-purple-900/50 to-purple-800/50 border-purple-700/50 backdrop-blur-sm text-center p-6 hover:border-purple-500/70 transition-all duration-300 group sm:col-span-2 lg:col-span-1">
-            <div className="p-3 rounded-full bg-purple-500/20 w-fit mx-auto mb-4 group-hover:bg-purple-500/30 transition-colors duration-300">
-              <Bitcoin className="h-10 w-10 text-purple-400" />
+          <Card className="bg-gradient-to-br from-blue-900/50 to-blue-800/50 border-blue-700/50 backdrop-blur-sm text-center p-6 hover:border-blue-500/70 transition-all duration-300 group sm:col-span-2 lg:col-span-1">
+            <div className="p-3 rounded-full bg-blue-500/20 w-fit mx-auto mb-4 group-hover:bg-blue-500/30 transition-colors duration-300">
+              <Shield className="h-10 w-10 text-blue-400" />
             </div>
-            <h3 className="text-lg font-semibold mb-2 text-white">Instant Crypto Withdrawals</h3>
-            <p className="text-sm text-purple-200">
-              Withdraw your USDT earnings anytime with lightning-fast blockchain transactions and minimal fees.
+            <h3 className="text-lg font-semibold mb-2 text-white">Secure & Insured</h3>
+            <p className="text-sm text-blue-200">
+              Bank-grade security with full insurance coverage for all mining equipment and operations.
             </p>
           </Card>
         </div>
       </div>
-    </main>
+    </div>
   );
 }

@@ -109,44 +109,6 @@ export function UserManagement() {
 
   return (
     <div className="space-y-6">
-      {/* Stats Overview */}
-      <div className="grid gap-4 md:grid-cols-3">
-        <Card className="border-0 shadow-lg bg-gradient-to-br from-blue-50 to-blue-100 dark:from-blue-950 dark:to-blue-900">
-          <CardContent className="p-4">
-            <div className="flex items-center space-x-3">
-              <Users className="h-8 w-8 text-blue-600" />
-              <div>
-                <p className="text-sm font-medium text-blue-700 dark:text-blue-300">Total Users</p>
-                <p className="text-2xl font-bold text-blue-900 dark:text-blue-100">{stats.total_count}</p>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-
-        <Card className="border-0 shadow-lg bg-gradient-to-br from-green-50 to-green-100 dark:from-green-950 dark:to-green-900">
-          <CardContent className="p-4">
-            <div className="flex items-center space-x-3">
-              <Shield className="h-8 w-8 text-green-600" />
-              <div>
-                <p className="text-sm font-medium text-green-700 dark:text-green-300">Admins</p>
-                <p className="text-2xl font-bold text-green-900 dark:text-green-100">{stats.admin_count}</p>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-
-        <Card className="border-0 shadow-lg bg-gradient-to-br from-purple-50 to-purple-100 dark:from-purple-950 dark:to-purple-900">
-          <CardContent className="p-4">
-            <div className="flex items-center space-x-3">
-              <User className="h-8 w-8 text-purple-600" />
-              <div>
-                <p className="text-sm font-medium text-purple-700 dark:text-purple-300">Regular Users</p>
-                <p className="text-2xl font-bold text-purple-900 dark:text-purple-100">{stats.user_count}</p>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-      </div>
 
       {/* Search and Controls */}
       <Card className="border-0 shadow-lg">
@@ -155,10 +117,10 @@ export function UserManagement() {
             <div>
               <CardTitle className="flex items-center space-x-2">
                 <Users className="h-5 w-5" />
-                <span>User Management</span>
+                <span>Miner Management</span>
               </CardTitle>
               <CardDescription>
-                View all users, copy UUIDs for top-ups, and manage user data
+                View all miners, copy UUIDs for balance top-ups, and manage mining accounts
               </CardDescription>
             </div>
             <Button onClick={fetchUsers} disabled={loading} variant="outline" size="sm">
@@ -171,7 +133,7 @@ export function UserManagement() {
           <div className="flex items-center space-x-2 mb-6">
             <Search className="h-4 w-4 text-muted-foreground" />
             <Input
-              placeholder="Search by email, UUID, or role..."
+              placeholder="Search miners by email, UUID, or role..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
               className="max-w-sm"
@@ -181,7 +143,7 @@ export function UserManagement() {
           {loading ? (
             <div className="flex items-center justify-center py-8">
               <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
-              <span className="ml-2 text-muted-foreground">Loading users...</span>
+              <span className="ml-2 text-muted-foreground">Loading miners...</span>
             </div>
           ) : (
             <div className="space-y-4">

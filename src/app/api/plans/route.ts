@@ -11,7 +11,7 @@ export async function GET() {
       .from("plans")
       .select("*")
       .eq("is_active", true)
-      .order("price_usdt", { ascending: true });
+      .order("min_amount", { ascending: true });
 
     if (error) {
       console.error("Error fetching plans:", error);

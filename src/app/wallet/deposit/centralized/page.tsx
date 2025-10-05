@@ -6,7 +6,7 @@ import { Suspense } from "react";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { ArrowLeft, Shield } from "lucide-react";
-import CentralizedDeposit from "@/components/wallet/centralized-deposit";
+import SimpleDeposit from "@/components/simple-deposit";
 
 function CentralizedDepositContent() {
   const search = useSearchParams();
@@ -57,10 +57,8 @@ function CentralizedDepositContent() {
         )}
 
         {/* Centralized Deposit Component */}
-        <CentralizedDeposit
+        <SimpleDeposit
           amount={parseFloat(amount) || 0}
-          onSuccess={handleSuccess}
-          onError={handleError}
         />
       </div>
     </main>
