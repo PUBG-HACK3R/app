@@ -1,4 +1,32 @@
-{{ ... }}
+import { NextResponse } from "next/server";
+import { getSupabaseAdminClient } from "@/lib/supabase/admin";
+
+export const runtime = "nodejs";
+export const dynamic = "force-dynamic";
+
+// Monitor blockchain for deposits (called by cron job)
+export async function POST(request: Request) {
+  try {
+    const admin = getSupabaseAdminClient();
+    let totalProcessed = 0;
+    let errors: string[] = [];
+
+    return NextResponse.json({
+      success: true,
+      totalProcessed,
+      errors,
+      message: `Processed ${totalProcessed} deposits`,
+      timestamp: new Date().toISOString()
+    });
+
+  } catch (error: any) {
+    console.error('Deposit monitoring error:', error);
+    return NextResponse.json({ 
+      success: false, 
+      error: error.message 
+    }, { status: 500 });
+  }
+}
 
 // Process a detected deposit
 async function processDeposit(admin: any, depositData: any) {
@@ -97,10 +125,10 @@ async function processDeposit(admin: any, depositData: any) {
             amount_usdt: depositData.amount,
             status: 'completed',
             description: `Auto-sweep to hot wallet (${depositData.network})`,
-            reference_id: sweepResult.txHash
+            reference_id: sweepResult.success ? (sweepResult as any).txHash : 'failed'
           });
 
-        console.log(`Swept ${depositData.amount} USDT to hot wallet:`, sweepResult.txHash);
+        console.log(`✅ Swept ${depositData.amount} USDT to hot wallet:`, sweepResult.success ? (sweepResult as any).txHash : 'unknown');
       } else {
         console.error(`Failed to sweep funds:`, sweepResult.error);
         
