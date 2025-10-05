@@ -5,6 +5,10 @@ export const dynamic = "force-dynamic";
 
 export async function POST() {
   try {
+    const baseUrl = process.env.VERCEL_URL 
+      ? `https://${process.env.VERCEL_URL}` 
+      : 'http://localhost:3000';
+      
     const results = {
       earnings: null as any,
       planCompletions: null as any,
@@ -13,7 +17,7 @@ export async function POST() {
 
     // Process daily earnings
     try {
-      const earningsResponse = await fetch(`${process.env.VERCEL_URL || 'http://localhost:3000'}/api/cron/daily-earnings`, {
+      const earningsResponse = await fetch(`${baseUrl}/api/cron/daily-earnings`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' }
       });
@@ -30,7 +34,7 @@ export async function POST() {
 
     // Process plan completions
     try {
-      const completionsResponse = await fetch(`${process.env.VERCEL_URL || 'http://localhost:3000'}/api/plans/complete`, {
+      const completionsResponse = await fetch(`${baseUrl}/api/plans/complete`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' }
       });
