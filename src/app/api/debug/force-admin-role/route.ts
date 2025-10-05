@@ -43,7 +43,7 @@ export async function POST() {
       if (insertError) {
         return NextResponse.json({
           error: "Failed to create admin profile",
-          insertError: insertError.message
+          insertError: (insertError as any)?.message || 'Unknown error'
         }, { status: 500 });
       }
 
@@ -57,7 +57,7 @@ export async function POST() {
     if (updateError) {
       return NextResponse.json({
         error: "Failed to update admin role",
-        updateError: updateError.message
+        updateError: (updateError as any)?.message || 'Unknown error'
       }, { status: 500 });
     }
 
