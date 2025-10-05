@@ -1,186 +1,4 @@
-import { NextResponse } from "next/server";
-import { getSupabaseAdminClient } from "@/lib/supabase/admin";
-
-export const runtime = "nodejs";
-export const dynamic = "force-dynamic";
-
-// Monitor blockchain for deposits (called by cron job)
-export async function POST(request: Request) {
-  try {
-    // Verify this is coming from cron or admin
-    const authHeader = request.headers.get('authorization');
-    if (authHeader !== `Bearer ${process.env.CRON_SECRET}`) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-    }
-
-    const admin = getSupabaseAdminClient();
-    let totalProcessed = 0;
-    let errors = [];
-
-    // Monitor TRON network
-    try {
-      const tronResult = await monitorTronDeposits(admin);
-      totalProcessed += tronResult.processed;
-      if (tronResult.errors.length > 0) {
-        errors.push(...tronResult.errors);
-      }
-    } catch (error: any) {
-      errors.push(`TRON monitoring error: ${error.message}`);
-    }
-
-    // Monitor Arbitrum network
-    try {
-      const arbitrumResult = await monitorArbitrumDeposits(admin);
-      totalProcessed += arbitrumResult.processed;
-      if (arbitrumResult.errors.length > 0) {
-        errors.push(...arbitrumResult.errors);
-      }
-    } catch (error: any) {
-      errors.push(`Arbitrum monitoring error: ${error.message}`);
-    }
-
-    return NextResponse.json({
-      success: true,
-      totalProcessed,
-      errors,
-      message: `Processed ${totalProcessed} deposits`,
-      timestamp: new Date().toISOString()
-    });
-
-  } catch (error: any) {
-    console.error('Deposit monitoring error:', error);
-    return NextResponse.json({ 
-      success: false, 
-      error: error.message 
-    }, { status: 500 });
-  }
-}
-
-// Monitor TRON network for deposits
-async function monitorTronDeposits(admin: any) {
-  let processed = 0;
-  let errors = [];
-
-  try {
-    // Get all active TRON deposit addresses
-    const { data: addresses, error: addressError } = await admin
-      .from("deposit_addresses")
-      .select("*")
-      .eq("network", "TRON")
-      .eq("is_active", true);
-
-    if (addressError) {
-      errors.push(`Failed to get TRON addresses: ${addressError.message}`);
-      return { processed, errors };
-    }
-
-    // For each address, check for new transactions
-    for (const address of addresses || []) {
-      try {
-        // In production, you would call TRON API here
-        // For now, simulate finding a deposit
-        const mockDeposit = await simulateDepositCheck(address, 'TRON');
-        
-        if (mockDeposit) {
-          // Process the deposit
-          const success = await processDeposit(admin, {
-            userId: address.user_id,
-            network: 'TRON',
-            fromAddress: mockDeposit.from,
-            toAddress: address.address,
-            amount: mockDeposit.amount,
-            txHash: mockDeposit.txHash,
-            blockNumber: mockDeposit.blockNumber
-          });
-
-          if (success) {
-            processed++;
-          } else {
-            errors.push(`Failed to process TRON deposit for ${address.address}`);
-          }
-        }
-      } catch (error: any) {
-        errors.push(`Error checking TRON address ${address.address}: ${error.message}`);
-      }
-    }
-  } catch (error: any) {
-    errors.push(`TRON monitoring failed: ${error.message}`);
-  }
-
-  return { processed, errors };
-}
-
-// Monitor Arbitrum network for deposits
-async function monitorArbitrumDeposits(admin: any) {
-  let processed = 0;
-  let errors = [];
-
-  try {
-    // Get all active Arbitrum deposit addresses
-    const { data: addresses, error: addressError } = await admin
-      .from("deposit_addresses")
-      .select("*")
-      .eq("network", "ARBITRUM")
-      .eq("is_active", true);
-
-    if (addressError) {
-      errors.push(`Failed to get Arbitrum addresses: ${addressError.message}`);
-      return { processed, errors };
-    }
-
-    // For each address, check for new transactions
-    for (const address of addresses || []) {
-      try {
-        // In production, you would call Arbitrum API here
-        const mockDeposit = await simulateDepositCheck(address, 'ARBITRUM');
-        
-        if (mockDeposit) {
-          // Process the deposit
-          const success = await processDeposit(admin, {
-            userId: address.user_id,
-            network: 'ARBITRUM',
-            fromAddress: mockDeposit.from,
-            toAddress: address.address,
-            amount: mockDeposit.amount,
-            txHash: mockDeposit.txHash,
-            blockNumber: mockDeposit.blockNumber
-          });
-
-          if (success) {
-            processed++;
-          } else {
-            errors.push(`Failed to process Arbitrum deposit for ${address.address}`);
-          }
-        }
-      } catch (error: any) {
-        errors.push(`Error checking Arbitrum address ${address.address}: ${error.message}`);
-      }
-    }
-  } catch (error: any) {
-    errors.push(`Arbitrum monitoring failed: ${error.message}`);
-  }
-
-  return { processed, errors };
-}
-
-// Simulate deposit checking (replace with real blockchain API calls)
-async function simulateDepositCheck(address: any, network: string) {
-  // In production, this would call:
-  // - TRON: TronGrid API or TronWeb
-  // - Arbitrum: Alchemy, Infura, or direct RPC calls
-  
-  // For demo, randomly simulate finding a deposit
-  if (Math.random() < 0.1) { // 10% chance of finding a deposit
-    return {
-      from: network === 'TRON' ? 'TRandomSenderAddress123456789' : '0xRandomSenderAddress123456789',
-      amount: Math.floor(Math.random() * 1000) + 10, // Random amount 10-1010
-      txHash: `${network}_${Date.now()}_${Math.random().toString(36).substring(7)}`,
-      blockNumber: Math.floor(Math.random() * 1000000) + 1000000
-    };
-  }
-  
-  return null;
-}
+{{ ... }}
 
 // Process a detected deposit
 async function processDeposit(admin: any, depositData: any) {
@@ -199,7 +17,7 @@ async function processDeposit(admin: any, depositData: any) {
     // Get deposit address info
     const { data: depositAddress } = await admin
       .from("deposit_addresses")
-      .select("id")
+      .select("id, address, private_key")
       .eq("user_id", depositData.userId)
       .eq("network", depositData.network)
       .single();
@@ -265,9 +83,152 @@ async function processDeposit(admin: any, depositData: any) {
       })
       .eq("id", depositAddress.id);
 
+    // AUTO-SWEEP: Transfer funds to main hot wallet
+    try {
+      const sweepResult = await sweepToHotWallet(depositData.network, depositAddress, depositData.amount);
+      
+      if (sweepResult.success) {
+        // Record the sweep transaction
+        await admin
+          .from("transactions")
+          .insert({
+            user_id: depositData.userId,
+            type: 'sweep',
+            amount_usdt: depositData.amount,
+            status: 'completed',
+            description: `Auto-sweep to hot wallet (${depositData.network})`,
+            reference_id: sweepResult.txHash
+          });
+
+        console.log(`Swept ${depositData.amount} USDT to hot wallet:`, sweepResult.txHash);
+      } else {
+        console.error(`Failed to sweep funds:`, sweepResult.error);
+        
+        // Record failed sweep for manual intervention
+        await admin
+          .from("transactions")
+          .insert({
+            user_id: depositData.userId,
+            type: 'sweep_failed',
+            amount_usdt: depositData.amount,
+            status: 'failed',
+            description: `Auto-sweep failed: ${sweepResult.error}`,
+            reference_id: depositData.txHash
+          });
+      }
+    } catch (sweepError) {
+      console.error('Sweep error:', sweepError);
+    }
+
     return true;
   } catch (error) {
     console.error('Process deposit error:', error);
     return false;
+  }
+}
+
+// AUTO-SWEEP: Transfer funds to main hot wallet
+async function sweepToHotWallet(network: string, depositAddress: any, amount: number) {
+  try {
+    const hotWalletAddress = network === 'TRON' 
+      ? process.env.HOT_WALLET_TRC20_ADDRESS 
+      : process.env.HOT_WALLET_ARBITRUM_ADDRESS;
+
+    if (!hotWalletAddress) {
+      return { success: false, error: `Hot wallet address not configured for ${network}` };
+    }
+
+    // Calculate sweep amount (leave small amount for gas fees)
+    const gasReserve = network === 'TRON' ? 1 : 0.001; // TRX for TRON, ETH for Arbitrum
+    const sweepAmount = Math.max(0, amount - gasReserve);
+
+    if (sweepAmount <= 0) {
+      return { success: false, error: 'Amount too small to sweep after gas reserve' };
+    }
+
+    if (network === 'TRON') {
+      return await sweepTronFunds(depositAddress, hotWalletAddress, sweepAmount);
+    } else if (network === 'ARBITRUM') {
+      return await sweepArbitrumFunds(depositAddress, hotWalletAddress, sweepAmount);
+    }
+
+    return { success: false, error: `Unsupported network: ${network}` };
+  } catch (error) {
+    return { success: false, error: error instanceof Error ? error.message : 'Unknown sweep error' };
+  }
+}
+
+// AUTO-SWEEP: Sweep TRON funds to hot wallet
+async function sweepTronFunds(depositAddress: any, hotWalletAddress: string, amount: number) {
+  try {
+    // In production, use TronWeb to create and broadcast transaction
+    // For now, simulate the sweep
+    
+    const TronWeb = require('tronweb');
+    const tronWeb = new TronWeb({
+      fullHost: process.env.TRON_RPC_URL || 'https://api.trongrid.io',
+      privateKey: depositAddress.private_key
+    });
+
+    // USDT TRC20 contract
+    const usdtContract = await tronWeb.contract().at(process.env.USDT_TRC20_ADDRESS);
+    
+    // Convert amount to proper decimals (USDT has 6 decimals)
+    const amountInDecimals = Math.floor(amount * 1000000);
+    
+    // Create transfer transaction
+    const transaction = await usdtContract.transfer(hotWalletAddress, amountInDecimals).send();
+    
+    return { 
+      success: true, 
+      txHash: transaction,
+      amount: amount,
+      to: hotWalletAddress
+    };
+  } catch (error) {
+    console.error('TRON sweep error:', error);
+    return { 
+      success: false, 
+      error: error instanceof Error ? error.message : 'TRON sweep failed' 
+    };
+  }
+}
+
+// AUTO-SWEEP: Sweep Arbitrum funds to hot wallet  
+async function sweepArbitrumFunds(depositAddress: any, hotWalletAddress: string, amount: number) {
+  try {
+    // In production, use ethers.js to create and broadcast transaction
+    // For now, simulate the sweep
+    
+    const { ethers } = require('ethers');
+    const provider = new ethers.JsonRpcProvider(process.env.ARBITRUM_RPC_URL);
+    const wallet = new ethers.Wallet(depositAddress.private_key, provider);
+    
+    // USDT contract on Arbitrum
+    const usdtContract = new ethers.Contract(
+      process.env.USDT_ARBITRUM_ADDRESS,
+      ['function transfer(address to, uint256 amount) returns (bool)'],
+      wallet
+    );
+    
+    // Convert amount to proper decimals (USDT has 6 decimals)
+    const amountInDecimals = ethers.parseUnits(amount.toString(), 6);
+    
+    // Create transfer transaction
+    const transaction = await usdtContract.transfer(hotWalletAddress, amountInDecimals);
+    await transaction.wait();
+    
+    return { 
+      success: true, 
+      txHash: transaction.hash,
+      amount: amount,
+      to: hotWalletAddress
+    };
+  } catch (error) {
+    console.error('Arbitrum sweep error:', error);
+    return { 
+      success: false, 
+      error: error instanceof Error ? error.message : 'Arbitrum sweep failed' 
+    };
   }
 }
