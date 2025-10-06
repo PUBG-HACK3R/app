@@ -22,11 +22,24 @@ export async function GET(request: Request) {
     // In production, this would integrate with blockchain APIs
     
     // Check for any manual deposits that need processing
-    const { data: pendingDeposits, error: fetchError } = await admin
-      .from("deposit_monitoring")
-      .select("*")
-      .eq("status", "pending")
-      .lt("created_at", new Date(Date.now() - 5 * 60 * 1000).toISOString()); // 5 minutes old
+    let pendingDeposits = null;
+    let fetchError = null;
+    
+    try {
+      const { data, error } = await admin
+        .from("deposit_transactions")
+        .select("*")
+        .eq("status", "pending")
+        .lt("created_at", new Date(Date.now() - 5 * 60 * 1000).toISOString()) // 5 minutes old
+        .limit(10);
+      
+      pendingDeposits = data;
+      fetchError = error;
+    } catch (error: any) {
+      console.log('deposit_transactions table not found, will simulate detection...');
+      pendingDeposits = [];
+      fetchError = null;
+    }
 
     if (fetchError) {
       console.error('Error fetching pending deposits:', fetchError);
@@ -45,7 +58,7 @@ export async function GET(request: Request) {
 
         // Update deposit status to confirmed
         const { error: updateError } = await admin
-          .from("deposit_monitoring")
+          .from("deposit_transactions")
           .update({
             status: "confirmed",
             confirmations: 6, // Simulate 6 confirmations
@@ -68,47 +81,56 @@ export async function GET(request: Request) {
     }
 
     // Check for active deposit addresses that might have received funds
-    const { data: activeAddresses, error: addressError } = await admin
-      .from("user_deposit_addresses")
-      .select("*")
-      .eq("is_active", true)
-      .limit(10); // Process 10 addresses per run
-
     let detectedCount = 0;
+    let activeAddresses = null;
+    
+    try {
+      const { data, error: addressError } = await admin
+        .from("user_deposit_addresses")
+        .select("*")
+        .eq("is_active", true)
+        .limit(10); // Process 10 addresses per run
 
-    if (!addressError && activeAddresses) {
-      // In a real implementation, you would check blockchain for each address
-      // For now, we'll just log that we're monitoring them
-      console.log(`📍 Monitoring ${activeAddresses.length} active deposit addresses`);
-      
-      // Simulate occasional deposit detection (for demo)
-      if (Math.random() < 0.1) { // 10% chance
-        const randomAddress = activeAddresses[Math.floor(Math.random() * activeAddresses.length)];
-        const randomAmount = (Math.random() * 100 + 10).toFixed(2); // $10-$110
-        
-        console.log(`🎯 Simulated deposit detected: ${randomAmount} USDT to ${randomAddress.deposit_address}`);
-        
-        // Create simulated deposit record
-        const { error: insertError } = await admin
-          .from("deposit_monitoring")
-          .insert({
-            user_id: randomAddress.user_id,
-            deposit_address: randomAddress.deposit_address,
-            tx_hash: `0x${Math.random().toString(16).substr(2, 64)}`, // Fake tx hash
-            from_address: `0x${Math.random().toString(16).substr(2, 40)}`, // Fake from address
-            amount: parseFloat(randomAmount),
-            block_number: Math.floor(Math.random() * 1000000),
-            confirmations: 1,
-            status: 'pending',
-            detected_at: new Date().toISOString(),
-            network: randomAddress.network || 'arbitrum'
-          });
+      activeAddresses = data;
 
-        if (!insertError) {
-          detectedCount++;
-          console.log(`📝 Created deposit record for ${randomAmount} USDT`);
+      if (!addressError && activeAddresses && activeAddresses.length > 0) {
+        // In a real implementation, you would check blockchain for each address
+        // For now, we'll just log that we're monitoring them
+        console.log(`📍 Monitoring ${activeAddresses.length} active deposit addresses`);
+        
+        // Simulate occasional deposit detection (for demo)
+        if (Math.random() < 0.1) { // 10% chance
+          const randomAddress = activeAddresses[Math.floor(Math.random() * activeAddresses.length)];
+          const randomAmount = (Math.random() * 100 + 10).toFixed(2); // $10-$110
+          
+          console.log(`🎯 Simulated deposit detected: ${randomAmount} USDT to ${randomAddress.deposit_address}`);
+          
+          // Create simulated deposit record
+          const { error: insertError } = await admin
+            .from("deposit_transactions")
+            .insert({
+              user_id: randomAddress.user_id,
+              deposit_address: randomAddress.deposit_address,
+              tx_hash: `0x${Math.random().toString(16).substr(2, 64)}`, // Fake tx hash
+              from_address: `0x${Math.random().toString(16).substr(2, 40)}`, // Fake from address
+              amount: parseFloat(randomAmount),
+              block_number: Math.floor(Math.random() * 1000000),
+              confirmations: 1,
+              status: 'pending',
+              detected_at: new Date().toISOString(),
+              network: randomAddress.network || 'arbitrum'
+            });
+
+          if (!insertError) {
+            detectedCount++;
+            console.log(`📝 Created deposit record for ${randomAmount} USDT`);
+          }
         }
+      } else {
+        console.log('📍 No active deposit addresses found or table does not exist');
       }
+    } catch (error) {
+      console.log('📍 user_deposit_addresses table not found, skipping address monitoring');
     }
 
     console.log(`✅ Deposit detection complete. Confirmed: ${confirmedCount}, Detected: ${detectedCount}`);
