@@ -39,7 +39,7 @@ interface DepositAddressData {
   expiresAt?: string;
 }
 
-type NetworkType = 'trc20' | 'arbitrum';
+type NetworkType = 'trc20' | 'bep20';
 
 export default function CentralizedDeposit({ amount, onSuccess, onError }: CentralizedDepositProps) {
   const [selectedNetwork, setSelectedNetwork] = useState<NetworkType>('trc20');
@@ -60,7 +60,7 @@ export default function CentralizedDeposit({ amount, onSuccess, onError }: Centr
       // Map frontend network names to backend network names
       const networkMapping = {
         'trc20': 'TRC20',
-        'arbitrum': 'BEP20' // Using BSC instead of Arbitrum for the new system
+        'bep20': 'BEP20' // BSC network for the new system
       };
       
       const backendNetwork = networkMapping[selectedNetwork];
@@ -136,9 +136,9 @@ export default function CentralizedDeposit({ amount, onSuccess, onError }: Centr
     if (selectedNetwork === 'trc20') {
       // Open TRON block explorer
       explorerUrl = `https://tronscan.org/#/address/${depositAddress.address}`;
-    } else if (selectedNetwork === 'arbitrum') {
-      // Open Arbitrum block explorer
-      explorerUrl = `https://arbiscan.io/address/${depositAddress.address}`;
+    } else if (selectedNetwork === 'bep20') {
+      // Open BSC block explorer
+      explorerUrl = `https://bscscan.com/address/${depositAddress.address}`;
     }
     
     if (explorerUrl) {
@@ -243,15 +243,15 @@ export default function CentralizedDeposit({ amount, onSuccess, onError }: Centr
             TRC20
           </Button>
           <Button
-            variant={selectedNetwork === 'arbitrum' ? 'default' : 'outline'}
+            variant={selectedNetwork === 'bep20' ? 'default' : 'outline'}
             size="sm"
-            onClick={() => setSelectedNetwork('arbitrum')}
-            className={selectedNetwork === 'arbitrum' 
+            onClick={() => setSelectedNetwork('bep20')}
+            className={selectedNetwork === 'bep20' 
               ? 'bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 text-white border-0' 
               : 'border-blue-500/50 text-blue-300 hover:bg-blue-500/10 hover:text-blue-200'
             }
           >
-            ARB
+            BEP20
           </Button>
         </div>
 
@@ -303,12 +303,12 @@ export default function CentralizedDeposit({ amount, onSuccess, onError }: Centr
             <span className="text-sm font-medium text-yellow-300">Important Instructions</span>
           </div>
           <ul className="text-sm text-yellow-200 space-y-1 ml-6 list-disc">
-            <li>Only send USDT {selectedNetwork === 'trc20' ? 'TRC20 (TRON)' : 'on Arbitrum'} to this address</li>
+            <li>Only send USDT {selectedNetwork === 'trc20' ? 'TRC20 (TRON)' : 'BEP20 (BSC)'} to this address</li>
             <li>Funds will be credited automatically after confirmation</li>
             <li>This address is unique to your account</li>
             <li>Do not send other cryptocurrencies to this address</li>
-            {selectedNetwork === 'arbitrum' && (
-              <li>Make sure you're using the Arbitrum network (Chain ID: 42161)</li>
+            {selectedNetwork === 'bep20' && (
+              <li>Make sure you're using the BSC network (Chain ID: 56)</li>
             )}
           </ul>
         </div>
