@@ -1,0 +1,33 @@
+{
+  "name": "deposit-event-listener-service",
+  "version": "1.0.0",
+  "description": "Standalone event-based deposit listener for TRC20 and BEP20 USDT",
+  "main": "standalone-deposit-listener.js",
+  "scripts": {
+    "start": "node standalone-deposit-listener.js",
+    "dev": "nodemon standalone-deposit-listener.js",
+    "pm2:start": "pm2 start ecosystem.config.js",
+    "pm2:stop": "pm2 stop deposit-listener",
+    "pm2:restart": "pm2 restart deposit-listener",
+    "pm2:logs": "pm2 logs deposit-listener"
+  },
+  "dependencies": {
+    "@supabase/supabase-js": "^2.58.0",
+    "ethers": "^6.15.0",
+    "tronweb": "^6.0.2"
+  },
+  "devDependencies": {
+    "nodemon": "^3.0.2"
+  },
+  "keywords": [
+    "blockchain",
+    "deposit",
+    "event-listener",
+    "trc20",
+    "bep20",
+    "usdt",
+    "cryptocurrency"
+  ],
+  "author": "EarningWe",
+  "license": "MIT"
+}
