@@ -23,7 +23,7 @@ export async function GET(request: Request) {
     
     try {
       const { data, error } = await admin
-        .from("deposit_monitoring")
+        .from("deposit_transactions")
         .select("*")
         .eq("status", "confirmed")
         .is("credited_at", null)
@@ -135,7 +135,7 @@ export async function GET(request: Request) {
         // Mark deposit as credited (only if it's not a demo deposit)
         if (!deposit.id.toString().startsWith('demo_')) {
           const { error: updateError } = await admin
-            .from("deposit_monitoring")
+            .from("deposit_transactions")
             .update({
               credited_at: new Date().toISOString(),
               status: "credited"
@@ -163,7 +163,7 @@ export async function GET(request: Request) {
     // Also check for deposits that need status updates (forwarded but not marked as credited)
     try {
       const { data: forwardedDeposits, error: forwardedError } = await admin
-        .from("deposit_monitoring")
+        .from("deposit_transactions")
         .select("*")
         .eq("status", "forwarded")
         .is("credited_at", null)
@@ -173,7 +173,7 @@ export async function GET(request: Request) {
         for (const deposit of forwardedDeposits) {
           // These were already forwarded, just need to be marked as credited
           const { error: updateError } = await admin
-            .from("deposit_monitoring")
+            .from("deposit_transactions")
             .update({
               credited_at: new Date().toISOString(),
               status: "credited"
