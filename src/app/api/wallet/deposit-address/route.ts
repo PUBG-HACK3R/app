@@ -5,7 +5,10 @@ import { ethers } from "ethers";
 import crypto from 'crypto';
 
 // Import TronWeb dynamically to avoid SSR issues
-const TronWeb = require('tronweb');
+let TronWeb: any;
+if (typeof window === 'undefined') {
+  TronWeb = require('tronweb');
+}
 
 // Generate REAL TRON addresses using TronWeb
 function generateTronAddress(userId: string): { address: string; privateKey: string } {

@@ -2,8 +2,11 @@ import { NextResponse } from "next/server";
 import { getSupabaseAdminClient } from "@/lib/supabase/admin";
 import { ethers } from "ethers";
 
-// Import TronWeb dynamically
-const TronWeb = require('tronweb');
+// Import TronWeb dynamically to avoid SSR issues
+let TronWeb: any;
+if (typeof window === 'undefined') {
+  TronWeb = require('tronweb');
+}
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
