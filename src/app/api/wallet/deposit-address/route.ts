@@ -1,38 +1,73 @@
 import { NextResponse } from "next/server";
 import { getSupabaseServerClient } from "@/lib/supabase/server";
 import { getSupabaseAdminClient } from "@/lib/supabase/admin";
+import { ethers } from "ethers";
 import crypto from 'crypto';
 
-// Generate unique sub-addresses for each user
+// Import TronWeb dynamically to avoid SSR issues
+const TronWeb = require('tronweb');
+
+// Generate REAL TRON addresses using TronWeb
 function generateTronAddress(userId: string): { address: string; privateKey: string } {
-  // Create deterministic seed from user ID for TRON
-  const seed = `TRON-${userId}-${process.env.TRON_PRIVATE_KEY?.slice(-8)}`;
-  const hash = crypto.createHash('sha256').update(seed).digest('hex');
-  
-  // Generate TRON-style address (T + 33 chars)
-  const addressSuffix = hash.substring(0, 32);
-  const address = 'T' + addressSuffix.toUpperCase();
-  
-  // Generate private key for this address (derived from main key + user)
-  const privateKeySeed = `${process.env.TRON_PRIVATE_KEY}-${userId}`;
-  const privateKey = crypto.createHash('sha256').update(privateKeySeed).digest('hex');
-  
-  return { address, privateKey };
+  try {
+    // Create deterministic seed from user ID and master key
+    const masterKey = process.env.TRON_PRIVATE_KEY;
+    if (!masterKey) {
+      throw new Error("TRON_PRIVATE_KEY not configured");
+    }
+
+    // Create deterministic private key for this user
+    const seed = `TRON-${userId}-${masterKey}`;
+    const hash = crypto.createHash('sha256').update(seed).digest('hex');
+    
+    // Ensure the private key is valid (32 bytes)
+    const privateKey = hash;
+    
+    // Generate real TRON address from private key
+    const tronWeb = new TronWeb({
+      fullHost: 'https://api.trongrid.io',
+    });
+    
+    // Create account from private key
+    const account = tronWeb.address.fromPrivateKey(privateKey);
+    
+    return { 
+      address: account, 
+      privateKey: privateKey 
+    };
+  } catch (error) {
+    console.error('Error generating TRON address:', error);
+    throw new Error('Failed to generate TRON address');
+  }
 }
 
+// Generate REAL Arbitrum addresses using ethers
 function generateArbitrumAddress(userId: string): { address: string; privateKey: string } {
-  // Create deterministic seed from user ID for Arbitrum
-  const seed = `ARBITRUM-${userId}-${process.env.ARBITRUM_PRIVATE_KEY?.slice(-8)}`;
-  const hash = crypto.createHash('sha256').update(seed).digest('hex');
-  
-  // Generate Ethereum-style address (0x + 40 chars)
-  const address = '0x' + hash.substring(0, 40).toLowerCase();
-  
-  // Generate private key for this address (derived from main key + user)
-  const privateKeySeed = `${process.env.ARBITRUM_PRIVATE_KEY}-${userId}`;
-  const privateKey = crypto.createHash('sha256').update(privateKeySeed).digest('hex');
-  
-  return { address, privateKey };
+  try {
+    // Create deterministic seed from user ID and master key
+    const masterKey = process.env.ARBITRUM_PRIVATE_KEY;
+    if (!masterKey) {
+      throw new Error("ARBITRUM_PRIVATE_KEY not configured");
+    }
+
+    // Create deterministic private key for this user
+    const seed = `ARBITRUM-${userId}-${masterKey}`;
+    const hash = crypto.createHash('sha256').update(seed).digest('hex');
+    
+    // Ensure the private key is valid (32 bytes with 0x prefix)
+    const privateKey = '0x' + hash;
+    
+    // Generate real Ethereum/Arbitrum address from private key
+    const wallet = new ethers.Wallet(privateKey);
+    
+    return { 
+      address: wallet.address, 
+      privateKey: privateKey 
+    };
+  } catch (error) {
+    console.error('Error generating Arbitrum address:', error);
+    throw new Error('Failed to generate Arbitrum address');
+  }
 }
 
 function getNetworkInfo(network: string) {

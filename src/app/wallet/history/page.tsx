@@ -1,5 +1,6 @@
 import { redirect } from "next/navigation";
 import { getSupabaseServerClient } from "@/lib/supabase/server";
+import { getSupabaseAdminClient } from "@/lib/supabase/admin";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Clock, CheckCircle, AlertCircle, ArrowUpRight, ArrowDownRight, TrendingUp, PiggyBank } from "lucide-react";
@@ -15,36 +16,65 @@ type Tx = {
 
 export default async function WalletHistoryPage() {
   const supabase = await getSupabaseServerClient();
+  const admin = getSupabaseAdminClient();
+  
   const {
     data: { user },
   } = await supabase.auth.getUser();
   if (!user) redirect("/login?next=/wallet/history");
 
-  // Get confirmed transactions
-  const { data: txs } = await supabase
+  // Get confirmed transactions using admin client (bypasses RLS)
+  const { data: txs, error: txError } = await admin
     .from("transactions")
-    .select("type, amount_usdt, created_at, meta")
+    .select("type, amount_usdt, created_at, meta, status, reference_id")
     .eq("user_id", user.id)
     .order("created_at", { ascending: false })
     .limit(40);
 
-  // Get pending deposits
-  const { data: pendingDeposits } = await supabase
-    .from("deposits")
-    .select("amount_usdt, created_at, status, order_id")
-    .eq("user_id", user.id)
-    .eq("status", "pending")
-    .order("created_at", { ascending: false })
-    .limit(10);
+  console.log("Transactions query result:", { 
+    txs, 
+    txError: txError?.message || txError, 
+    userId: user.id,
+    userEmail: user.email,
+    txCount: txs?.length || 0
+  });
+
+  // Test admin client directly
+  const { data: testTxs, error: testError } = await admin
+    .from("transactions")
+    .select("*")
+    .limit(3);
+  
+  console.log("Admin client test:", {
+    testTxs,
+    testError: testError?.message || testError,
+    testCount: testTxs?.length || 0
+  });
+
+  // Get pending deposits from deposit_transactions table using admin client
+  let pendingDeposits = null;
+  try {
+    const { data } = await admin
+      .from("deposit_transactions")
+      .select("amount, created_at, status, tx_hash")
+      .eq("user_id", user.id)
+      .in("status", ["pending", "confirmed"])
+      .order("created_at", { ascending: false })
+      .limit(10);
+    pendingDeposits = data;
+  } catch (error) {
+    console.log("deposit_transactions table not found, skipping pending deposits");
+    pendingDeposits = [];
+  }
 
   // Combine and format all items
   const confirmedTxs = (txs as Tx[] | null) || [];
   const pendingTxs = (pendingDeposits || []).map((deposit: any) => ({
     type: "pending_deposit" as const,
-    amount_usdt: deposit.amount_usdt,
+    amount_usdt: deposit.amount || deposit.amount_usdt,
     created_at: deposit.created_at,
     status: deposit.status,
-    order_id: deposit.order_id
+    order_id: deposit.tx_hash || deposit.order_id
   }));
 
   // Combine and sort by date
@@ -54,11 +84,26 @@ export default async function WalletHistoryPage() {
 
   const items = allItems;
 
+  // Debug info (remove in production)
+  console.log("Transactions found:", confirmedTxs.length);
+  console.log("Pending deposits found:", pendingTxs.length);
+  console.log("Total items:", items.length);
+
   return (
     <main className="mx-auto max-w-3xl px-4 py-8 space-y-6">
       <div>
         <h1 className="text-2xl font-semibold">Transaction History</h1>
         <p className="text-muted-foreground">Deposits, earnings, and withdrawals.</p>
+        {/* Debug info - remove after testing */}
+        <div className="text-xs text-gray-500 mt-2">
+          Debug: {confirmedTxs.length} transactions, {pendingTxs.length} pending deposits
+          <br />
+          Current User ID: {user.id}
+          <br />
+          DB User ID from debug: 148077ef-d0a0-44e0-88fa-e98cd26ff5bb
+          <br />
+          Match: {user.id === "148077ef-d0a0-44e0-88fa-e98cd26ff5bb" ? "YES" : "NO"}
+        </div>
       </div>
 
       <Card>

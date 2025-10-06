@@ -53,40 +53,21 @@ export async function POST(request: NextRequest) {
     // Use admin client to check balance and create withdrawal
     const admin = getSupabaseAdminClient();
 
-    // Check user balance
-    const { data: transactions } = await admin
-      .from("transactions")
-      .select("type, amount_usdt")
-      .eq("user_id", user.id);
+    // Check user balance from balances table (consistent with balance API)
+    const { data: balanceData } = await admin
+      .from("balances")
+      .select("available_usdt")
+      .eq("user_id", user.id)
+      .single();
 
-    if (!transactions) {
+    if (!balanceData) {
       return NextResponse.json(
         { error: "Unable to fetch balance" },
         { status: 500 }
       );
     }
 
-    const totalDeposits = transactions
-      .filter(t => t.type === "deposit")
-      .reduce((sum, t) => sum + Number(t.amount_usdt || 0), 0);
-    
-    const totalEarnings = transactions
-      .filter(t => t.type === "earning")
-      .reduce((sum, t) => sum + Number(t.amount_usdt || 0), 0);
-    
-    const totalInvestments = transactions
-      .filter(t => t.type === "investment")
-      .reduce((sum, t) => sum + Number(t.amount_usdt || 0), 0);
-    
-    const totalReturns = transactions
-      .filter(t => t.type === "investment_return")
-      .reduce((sum, t) => sum + Number(t.amount_usdt || 0), 0);
-    
-    const totalWithdrawals = transactions
-      .filter(t => t.type === "withdrawal")
-      .reduce((sum, t) => sum + Number(t.amount_usdt || 0), 0);
-
-    const availableBalance = totalDeposits + totalEarnings + totalReturns - totalInvestments - totalWithdrawals;
+    const availableBalance = Number(balanceData.available_usdt || 0);
 
     if (numericAmount > availableBalance) {
       return NextResponse.json(

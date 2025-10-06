@@ -53,7 +53,14 @@ export default function CentralizedDeposit({ amount, onSuccess, onError }: Centr
       setIsLoading(true);
       setError(null);
 
-      const response = await fetch(`/api/wallet/deposit-address?network=${selectedNetwork}`);
+      // Map frontend network names to backend network names
+      const networkMapping = {
+        'trc20': 'TRON',
+        'arbitrum': 'ARBITRUM'
+      };
+      
+      const backendNetwork = networkMapping[selectedNetwork];
+      const response = await fetch(`/api/wallet/deposit-address?network=${backendNetwork}`);
       const data = await response.json();
 
       if (!response.ok) {

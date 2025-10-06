@@ -87,6 +87,29 @@ export async function POST(request: Request) {
       // Don't fail the approval, just log the error
     }
 
+    // CRITICAL FIX: Also deduct from balances table to keep systems in sync
+    // First get current balance, then update it
+    const { data: currentBalance } = await admin
+      .from("balances")
+      .select("available_usdt")
+      .eq("user_id", wd.user_id)
+      .single();
+
+    const newAvailableBalance = Number(currentBalance?.available_usdt || 0) - amount;
+
+    const { error: balanceErr } = await admin
+      .from("balances")
+      .update({ 
+        available_usdt: newAvailableBalance 
+      })
+      .eq("user_id", wd.user_id);
+
+    if (balanceErr) {
+      console.error("Error updating balance:", balanceErr);
+      // This is critical - if balance update fails, we should log it but not fail the approval
+      // since the transaction record was already created
+    }
+
     const newBal = currentBal - amount;
     return NextResponse.json({ ok: true, id: wd.id, new_balance: newBal });
   } catch (err: any) {

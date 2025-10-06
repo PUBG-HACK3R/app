@@ -1,11 +1,14 @@
 import { NextResponse } from "next/server";
 import { getSupabaseAdminClient } from "@/lib/supabase/admin";
+import { ethers } from "ethers";
+
+// Import TronWeb dynamically
+const TronWeb = require('tronweb');
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
-// This runs every 30 seconds to detect new deposits
-// It's a simplified version that works without blockchain integration
+// REAL blockchain deposit detection
 export async function GET(request: Request) {
   try {
     // Verify this is coming from cron service
@@ -16,131 +19,74 @@ export async function GET(request: Request) {
 
     const admin = getSupabaseAdminClient();
     
-    console.log('🔍 Starting deposit detection...');
+    console.log('🔍 Starting REAL deposit detection...');
     
-    // For demo purposes, we'll simulate deposit detection
-    // In production, this would integrate with blockchain APIs
-    
-    // Check for any manual deposits that need processing
-    let pendingDeposits = null;
-    let fetchError = null;
-    
-    try {
-      const { data, error } = await admin
-        .from("deposit_transactions")
-        .select("*")
-        .eq("status", "pending")
-        .lt("created_at", new Date(Date.now() - 5 * 60 * 1000).toISOString()) // 5 minutes old
-        .limit(10);
-      
-      pendingDeposits = data;
-      fetchError = error;
-    } catch (error: any) {
-      console.log('deposit_transactions table not found, will simulate detection...');
-      pendingDeposits = [];
-      fetchError = null;
-    }
+    let detectedCount = 0;
+    let confirmedCount = 0;
 
-    if (fetchError) {
-      console.error('Error fetching pending deposits:', fetchError);
+    // Get active deposit addresses to monitor
+    const { data: depositAddresses, error: addressError } = await admin
+      .from("deposit_addresses")
+      .select("*")
+      .eq("is_active", true)
+      .limit(20); // Monitor 20 addresses per run
+
+    if (addressError) {
+      console.error('Error fetching deposit addresses:', addressError);
       return NextResponse.json({ 
         success: false, 
-        error: fetchError.message 
+        error: addressError.message 
       }, { status: 500 });
     }
 
-    let confirmedCount = 0;
+    // Monitor TRON addresses
+    const tronAddresses = depositAddresses?.filter(addr => addr.network === 'TRON') || [];
+    if (tronAddresses.length > 0) {
+      detectedCount += await monitorTronDeposits(admin, tronAddresses);
+    }
 
-    // Auto-confirm deposits that are 5+ minutes old (simulation)
+    // Monitor Arbitrum addresses  
+    const arbitrumAddresses = depositAddresses?.filter(addr => addr.network === 'ARBITRUM') || [];
+    if (arbitrumAddresses.length > 0) {
+      detectedCount += await monitorArbitrumDeposits(admin, arbitrumAddresses);
+    }
+
+    // Confirm pending deposits (check for sufficient confirmations)
+    const { data: pendingDeposits } = await admin
+      .from("deposit_transactions")
+      .select("*")
+      .eq("status", "pending")
+      .gte("confirmations", 3) // Require 3+ confirmations
+      .limit(10);
+
     for (const deposit of pendingDeposits || []) {
       try {
-        console.log(`✅ Auto-confirming deposit: ${deposit.amount} USDT for user ${deposit.user_id}`);
-
-        // Update deposit status to confirmed
+        // Update to confirmed status
         const { error: updateError } = await admin
           .from("deposit_transactions")
           .update({
             status: "confirmed",
-            confirmations: 6, // Simulate 6 confirmations
             confirmed_at: new Date().toISOString()
           })
           .eq("id", deposit.id);
 
-        if (updateError) {
-          console.error(`Error confirming deposit ${deposit.id}:`, updateError);
-          continue;
+        if (!updateError) {
+          confirmedCount++;
+          console.log(`✅ Confirmed deposit ${deposit.id}: ${deposit.amount} USDT`);
         }
-
-        confirmedCount++;
-        console.log(`✅ Confirmed deposit ${deposit.id}`);
-
       } catch (error) {
-        console.error(`Error processing deposit ${deposit.id}:`, error);
-        continue;
+        console.error(`Error confirming deposit ${deposit.id}:`, error);
       }
     }
 
-    // Check for active deposit addresses that might have received funds
-    let detectedCount = 0;
-    let activeAddresses = null;
-    
-    try {
-      const { data, error: addressError } = await admin
-        .from("user_deposit_addresses")
-        .select("*")
-        .eq("is_active", true)
-        .limit(10); // Process 10 addresses per run
-
-      activeAddresses = data;
-
-      if (!addressError && activeAddresses && activeAddresses.length > 0) {
-        // In a real implementation, you would check blockchain for each address
-        // For now, we'll just log that we're monitoring them
-        console.log(`📍 Monitoring ${activeAddresses.length} active deposit addresses`);
-        
-        // Simulate occasional deposit detection (for demo)
-        if (Math.random() < 0.1) { // 10% chance
-          const randomAddress = activeAddresses[Math.floor(Math.random() * activeAddresses.length)];
-          const randomAmount = (Math.random() * 100 + 10).toFixed(2); // $10-$110
-          
-          console.log(`🎯 Simulated deposit detected: ${randomAmount} USDT to ${randomAddress.deposit_address}`);
-          
-          // Create simulated deposit record
-          const { error: insertError } = await admin
-            .from("deposit_transactions")
-            .insert({
-              user_id: randomAddress.user_id,
-              deposit_address: randomAddress.deposit_address,
-              tx_hash: `0x${Math.random().toString(16).substr(2, 64)}`, // Fake tx hash
-              from_address: `0x${Math.random().toString(16).substr(2, 40)}`, // Fake from address
-              amount: parseFloat(randomAmount),
-              block_number: Math.floor(Math.random() * 1000000),
-              confirmations: 1,
-              status: 'pending',
-              detected_at: new Date().toISOString(),
-              network: randomAddress.network || 'arbitrum'
-            });
-
-          if (!insertError) {
-            detectedCount++;
-            console.log(`📝 Created deposit record for ${randomAmount} USDT`);
-          }
-        }
-      } else {
-        console.log('📍 No active deposit addresses found or table does not exist');
-      }
-    } catch (error) {
-      console.log('📍 user_deposit_addresses table not found, skipping address monitoring');
-    }
-
-    console.log(`✅ Deposit detection complete. Confirmed: ${confirmedCount}, Detected: ${detectedCount}`);
+    console.log(`✅ Deposit detection complete. Detected: ${detectedCount}, Confirmed: ${confirmedCount}`);
     
     return NextResponse.json({ 
       success: true, 
-      message: 'Deposit detection completed successfully',
-      deposits_confirmed: confirmedCount,
+      message: 'Real deposit detection completed successfully',
       deposits_detected: detectedCount,
-      addresses_monitored: activeAddresses?.length || 0,
+      deposits_confirmed: confirmedCount,
+      addresses_monitored: depositAddresses?.length || 0,
       timestamp: new Date().toISOString()
     });
 
@@ -151,6 +97,184 @@ export async function GET(request: Request) {
       error: error.message 
     }, { status: 500 });
   }
+}
+
+// Monitor TRON addresses for USDT deposits
+async function monitorTronDeposits(admin: any, addresses: any[]): Promise<number> {
+  let detectedCount = 0;
+  
+  try {
+    const tronWeb = new TronWeb({
+      fullHost: 'https://api.trongrid.io',
+    });
+
+    const USDT_CONTRACT = process.env.NEXT_PUBLIC_USDT_TRC20_ADDRESS;
+    if (!USDT_CONTRACT) {
+      console.error('USDT TRC20 contract address not configured');
+      return 0;
+    }
+
+    for (const addressData of addresses) {
+      try {
+        // Get USDT balance for this address
+        const contract = await tronWeb.contract().at(USDT_CONTRACT);
+        const balance = await contract.balanceOf(addressData.address).call();
+        const balanceUsdt = parseFloat(balance) / 1000000; // USDT has 6 decimals
+
+        if (balanceUsdt > 0 && balanceUsdt !== addressData.balance_usdt) {
+          console.log(`💰 TRON deposit detected: ${balanceUsdt} USDT to ${addressData.address}`);
+
+          // Get recent transactions for this address
+          const transactions = await tronWeb.trx.getTransactionsFromAddress(addressData.address, 10);
+          
+          for (const tx of transactions) {
+            // Check if this is a new USDT transfer
+            if (tx.raw_data?.contract?.[0]?.type === 'TriggerSmartContract') {
+              const depositAmount = balanceUsdt - (addressData.balance_usdt || 0);
+              
+              if (depositAmount > 0) {
+                // Check if this transaction already exists to prevent duplicates
+                const { data: existingTx } = await admin
+                  .from("deposit_transactions")
+                  .select("id")
+                  .eq("tx_hash", tx.txID)
+                  .eq("user_id", addressData.user_id)
+                  .single();
+
+                if (!existingTx) {
+                  // Create deposit transaction record
+                  const { error: insertError } = await admin
+                    .from("deposit_transactions")
+                    .insert({
+                      user_id: addressData.user_id,
+                      deposit_address: addressData.address,
+                      tx_hash: tx.txID,
+                      from_address: tx.raw_data.contract[0].parameter?.value?.owner_address || 'unknown',
+                      amount: depositAmount,
+                      network: 'TRON',
+                      block_number: tx.blockNumber || 0,
+                      confirmations: 1,
+                      status: 'pending',
+                      detected_at: new Date().toISOString()
+                    });
+
+                  if (!insertError) {
+                    detectedCount++;
+                    
+                    // Update address balance
+                    await admin
+                      .from("deposit_addresses")
+                      .update({ balance_usdt: balanceUsdt })
+                      .eq("id", addressData.id);
+                  }
+                }
+              }
+            }
+          }
+        }
+      } catch (error) {
+        console.error(`Error monitoring TRON address ${addressData.address}:`, error);
+      }
+    }
+  } catch (error) {
+    console.error('Error in TRON monitoring:', error);
+  }
+
+  return detectedCount;
+}
+
+// Monitor Arbitrum addresses for USDT deposits
+async function monitorArbitrumDeposits(admin: any, addresses: any[]): Promise<number> {
+  let detectedCount = 0;
+  
+  try {
+    const provider = new ethers.JsonRpcProvider(process.env.ARBITRUM_RPC_URL || 'https://arb1.arbitrum.io/rpc');
+    const USDT_CONTRACT = process.env.NEXT_PUBLIC_USDT_ARBITRUM_ADDRESS;
+    
+    if (!USDT_CONTRACT) {
+      console.error('USDT Arbitrum contract address not configured');
+      return 0;
+    }
+
+    // USDT contract ABI (minimal)
+    const USDT_ABI = [
+      "function balanceOf(address) view returns (uint256)",
+      "event Transfer(address indexed from, address indexed to, uint256 value)"
+    ];
+
+    const usdtContract = new ethers.Contract(USDT_CONTRACT, USDT_ABI, provider);
+
+    for (const addressData of addresses) {
+      try {
+        // Get USDT balance for this address
+        const balance = await usdtContract.balanceOf(addressData.address);
+        const balanceUsdt = parseFloat(ethers.formatUnits(balance, 6)); // USDT has 6 decimals
+
+        if (balanceUsdt > 0 && balanceUsdt !== addressData.balance_usdt) {
+          console.log(`💰 Arbitrum deposit detected: ${balanceUsdt} USDT to ${addressData.address}`);
+
+          // Get recent blocks to find the transfer transaction
+          const latestBlock = await provider.getBlockNumber();
+          const fromBlock = latestBlock - 100; // Check last 100 blocks
+
+          // Query Transfer events to this address
+          const filter = usdtContract.filters.Transfer(null, addressData.address);
+          const events = await usdtContract.queryFilter(filter, fromBlock, latestBlock);
+
+          for (const event of events) {
+            // Type guard to ensure we have an EventLog with args
+            if ('args' in event && event.args) {
+              const depositAmount = parseFloat(ethers.formatUnits(event.args[2], 6));
+              
+              if (depositAmount > 0) {
+                // Check if this transaction already exists to prevent duplicates
+                const { data: existingTx } = await admin
+                  .from("deposit_transactions")
+                  .select("id")
+                  .eq("tx_hash", event.transactionHash)
+                  .eq("user_id", addressData.user_id)
+                  .single();
+
+                if (!existingTx) {
+                  // Create deposit transaction record
+                  const { error: insertError } = await admin
+                    .from("deposit_transactions")
+                    .insert({
+                      user_id: addressData.user_id,
+                      deposit_address: addressData.address,
+                      tx_hash: event.transactionHash,
+                      from_address: event.args[0],
+                      amount: depositAmount,
+                      network: 'ARBITRUM',
+                      block_number: event.blockNumber,
+                      confirmations: latestBlock - event.blockNumber,
+                      status: 'pending',
+                      detected_at: new Date().toISOString()
+                    });
+
+                  if (!insertError) {
+                    detectedCount++;
+                    
+                    // Update address balance
+                    await admin
+                      .from("deposit_addresses")
+                      .update({ balance_usdt: balanceUsdt })
+                      .eq("id", addressData.id);
+                  }
+                }
+              }
+            }
+          }
+        }
+      } catch (error) {
+        console.error(`Error monitoring Arbitrum address ${addressData.address}:`, error);
+      }
+    }
+  } catch (error) {
+    console.error('Error in Arbitrum monitoring:', error);
+  }
+
+  return detectedCount;
 }
 
 // Also allow POST for manual testing

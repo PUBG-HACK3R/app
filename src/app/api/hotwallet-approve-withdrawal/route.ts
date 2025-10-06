@@ -170,6 +170,27 @@ export async function POST(request: NextRequest) {
         // Don't fail the request, just log the error
       }
 
+      // CRITICAL FIX: Also deduct from balances table to keep systems in sync
+      const { data: currentBalance } = await supabase
+        .from("balances")
+        .select("available_usdt")
+        .eq("user_id", withdrawal.user_id)
+        .single();
+
+      const newAvailableBalance = Number(currentBalance?.available_usdt || 0) - numericAmount;
+
+      const { error: balanceUpdateError } = await supabase
+        .from("balances")
+        .update({ 
+          available_usdt: newAvailableBalance 
+        })
+        .eq("user_id", withdrawal.user_id);
+
+      if (balanceUpdateError) {
+        console.error("Error updating balance after hot wallet withdrawal:", balanceUpdateError);
+        // Don't fail the request, just log the error since transaction was already sent
+      }
+
       return NextResponse.json({
         success: true,
         tx_hash: receipt.hash,
