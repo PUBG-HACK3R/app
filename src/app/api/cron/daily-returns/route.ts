@@ -29,10 +29,9 @@ export async function GET(request: Request) {
     let query = admin
       .from("subscriptions")
       .select(
-        "id,user_id,principal_usdt,roi_daily_percent,start_date,end_date,active,next_earning_at"
+        "id,user_id,amount_invested,daily_earning,start_date,end_date,active"
       )
-      .eq("active", true)
-      .or(`next_earning_at.is.null,next_earning_at.lte.${nowIso}`);
+      .eq("active", true);
 
     const { data: subs, error: subsErr } = await query;
     if (subsErr) {
@@ -42,10 +41,9 @@ export async function GET(request: Request) {
     let credited = 0;
 
     for (const sub of subs || []) {
-      // Compute daily earning amount
-      const principal = Number(sub.principal_usdt || 0);
-      const roiDaily = Number(sub.roi_daily_percent || 0);
-      if (!principal || !roiDaily) continue;
+      // Use the daily_earning directly from the subscription
+      const amount = Number(sub.daily_earning || 0);
+      if (!amount) continue;
 
       // If subscription has ended, deactivate and skip credit
       if (sub.end_date) {
@@ -59,8 +57,6 @@ export async function GET(request: Request) {
           continue;
         }
       }
-
-      const amount = Number((principal * (roiDaily / 100)).toFixed(2));
 
       // Insert earning transaction
       const { error: txErr } = await admin.from("transactions").insert({
@@ -96,27 +92,18 @@ export async function GET(request: Request) {
           .eq("user_id", sub.user_id);
       }
 
-      // Advance next_earning_at by 1 day
-      const currentNext = sub.next_earning_at ? new Date(sub.next_earning_at) : now;
-      // Ensure we always move at least one day forward from "now"
-      const base = currentNext > now ? currentNext : now;
-      const next = new Date(base);
-      next.setUTCDate(base.getUTCDate() + 1);
-
-      // Determine if subscription should remain active
-      let stillActive = true;
-      if (sub.end_date) {
-        // If end_date has passed (today > end_date), deactivate
-        const endDate = new Date(sub.end_date as string);
-        const todayDate = new Date(`${today}T00:00:00.000Z`);
-        if (todayDate > endDate) {
-          stillActive = false;
-        }
-      }
-
+      // Update total_earned in subscription (get current value first)
+      const { data: currentSub } = await admin
+        .from("subscriptions")
+        .select("total_earned")
+        .eq("id", sub.id)
+        .single();
+      
+      const newTotalEarned = Number(currentSub?.total_earned || 0) + amount;
+      
       await admin
         .from("subscriptions")
-        .update({ next_earning_at: next.toISOString(), active: stillActive })
+        .update({ total_earned: newTotalEarned })
         .eq("id", sub.id);
     }
 
