@@ -2,10 +2,10 @@ import { NextResponse } from "next/server";
 import { getSupabaseAdminClient } from "@/lib/supabase/admin";
 import { ethers } from "ethers";
 
-// Import TronWeb dynamically to avoid SSR issues
-let TronWeb: any;
-if (typeof window === 'undefined') {
-  TronWeb = require('tronweb');
+// Dynamic import for TronWeb to avoid SSR issues
+async function getTronWeb() {
+  const { default: TronWeb } = await import('tronweb');
+  return TronWeb;
 }
 
 export const runtime = "nodejs";
@@ -85,6 +85,7 @@ async function forwardTronDeposits(admin: any, addresses: any[]): Promise<{ forw
   let totalForwarded = 0;
 
   try {
+    const TronWeb = await getTronWeb();
     const tronWeb = new TronWeb({
       fullHost: 'https://api.trongrid.io',
     });
@@ -112,10 +113,13 @@ async function forwardTronDeposits(admin: any, addresses: any[]): Promise<{ forw
         }
 
         // Set up wallet with private key
-        tronWeb.setPrivateKey(privateKey);
+        const tronWebWithKey = new TronWeb({
+          fullHost: 'https://api.trongrid.io',
+          privateKey: privateKey
+        });
         
         // Get USDT contract instance
-        const contract = await tronWeb.contract().at(USDT_CONTRACT);
+        const contract = await tronWebWithKey.contract().at(USDT_CONTRACT);
         
         // Calculate amount to forward (keep some TRX for gas)
         const forwardAmount = balance * 0.98; // Keep 2% for fees

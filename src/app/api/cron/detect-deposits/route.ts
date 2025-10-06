@@ -2,10 +2,10 @@ import { NextResponse } from "next/server";
 import { getSupabaseAdminClient } from "@/lib/supabase/admin";
 import { ethers } from "ethers";
 
-// Import TronWeb dynamically to avoid SSR issues
-let TronWeb: any;
-if (typeof window === 'undefined') {
-  TronWeb = require('tronweb');
+// Dynamic import for TronWeb to avoid SSR issues
+async function getTronWeb() {
+  const { default: TronWeb } = await import('tronweb');
+  return TronWeb;
 }
 
 export const runtime = "nodejs";
@@ -107,6 +107,7 @@ async function monitorTronDeposits(admin: any, addresses: any[]): Promise<number
   let detectedCount = 0;
   
   try {
+    const TronWeb = await getTronWeb();
     const tronWeb = new TronWeb({
       fullHost: 'https://api.trongrid.io',
     });

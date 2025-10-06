@@ -4,14 +4,14 @@ import { getSupabaseAdminClient } from "@/lib/supabase/admin";
 import { ethers } from "ethers";
 import crypto from 'crypto';
 
-// Import TronWeb dynamically to avoid SSR issues
-let TronWeb: any;
-if (typeof window === 'undefined') {
-  TronWeb = require('tronweb');
+// Dynamic import for TronWeb to avoid SSR issues
+async function getTronWeb() {
+  const { default: TronWeb } = await import('tronweb');
+  return TronWeb;
 }
 
 // Generate REAL TRON addresses using TronWeb
-function generateTronAddress(userId: string): { address: string; privateKey: string } {
+async function generateTronAddress(userId: string): Promise<{ address: string; privateKey: string }> {
   try {
     // Create deterministic seed from user ID and master key
     const masterKey = process.env.TRON_PRIVATE_KEY;
@@ -27,6 +27,7 @@ function generateTronAddress(userId: string): { address: string; privateKey: str
     const privateKey = hash;
     
     // Generate real TRON address from private key
+    const TronWeb = await getTronWeb();
     const tronWeb = new TronWeb({
       fullHost: 'https://api.trongrid.io',
     });
@@ -143,7 +144,7 @@ export async function GET(request: Request) {
     // Generate new address if none exists
     let addressData;
     if (network === 'TRON') {
-      addressData = generateTronAddress(user.id);
+      addressData = await generateTronAddress(user.id);
     } else if (network === 'ARBITRUM') {
       addressData = generateArbitrumAddress(user.id);
     } else {
