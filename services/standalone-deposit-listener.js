@@ -246,7 +246,7 @@ class StandaloneDepositListener {
 
       if (txInfo.log && txInfo.log.length > 0) {
         const transferLog = txInfo.log.find(log => 
-          log.topics && log.topics[0] === tronWeb.sha3('Transfer(address,address,uint256)')
+          log.topics && log.topics[0] === tronWeb.utils.sha3('Transfer(address,address,uint256)')
         );
 
         if (transferLog) {
