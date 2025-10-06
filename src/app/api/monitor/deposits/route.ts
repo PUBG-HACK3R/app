@@ -5,7 +5,16 @@ export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
 // Monitor blockchain for deposits (called by cron job)
+// Support both GET and POST for flexibility
+export async function GET(request: Request) {
+  return handleDepositMonitoring(request);
+}
+
 export async function POST(request: Request) {
+  return handleDepositMonitoring(request);
+}
+
+async function handleDepositMonitoring(request: Request) {
   try {
     const admin = getSupabaseAdminClient();
     let totalProcessed = 0;

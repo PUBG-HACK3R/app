@@ -27,7 +27,6 @@ interface DatabasePlan {
   id: string;
   name: string;
   min_amount: number;
-  max_amount: number;
   roi_daily_percent: number;
   duration_days: number;
   is_active: boolean;
@@ -269,7 +268,7 @@ export default async function PlansPage() {
                 <CardContent className="space-y-6">
                   {/* Pricing */}
                   <div className="text-center space-y-2">
-                    <div className="text-3xl sm:text-4xl font-bold text-white">${plan.min_amount} - ${plan.max_amount}</div>
+                    <div className="text-3xl sm:text-4xl font-bold text-white">${plan.min_amount}</div>
                     <div className="text-sm text-gray-400 flex items-center justify-center gap-1">
                       <Coins className="h-4 w-4" />
                       Minimum USDT Investment

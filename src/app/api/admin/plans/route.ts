@@ -1,12 +1,12 @@
 import { NextRequest, NextResponse } from "next/server";
-import { requireAdmin } from "@/lib/auth-helpers";
+import { requireAdminAuth } from "@/lib/admin-auth";
 import { getSupabaseAdminClient } from "@/lib/supabase/admin";
 
 // GET - Fetch all plans (admin only)
 export async function GET() {
   try {
     // Use standardized auth helper
-    await requireAdmin();
+    await requireAdminAuth();
 
     // Use admin client to fetch all plans (including inactive ones)
     const admin = getSupabaseAdminClient();
@@ -31,14 +31,13 @@ export async function GET() {
 export async function POST(request: NextRequest) {
   try {
     // Use standardized auth helper
-    await requireAdmin();
+    await requireAdminAuth();
 
     const body = await request.json();
     const { 
       name, 
       description,
       min_amount, 
-      max_amount,
       roi_daily_percent, 
       duration_days,
       category_id,
@@ -51,24 +50,17 @@ export async function POST(request: NextRequest) {
     } = body;
 
     // Validate required fields
-    if (!name || !min_amount || !max_amount || !roi_daily_percent || !duration_days) {
+    if (!name || !min_amount || !roi_daily_percent || !duration_days) {
       return NextResponse.json(
-        { error: "Missing required fields: name, min_amount, max_amount, roi_daily_percent, duration_days" },
+        { error: "Missing required fields: name, min_amount, roi_daily_percent, duration_days" },
         { status: 400 }
       );
     }
 
     // Validate numeric values
-    if (min_amount <= 0 || max_amount <= 0 || roi_daily_percent <= 0 || duration_days <= 0) {
+    if (min_amount <= 0 || roi_daily_percent <= 0 || duration_days <= 0) {
       return NextResponse.json(
-        { error: "Amounts, ROI, and duration must be positive numbers" },
-        { status: 400 }
-      );
-    }
-
-    if (min_amount > max_amount) {
-      return NextResponse.json(
-        { error: "Minimum amount cannot be greater than maximum amount" },
+        { error: "Amount, ROI, and duration must be positive numbers" },
         { status: 400 }
       );
     }
@@ -81,7 +73,6 @@ export async function POST(request: NextRequest) {
         name,
         description: description || '',
         min_amount: parseFloat(min_amount),
-        max_amount: parseFloat(max_amount),
         roi_daily_percent: parseFloat(roi_daily_percent),
         duration_days: parseInt(duration_days),
         category_id: category_id || null,

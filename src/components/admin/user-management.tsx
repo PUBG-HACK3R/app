@@ -21,7 +21,10 @@ import {
   TrendingUp,
   ArrowUpRight,
   ArrowDownRight,
-  RefreshCw
+  RefreshCw,
+  Ban,
+  UserCheck,
+  Eye
 } from "lucide-react";
 
 interface UserData {
@@ -40,6 +43,7 @@ interface UserData {
   has_active_subscription: boolean;
   subscription_plan?: string;
   profile_created_at?: string;
+  is_suspended?: boolean;
 }
 
 interface UsersResponse {
@@ -55,6 +59,8 @@ export function UserManagement() {
   const [searchTerm, setSearchTerm] = React.useState("");
   const [copiedId, setCopiedId] = React.useState<string | null>(null);
   const [stats, setStats] = React.useState({ total_count: 0, admin_count: 0, user_count: 0 });
+  const [showLimited, setShowLimited] = React.useState(true);
+  const [suspendingUser, setSuspendingUser] = React.useState<string | null>(null);
 
   const fetchUsers = async () => {
     setLoading(true);
@@ -89,6 +95,41 @@ export function UserManagement() {
       setTimeout(() => setCopiedId(null), 2000);
     } catch (err) {
       console.error("Failed to copy:", err);
+      // Fallback for older browsers
+      const textArea = document.createElement('textarea');
+      textArea.value = text;
+      document.body.appendChild(textArea);
+      textArea.select();
+      document.execCommand('copy');
+      document.body.removeChild(textArea);
+      setCopiedId(id);
+      setTimeout(() => setCopiedId(null), 2000);
+    }
+  };
+
+  const toggleUserSuspension = async (userId: string, currentStatus: boolean) => {
+    setSuspendingUser(userId);
+    try {
+      const res = await fetch(`/api/admin/users/${userId}/suspend`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ is_suspended: !currentStatus })
+      });
+      
+      if (res.ok) {
+        // Update local state
+        setUsers(users.map(user => 
+          user.id === userId 
+            ? { ...user, is_suspended: !currentStatus }
+            : user
+        ));
+      } else {
+        console.error('Failed to update user suspension status');
+      }
+    } catch (err) {
+      console.error('Error updating user suspension:', err);
+    } finally {
+      setSuspendingUser(null);
     }
   };
 
@@ -97,6 +138,8 @@ export function UserManagement() {
     user.id.toLowerCase().includes(searchTerm.toLowerCase()) ||
     user.role.toLowerCase().includes(searchTerm.toLowerCase())
   );
+
+  const displayUsers = showLimited ? filteredUsers.slice(0, 3) : filteredUsers;
 
   const formatDate = (dateString?: string) => {
     if (!dateString) return "Never";
@@ -118,15 +161,39 @@ export function UserManagement() {
               <CardTitle className="flex items-center space-x-2">
                 <Users className="h-5 w-5" />
                 <span>Miner Management</span>
+                <Badge variant="secondary" className="ml-2">
+                  {showLimited ? `${displayUsers.length} of ${filteredUsers.length}` : filteredUsers.length} users
+                </Badge>
               </CardTitle>
               <CardDescription>
-                View all miners, copy UUIDs for balance top-ups, and manage mining accounts
+                View miners, copy UUIDs for balance top-ups, and manage mining accounts
               </CardDescription>
             </div>
-            <Button onClick={fetchUsers} disabled={loading} variant="outline" size="sm">
-              <RefreshCw className={`h-4 w-4 mr-2 ${loading ? 'animate-spin' : ''}`} />
-              Refresh
-            </Button>
+            <div className="flex gap-2">
+              {showLimited && filteredUsers.length > 3 && (
+                <Button 
+                  onClick={() => setShowLimited(false)} 
+                  variant="outline" 
+                  size="sm"
+                >
+                  <Eye className="h-4 w-4 mr-2" />
+                  See All ({filteredUsers.length})
+                </Button>
+              )}
+              {!showLimited && (
+                <Button 
+                  onClick={() => setShowLimited(true)} 
+                  variant="outline" 
+                  size="sm"
+                >
+                  Show Less
+                </Button>
+              )}
+              <Button onClick={fetchUsers} disabled={loading} variant="outline" size="sm">
+                <RefreshCw className={`h-4 w-4 mr-2 ${loading ? 'animate-spin' : ''}`} />
+                Refresh
+              </Button>
+            </div>
           </div>
         </CardHeader>
         <CardContent>
@@ -147,7 +214,7 @@ export function UserManagement() {
             </div>
           ) : (
             <div className="space-y-4">
-              {filteredUsers.map((user) => (
+              {displayUsers.map((user) => (
                 <Card key={user.id} className="border border-border">
                   <CardContent className="p-6">
                     <div className="grid gap-4 lg:grid-cols-3">
@@ -159,6 +226,11 @@ export function UserManagement() {
                           <Badge variant={user.role === "admin" ? "default" : "secondary"}>
                             {user.role}
                           </Badge>
+                          {user.is_suspended && (
+                            <Badge variant="destructive" className="text-xs">
+                              Suspended
+                            </Badge>
+                          )}
                         </div>
                         
                         <div className="flex items-center space-x-2">
@@ -249,6 +321,33 @@ export function UserManagement() {
                           )}
                         </Button>
 
+                        {user.role !== "admin" && (
+                          <Button
+                            size="sm"
+                            variant={user.is_suspended ? "default" : "destructive"}
+                            onClick={() => toggleUserSuspension(user.id, user.is_suspended || false)}
+                            disabled={suspendingUser === user.id}
+                            className="w-full"
+                          >
+                            {suspendingUser === user.id ? (
+                              <>
+                                <RefreshCw className="h-4 w-4 mr-2 animate-spin" />
+                                Processing...
+                              </>
+                            ) : user.is_suspended ? (
+                              <>
+                                <UserCheck className="h-4 w-4 mr-2" />
+                                Unsuspend User
+                              </>
+                            ) : (
+                              <>
+                                <Ban className="h-4 w-4 mr-2" />
+                                Suspend User
+                              </>
+                            )}
+                          </Button>
+                        )}
+
                         <div className="text-xs text-muted-foreground space-y-1">
                           <div>Email verified: {user.email_confirmed_at ? "✅" : "❌"}</div>
                           {user.phone && <div>Phone: {user.phone}</div>}
@@ -259,7 +358,7 @@ export function UserManagement() {
                 </Card>
               ))}
 
-              {filteredUsers.length === 0 && !loading && (
+              {displayUsers.length === 0 && !loading && (
                 <div className="text-center py-8">
                   <Users className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
                   <p className="text-muted-foreground">

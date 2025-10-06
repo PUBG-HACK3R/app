@@ -99,8 +99,8 @@ export function SiteHeader() {
               <Image 
                 src="/logo.png" 
                 alt="WeEarn Logo" 
-                width={60} 
-                height={60} 
+                width={80} 
+                height={80} 
                 className="rounded-lg shadow-sm group-hover:shadow-md transition-shadow"
               />
               <div className="absolute inset-0 rounded-lg bg-gradient-to-br from-blue-600/20 to-purple-600/20 opacity-0 group-hover:opacity-100 transition-opacity"></div>
@@ -251,8 +251,8 @@ export function SiteHeader() {
                     <Image 
                       src="/logo.png" 
                       alt="WeEarn Logo" 
-                      width={48} 
-                      height={48} 
+                      width={64} 
+                      height={64} 
                       className="rounded-lg shadow-sm"
                     />
                   </div>

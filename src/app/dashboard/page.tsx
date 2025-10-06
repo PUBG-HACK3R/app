@@ -5,16 +5,16 @@ import { getSupabaseAdminClient } from "@/lib/supabase/admin";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { HorizontalPlans } from "@/components/auto-scroll-plans";
+import { BalanceSection } from "@/components/dashboard/balance-section";
 import { 
   Wallet, 
   ArrowUpRight, 
   ArrowDownRight,
   TrendingUp,
-  Eye,
-  Bitcoin,
   Target,
   Users,
-  Gift
+  Gift,
+  Eye
 } from "lucide-react";
 
 export default async function DashboardPage() {
@@ -23,7 +23,16 @@ export default async function DashboardPage() {
     const authUser = await requireAuth();
     const admin = getSupabaseAdminClient();
 
-    // Fetch all user transactions to compute balance and earnings
+    // Get wallet balance from balances table
+    const { data: balanceData } = await admin
+      .from("balances")
+      .select("available_usdt")
+      .eq("user_id", authUser.id)
+      .maybeSingle();
+
+    const walletBalance = Number(balanceData?.available_usdt || 0);
+
+    // Fetch earnings transactions for stats display
     const { data: allTx } = await admin
       .from("transactions")
       .select("type, amount_usdt, created_at")
@@ -37,19 +46,6 @@ export default async function DashboardPage() {
     const totalEarnings = (allTx || [])
       .filter((t: Transaction) => t.type === "earning")
       .reduce((acc: number, t: Transaction) => acc + Number(t.amount_usdt || 0), 0) || 0;
-    const totalDeposits = (allTx || [])
-      .filter((t: Transaction) => t.type === "deposit")
-      .reduce((acc: number, t: Transaction) => acc + Number(t.amount_usdt || 0), 0) || 0;
-    const totalInvestments = (allTx || [])
-      .filter((t: Transaction) => t.type === "investment")
-      .reduce((acc: number, t: Transaction) => acc + Number(t.amount_usdt || 0), 0) || 0;
-    const totalReturns = (allTx || [])
-      .filter((t: Transaction) => t.type === "investment_return")
-      .reduce((acc: number, t: Transaction) => acc + Number(t.amount_usdt || 0), 0) || 0;
-    const totalWithdrawals = (allTx || [])
-      .filter((t: Transaction) => t.type === "withdrawal")
-      .reduce((acc: number, t: Transaction) => acc + Number(t.amount_usdt || 0), 0) || 0;
-    const walletBalance = (totalDeposits + totalEarnings + totalReturns - totalInvestments - totalWithdrawals) || 0;
 
     // Fetch investment plans
     const { data: plans } = await admin
@@ -59,14 +55,14 @@ export default async function DashboardPage() {
       .order("min_amount", { ascending: true });
 
     // Get all active subscriptions for this user
-    const { data: userSubscriptions } = await admin
+    const { data: userSubscriptions, error: subError } = await admin
       .from("subscriptions")
       .select("plan_id, active")
       .eq("user_id", authUser.id)
       .eq("active", true);
 
     // Get the active subscription for checking if user has any active plan
-    const { data: activeSub } = await admin
+    const { data: activeSub, error: activeSubError } = await admin
       .from("subscriptions")
       .select("id, plan_id, end_date, active")
       .eq("user_id", authUser.id)
@@ -78,32 +74,11 @@ export default async function DashboardPage() {
     const userPlanIds = new Set(userSubscriptions?.map(sub => sub.plan_id) || []);
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-900 via-orange-900/10 to-gray-900 pt-16 pb-20">
+    <div className="min-h-screen bg-gradient-to-br from-gray-900 via-orange-900/10 to-gray-900 pt-2 pb-20">
 
       <div className="px-4 py-6 space-y-6">
         {/* Balance Section */}
-        <div className="relative">
-          <div className="flex items-center justify-between mb-2">
-            <div className="flex items-center gap-2 text-gray-400">
-              <span className="text-sm">Balance</span>
-              <Eye className="w-4 h-4" />
-            </div>
-            <div className="absolute top-0 right-0">
-              <div className="w-16 h-16 bg-gradient-to-br from-orange-500/20 to-red-600/20 rounded-full flex items-center justify-center">
-                <div className="w-12 h-12 bg-gradient-to-br from-orange-500 to-red-600 rounded-full flex items-center justify-center">
-                  <Bitcoin className="w-6 h-6 text-white" />
-                </div>
-              </div>
-            </div>
-          </div>
-          
-          <div className="text-4xl font-bold text-white mb-1">
-            ${walletBalance.toFixed(2)}
-          </div>
-          <div className="text-gray-400 text-sm">
-            USDT Balance
-          </div>
-        </div>
+        <BalanceSection walletBalance={walletBalance} />
 
         {/* Action Buttons */}
         <div className="grid grid-cols-4 gap-4">
@@ -175,6 +150,10 @@ export default async function DashboardPage() {
               <div>
                 <div className="text-sm text-blue-200">Active Miners</div>
                 <div className="text-xl font-bold text-white">{activeSub ? '1' : '0'}</div>
+                {/* Debug info - remove after testing */}
+                <div className="text-xs text-gray-400">
+                  Debug: {activeSub ? `Active (ID: ${activeSub.id.slice(0,8)})` : 'No active sub'}
+                </div>
               </div>
             </div>
           </div>

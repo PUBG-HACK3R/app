@@ -39,8 +39,8 @@ export function ModernHeader() {
               <Image 
                 src="/logoC.png" 
                 alt="WeEarn Logo" 
-                width={28} 
-                height={28} 
+                width={48} 
+                height={48} 
                 className="object-contain"
               />
               <div className="text-lg font-bold text-white">

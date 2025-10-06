@@ -1,35 +1,17 @@
 import { redirect } from "next/navigation";
-import { getSupabaseServerClient } from "@/lib/supabase/server";
+import { requireAdminAuth } from "@/lib/admin-auth";
 import { getSupabaseAdminClient } from "@/lib/supabase/admin";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { PendingWithdrawalsTable, type PendingWithdrawal } from "@/components/admin/pending-withdrawals-table";
 import { AdminTools } from "@/components/admin/admin-tools";
 import { UserManagement } from "@/components/admin/user-management";
 import { AdvancedPlanManagement } from "@/components/admin/plan-management-advanced";
+import { AdminLogout } from "@/components/admin/admin-logout";
 
 export default async function AdminPage() {
   try {
-    // Direct auth check for more reliable admin access
-    const supabase = await getSupabaseServerClient();
-    const { data: { user }, error: authError } = await supabase.auth.getUser();
-    
-    if (authError || !user) {
-      console.log("Admin page - Auth error:", authError);
-      redirect("/login?next=/admin");
-    }
-
-    // Check admin role directly using admin client
-    const adminClient = getSupabaseAdminClient();
-    const { data: profile, error: profileError } = await adminClient
-      .from("profiles")
-      .select("role")
-      .eq("user_id", user.id)
-      .single();
-
-    if (profileError || !profile || profile.role !== 'admin') {
-      console.log("Admin page - Profile error or not admin:", profileError, profile?.role);
-      redirect("/dashboard");
-    }
+    // Require admin authentication
+    const { user, profile } = await requireAdminAuth();
 
   // Load admin overview metrics using service role (bypasses RLS)
   const admin = getSupabaseAdminClient();
@@ -79,9 +61,18 @@ export default async function AdminPage() {
 
   return (
     <main className="mx-auto max-w-7xl px-4 py-8 space-y-6 bg-gradient-to-br from-gray-900 via-orange-900/10 to-gray-900 min-h-screen">
-      <div>
-        <h1 className="text-2xl font-semibold text-white">Mining Operations Admin</h1>
-        <p className="text-gray-400">Bitcoin mining platform management and oversight.</p>
+      <div className="flex items-center justify-between">
+        <div>
+          <h1 className="text-2xl font-semibold text-white">Mining Operations Admin</h1>
+          <p className="text-gray-400">Bitcoin mining platform management and oversight.</p>
+        </div>
+        <div className="flex items-center gap-4">
+          <div className="text-right">
+            <p className="text-sm text-gray-400">Logged in as</p>
+            <p className="text-white font-medium">{profile.email}</p>
+          </div>
+          <AdminLogout />
+        </div>
       </div>
 
       <div className="grid gap-4 md:grid-cols-4">
@@ -166,7 +157,7 @@ export default async function AdminPage() {
   );
   } catch (error) {
     console.error("Admin page error:", error);
-    redirect("/login?next=/admin");
+    redirect("/admin/login");
   }
 }
 

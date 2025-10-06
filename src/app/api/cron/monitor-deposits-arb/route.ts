@@ -20,7 +20,16 @@ const USDT_ABI = [
   "event Transfer(address indexed from, address indexed to, uint256 value)"
 ];
 
+// Support both GET and POST for flexibility with different cron services
+export async function GET(request: NextRequest) {
+  return handleDepositMonitoring(request);
+}
+
 export async function POST(request: NextRequest) {
+  return handleDepositMonitoring(request);
+}
+
+async function handleDepositMonitoring(request: NextRequest) {
   try {
     // Verify cron secret
     const authHeader = request.headers.get('authorization');

@@ -43,7 +43,6 @@ interface Plan {
   name: string;
   description: string;
   min_amount: number;
-  max_amount: number;
   roi_daily_percent: number;
   duration_days: number;
   mining_type: string;
@@ -72,7 +71,6 @@ export function AdvancedPlanManagement() {
     name: "",
     description: "",
     min_amount: "",
-    max_amount: "",
     roi_daily_percent: "",
     duration_days: "",
     mining_type: "ASIC Mining",
@@ -123,14 +121,17 @@ export function AdvancedPlanManagement() {
       const planData = {
         ...formData,
         min_amount: parseFloat(formData.min_amount),
-        max_amount: parseFloat(formData.max_amount),
         roi_daily_percent: parseFloat(formData.roi_daily_percent),
         duration_days: parseInt(formData.duration_days),
         features: formData.features.split(',').map(f => f.trim()).filter(f => f)
       };
 
+      console.log('Submitting plan data:', planData);
+
       const url = editingPlan ? `/api/admin/plans/${editingPlan.id}` : '/api/admin/plans';
       const method = editingPlan ? 'PUT' : 'POST';
+
+      console.log('API URL:', url, 'Method:', method);
 
       const response = await fetch(url, {
         method,
@@ -144,7 +145,9 @@ export function AdvancedPlanManagement() {
         resetForm();
         fetchPlans();
       } else {
-        throw new Error('Failed to save plan');
+        const errorData = await response.json();
+        console.error('API Error:', errorData);
+        throw new Error(errorData.error || 'Failed to save plan');
       }
     } catch (error) {
       console.error('Error saving plan:', error);
@@ -158,7 +161,6 @@ export function AdvancedPlanManagement() {
       name: plan.name,
       description: plan.description,
       min_amount: plan.min_amount.toString(),
-      max_amount: plan.max_amount.toString(),
       roi_daily_percent: plan.roi_daily_percent.toString(),
       duration_days: plan.duration_days.toString(),
       mining_type: plan.mining_type,
@@ -218,7 +220,6 @@ export function AdvancedPlanManagement() {
       name: "",
       description: "",
       min_amount: "",
-      max_amount: "",
       roi_daily_percent: "",
       duration_days: "",
       mining_type: "ASIC Mining",
@@ -314,31 +315,17 @@ export function AdvancedPlanManagement() {
                   />
                 </div>
 
-                <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <Label htmlFor="min_amount" className="text-white">Minimum Amount ($)</Label>
-                    <Input
-                      id="min_amount"
-                      type="number"
-                      step="0.01"
-                      value={formData.min_amount}
-                      onChange={(e) => setFormData({...formData, min_amount: e.target.value})}
-                      className="bg-gray-700 border-gray-600 text-white"
-                      required
-                    />
-                  </div>
-                  <div>
-                    <Label htmlFor="max_amount" className="text-white">Maximum Amount ($)</Label>
-                    <Input
-                      id="max_amount"
-                      type="number"
-                      step="0.01"
-                      value={formData.max_amount}
-                      onChange={(e) => setFormData({...formData, max_amount: e.target.value})}
-                      className="bg-gray-700 border-gray-600 text-white"
-                      required
-                    />
-                  </div>
+                <div>
+                  <Label htmlFor="min_amount" className="text-white">Minimum Amount ($)</Label>
+                  <Input
+                    id="min_amount"
+                    type="number"
+                    step="0.01"
+                    value={formData.min_amount}
+                    onChange={(e) => setFormData({...formData, min_amount: e.target.value})}
+                    className="bg-gray-700 border-gray-600 text-white"
+                    required
+                  />
                 </div>
 
                 <div className="grid grid-cols-2 gap-4">
@@ -453,7 +440,7 @@ export function AdvancedPlanManagement() {
             <TableHeader>
               <TableRow className="border-gray-700">
                 <TableHead className="text-gray-300">Plan Name</TableHead>
-                <TableHead className="text-gray-300">Amount Range</TableHead>
+                <TableHead className="text-gray-300">Min Amount</TableHead>
                 <TableHead className="text-gray-300">Daily ROI</TableHead>
                 <TableHead className="text-gray-300">Duration</TableHead>
                 <TableHead className="text-gray-300">Mining Type</TableHead>
@@ -471,7 +458,7 @@ export function AdvancedPlanManagement() {
                     </div>
                   </TableCell>
                   <TableCell className="text-gray-300">
-                    ${plan.min_amount} - ${plan.max_amount}
+                    ${plan.min_amount}
                   </TableCell>
                   <TableCell className="text-green-400 font-semibold">
                     {plan.roi_daily_percent}%

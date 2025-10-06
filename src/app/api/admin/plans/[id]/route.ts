@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { getSupabaseServerClient } from "@/lib/supabase/server";
+import { requireAdminAuth } from "@/lib/admin-auth";
 import { getSupabaseAdminClient } from "@/lib/supabase/admin";
 
 // PUT - Update plan (admin only)
@@ -9,27 +9,17 @@ export async function PUT(
 ) {
   const { id } = await params;
   try {
-    const supabase = await getSupabaseServerClient();
-    const {
-      data: { user },
-    } = await supabase.auth.getUser();
-
-    if (!user) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-    }
-
-    // Check if user is admin
-    const role = (user.app_metadata as any)?.role || (user.user_metadata as any)?.role || "user";
-    if (role !== "admin") {
-      return NextResponse.json({ error: "Admin access required" }, { status: 403 });
-    }
+    // Use the new admin authentication helper
+    console.log('Authenticating admin for plan update...');
+    await requireAdminAuth();
+    console.log('Admin authentication successful');
 
     const body = await request.json();
+    console.log('Request body:', body);
     const { 
       name, 
       description,
       min_amount, 
-      max_amount,
       roi_daily_percent, 
       duration_days,
       category_id,
@@ -42,24 +32,17 @@ export async function PUT(
     } = body;
 
     // Validate required fields
-    if (!name || !min_amount || !max_amount || !roi_daily_percent || !duration_days) {
+    if (!name || !min_amount || !roi_daily_percent || !duration_days) {
       return NextResponse.json(
-        { error: "Missing required fields: name, min_amount, max_amount, roi_daily_percent, duration_days" },
+        { error: "Missing required fields: name, min_amount, roi_daily_percent, duration_days" },
         { status: 400 }
       );
     }
 
     // Validate numeric values
-    if (min_amount <= 0 || max_amount <= 0 || roi_daily_percent <= 0 || duration_days <= 0) {
+    if (min_amount <= 0 || roi_daily_percent <= 0 || duration_days <= 0) {
       return NextResponse.json(
-        { error: "Amounts, ROI, and duration must be positive numbers" },
-        { status: 400 }
-      );
-    }
-
-    if (min_amount > max_amount) {
-      return NextResponse.json(
-        { error: "Minimum amount cannot be greater than maximum amount" },
+        { error: "Amount, ROI, and duration must be positive numbers" },
         { status: 400 }
       );
     }
@@ -72,7 +55,6 @@ export async function PUT(
         name,
         description: description || '',
         min_amount: parseFloat(min_amount),
-        max_amount: parseFloat(max_amount),
         roi_daily_percent: parseFloat(roi_daily_percent),
         duration_days: parseInt(duration_days),
         category_id: category_id || null,
@@ -89,7 +71,11 @@ export async function PUT(
 
     if (error) {
       console.error("Error updating plan:", error);
-      return NextResponse.json({ error: "Failed to update plan" }, { status: 500 });
+      return NextResponse.json({ 
+        error: "Failed to update plan", 
+        details: error.message,
+        code: error.code 
+      }, { status: 500 });
     }
 
     if (!plan) {
@@ -110,20 +96,8 @@ export async function DELETE(
 ) {
   const { id } = await params;
   try {
-    const supabase = await getSupabaseServerClient();
-    const {
-      data: { user },
-    } = await supabase.auth.getUser();
-
-    if (!user) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-    }
-
-    // Check if user is admin
-    const role = (user.app_metadata as any)?.role || (user.user_metadata as any)?.role || "user";
-    if (role !== "admin") {
-      return NextResponse.json({ error: "Admin access required" }, { status: 403 });
-    }
+    // Use the new admin authentication helper
+    await requireAdminAuth();
 
     // Use admin client to check if plan has active subscriptions
     const admin = getSupabaseAdminClient();

@@ -32,15 +32,16 @@ export default async function ActivePlansPage() {
     .select(`
       id,
       plan_id,
-      principal_usdt,
-      roi_daily_percent,
+      amount_invested,
+      daily_earning,
+      total_earned,
       start_date,
       end_date,
       active,
-      next_earning_at,
       plans!inner (
         name,
-        description,
+        min_amount,
+        roi_daily_percent,
         duration_days
       )
     `)
@@ -48,49 +49,7 @@ export default async function ActivePlansPage() {
     .eq("active", true)
     .order("created_at", { ascending: false });
 
-  // Fallback query if description field doesn't exist
-  if (subscriptionsError && subscriptionsError.message?.includes('description')) {
-    console.log("Falling back to query without description field");
-    const fallbackResult = await supabase
-      .from("subscriptions")
-      .select(`
-        id,
-        plan_id,
-        principal_usdt,
-        roi_daily_percent,
-        start_date,
-        end_date,
-        active,
-        next_earning_at,
-        plans!inner (
-          name,
-          duration_days
-        )
-      `)
-      .eq("user_id", user.id)
-      .eq("active", true)
-      .order("created_at", { ascending: false });
-    
-    // Add missing description field to maintain type compatibility
-    const subscriptionsWithDescription = fallbackResult.data?.map(sub => {
-      let plans;
-      if (Array.isArray(sub.plans)) {
-        plans = sub.plans.map(plan => ({ ...plan, description: "Investment plan with competitive returns" }));
-      } else if (sub.plans && typeof sub.plans === 'object') {
-        plans = { ...(sub.plans as any), description: "Investment plan with competitive returns" };
-      } else {
-        plans = null;
-      }
-      
-      return {
-        ...sub,
-        plans
-      };
-    });
-    
-    subscriptions = subscriptionsWithDescription || null;
-    subscriptionsError = fallbackResult.error;
-  }
+  // Remove fallback query since we're using the correct column names now
 
   // Debug logging
   if (subscriptionsError) {
@@ -177,7 +136,7 @@ export default async function ActivePlansPage() {
             </div>
             <div className="bg-gradient-to-br from-green-900/50 to-green-800/50 rounded-2xl border border-green-700/30 p-4 text-center">
               <div className="text-2xl font-bold text-white">
-                ${subscriptionsWithEarnings.reduce((sum, sub) => sum + Number(sub.principal_usdt), 0).toFixed(0)}
+                ${subscriptionsWithEarnings.reduce((sum, sub) => sum + Number(sub.amount_invested), 0).toFixed(0)}
               </div>
               <div className="text-sm text-green-200">Invested</div>
             </div>
@@ -194,7 +153,7 @@ export default async function ActivePlansPage() {
             {subscriptionsWithEarnings.map((subscription) => {
               const progress = calculateProgress(subscription.start_date, subscription.end_date);
               const daysRemaining = calculateDaysRemaining(subscription.end_date);
-              const dailyEarning = (Number(subscription.principal_usdt) * Number(subscription.roi_daily_percent)) / 100;
+              const dailyEarning = Number(subscription.daily_earning) || 0;
 
               return (
                 <div key={subscription.id} className="bg-gradient-to-br from-gray-800/50 to-gray-900/50 rounded-3xl border border-gray-700/30 p-6">
@@ -230,7 +189,7 @@ export default async function ActivePlansPage() {
                   <div className="grid grid-cols-2 gap-4">
                     <div>
                       <div className="text-sm text-gray-400">Invested</div>
-                      <div className="text-lg font-semibold text-white">${Number(subscription.principal_usdt).toFixed(2)}</div>
+                      <div className="text-lg font-semibold text-white">${Number(subscription.amount_invested).toFixed(2)}</div>
                     </div>
                     <div>
                       <div className="text-sm text-gray-400">Daily Earning</div>
@@ -242,7 +201,7 @@ export default async function ActivePlansPage() {
                     </div>
                     <div>
                       <div className="text-sm text-gray-400">Daily Rate</div>
-                      <div className="text-lg font-semibold text-blue-400">{Number(subscription.roi_daily_percent).toFixed(1)}%</div>
+                      <div className="text-lg font-semibold text-blue-400">{Number(subscription.plan?.roi_daily_percent || 0).toFixed(1)}%</div>
                     </div>
                   </div>
                 </div>

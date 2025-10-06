@@ -10,7 +10,6 @@ interface Plan {
   id: string;
   name: string;
   min_amount: number;
-  max_amount: number;
   roi_daily_percent: number;
   duration_days: number;
   is_active?: boolean;
@@ -63,7 +62,7 @@ export function HorizontalPlans({ plans }: HorizontalPlansProps) {
             
             <div className="space-y-2">
               <div className="text-3xl font-bold text-white">
-                ${(plan.min_amount || 0).toLocaleString()} - ${(plan.max_amount || 0).toLocaleString()}
+                ${(plan.min_amount || 0).toLocaleString()}
               </div>
               <div className="text-sm text-gray-400">
                 {plan.duration_days} days • {(plan.roi_daily_percent * plan.duration_days).toFixed(1)}% total ROI

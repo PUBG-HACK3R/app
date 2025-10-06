@@ -14,7 +14,16 @@ const TRON_PRIVATE_KEY = process.env.TRON_PRIVATE_KEY!;
 const USDT_TRC20_ADDRESS = process.env.USDT_TRC20_ADDRESS!; // TR7NHqjeKQxGTCi8q8ZY4pL8otSzgjLj6t
 const HOT_WALLET_TRC20_ADDRESS = process.env.HOT_WALLET_TRC20_ADDRESS!;
 
+// Support both GET and POST for flexibility with different cron services
+export async function GET(request: NextRequest) {
+  return handleDepositMonitoring(request);
+}
+
 export async function POST(request: NextRequest) {
+  return handleDepositMonitoring(request);
+}
+
+async function handleDepositMonitoring(request: NextRequest) {
   try {
     // Verify cron secret
     const authHeader = request.headers.get('authorization');

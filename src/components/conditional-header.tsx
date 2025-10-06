@@ -14,6 +14,7 @@ const EXCLUDED_PAGES = [
   "/login-simple",
   "/signup-server",
   "/login-server",
+  "/admin/login", // Admin login page
 ];
 
 export function ConditionalHeader() {

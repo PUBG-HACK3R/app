@@ -41,7 +41,7 @@ export async function GET() {
     // Get profiles
     const { data: profiles } = await admin
       .from("profiles")
-      .select("user_id, role, created_at")
+      .select("user_id, role, created_at, is_suspended")
       .in("user_id", userIds);
 
     // Get transaction summaries for each user
@@ -97,6 +97,7 @@ export async function GET() {
         has_active_subscription: !!activeSubscription,
         subscription_plan: activeSubscription?.plan_id || null,
         profile_created_at: profile?.created_at,
+        is_suspended: profile?.is_suspended || false,
       };
     });
 

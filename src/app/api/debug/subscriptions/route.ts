@@ -17,32 +17,36 @@ export async function GET() {
     }
 
     const admin = getSupabaseAdminClient();
+    
+    // Get all subscriptions for this user
+    const { data: subscriptions, error } = await admin
+      .from("subscriptions")
+      .select("*")
+      .eq("user_id", user.id)
+      .order("created_at", { ascending: false });
 
-    // Get balance from balances table
+    if (error) {
+      console.error("Error fetching subscriptions:", error);
+      return NextResponse.json({ error: "Database error", details: error }, { status: 500 });
+    }
+
+    // Also get user's balance
     const { data: balanceData } = await admin
       .from("balances")
       .select("available_usdt")
       .eq("user_id", user.id)
       .maybeSingle();
 
-    const balance = Number(balanceData?.available_usdt || 0);
-
-    // Also check if user has an active subscription
-    const { data: activeSub } = await admin
-      .from("subscriptions")
-      .select("id, plan_id, active")
-      .eq("user_id", user.id)
-      .eq("active", true)
-      .maybeSingle();
-
     return NextResponse.json({
-      balance,
-      has_active_subscription: !!activeSub,
-      user_id: user.id
+      success: true,
+      user_id: user.id,
+      balance: balanceData?.available_usdt || 0,
+      subscription_count: subscriptions?.length || 0,
+      subscriptions: subscriptions || []
     });
 
   } catch (error) {
-    console.error("User balance API error:", error);
-    return NextResponse.json({ error: "Internal server error" }, { status: 500 });
+    console.error("Debug subscriptions API error:", error);
+    return NextResponse.json({ error: "Unexpected error" }, { status: 500 });
   }
 }

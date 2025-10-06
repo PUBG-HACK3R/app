@@ -15,6 +15,7 @@ import {
 
 interface SimpleDepositProps {
   amount: number;
+  showAmount?: boolean;
 }
 
 interface DepositData {
@@ -26,12 +27,32 @@ interface DepositData {
   hotWallet: string;
 }
 
-export default function SimpleDeposit({ amount }: SimpleDepositProps) {
+export default function SimpleDeposit({ amount, showAmount = true }: SimpleDepositProps) {
   const [selectedNetwork, setSelectedNetwork] = useState<'TRON' | 'ARBITRUM'>('TRON');
   const [depositData, setDepositData] = useState<DepositData | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [copied, setCopied] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  // Simple QR Code component using a QR code API
+  const QRCodeDisplay = ({ address }: { address: string }) => {
+    const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(address)}`;
+    
+    return (
+      <div className="flex justify-center p-4">
+        <div className="bg-white p-4 rounded-lg">
+          <img 
+            src={qrUrl} 
+            alt="QR Code for deposit address" 
+            className="w-48 h-48"
+            onError={(e) => {
+              e.currentTarget.style.display = 'none';
+            }}
+          />
+        </div>
+      </div>
+    );
+  };
 
   const fetchDepositAddress = async () => {
     setIsLoading(true);
@@ -107,17 +128,22 @@ export default function SimpleDeposit({ amount }: SimpleDepositProps) {
   }
 
   return (
-    <Card className="bg-gray-800/50 border-gray-700/50">
-      <CardHeader className="pb-4">
-        <CardTitle className="text-white text-lg flex items-center gap-2">
-          <Wallet className="w-4 h-4 text-green-400" />
-          Deposit ${amount} USDT
-        </CardTitle>
-        <CardDescription className="text-sm">
-          Send USDT to your unique address
-        </CardDescription>
-      </CardHeader>
-      <CardContent className="space-y-4">
+    <div className="space-y-4">
+      {showAmount && (
+        <Card className="bg-gray-800/50 border-gray-700/50">
+          <CardHeader className="pb-4">
+            <CardTitle className="text-white text-lg flex items-center gap-2">
+              <Wallet className="w-4 h-4 text-green-400" />
+              Deposit ${amount} USDT
+            </CardTitle>
+            <CardDescription className="text-sm">
+              Send USDT to your unique address
+            </CardDescription>
+          </CardHeader>
+        </Card>
+      )}
+      
+      <div className="space-y-4">
         
         {/* Network Selection */}
         <div>
@@ -125,7 +151,7 @@ export default function SimpleDeposit({ amount }: SimpleDepositProps) {
           <div className="grid grid-cols-2 gap-2">
             <button
               onClick={() => setSelectedNetwork('TRON')}
-              className={`p-3 rounded-lg border transition-all text-sm ${
+              className={`p-2 rounded-lg border transition-all text-xs ${
                 selectedNetwork === 'TRON' 
                   ? 'bg-green-600 border-green-500 text-white' 
                   : 'bg-gray-800/50 border-gray-600 text-gray-300 hover:border-green-500'
@@ -139,7 +165,7 @@ export default function SimpleDeposit({ amount }: SimpleDepositProps) {
             
             <button
               onClick={() => setSelectedNetwork('ARBITRUM')}
-              className={`p-3 rounded-lg border transition-all text-sm ${
+              className={`p-2 rounded-lg border transition-all text-xs ${
                 selectedNetwork === 'ARBITRUM' 
                   ? 'bg-blue-600 border-blue-500 text-white' 
                   : 'bg-gray-800/50 border-gray-600 text-gray-300 hover:border-blue-500'
@@ -172,6 +198,14 @@ export default function SimpleDeposit({ amount }: SimpleDepositProps) {
                 >
                   {copied ? <CheckCircle className="w-3 h-3" /> : <Copy className="w-3 h-3" />}
                 </Button>
+              </div>
+              
+              {/* QR Code Display - Auto-generated */}
+              <div className="mt-4">
+                <QRCodeDisplay address={depositData.address} />
+                <p className="text-center text-xs text-gray-400 mt-2">
+                  Scan QR code to copy address
+                </p>
               </div>
             </div>
 
@@ -208,7 +242,11 @@ export default function SimpleDeposit({ amount }: SimpleDepositProps) {
             {/* Status */}
             <div className="text-center pt-2">
               <div className="text-gray-400 text-xs">
-                Waiting for <span className="text-white font-medium">${amount} USDT</span> deposit
+                {showAmount ? (
+                  <>Waiting for <span className="text-white font-medium">${amount} USDT</span> deposit</>
+                ) : (
+                  <>Waiting for USDT deposit</>
+                )}
               </div>
               <div className="text-gray-500 text-xs mt-1">
                 Funds will appear automatically
@@ -217,7 +255,7 @@ export default function SimpleDeposit({ amount }: SimpleDepositProps) {
           </>
         )}
 
-      </CardContent>
-    </Card>
+      </div>
+    </div>
   );
 }
