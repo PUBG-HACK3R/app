@@ -45,12 +45,12 @@ async function handleDepositMonitoring(request: NextRequest) {
     const wallet = new ethers.Wallet(ARBITRUM_PRIVATE_KEY, provider);
     const usdtContract = new ethers.Contract(USDT_ARBITRUM_ADDRESS, USDT_ABI, wallet);
 
-    // Get all active Arbitrum deposit addresses
+    // Get all active deposit addresses for both networks
     const { data: addresses, error: addressError } = await supabase
-      .from('user_deposit_addresses')
+      .from('deposit_addresses')
       .select('*')
       .eq('is_active', true)
-      .eq('network', 'arbitrum');
+      .in('network', ['TRON', 'ARBITRUM']);
 
     if (addressError) {
       console.error('Error fetching addresses:', addressError);

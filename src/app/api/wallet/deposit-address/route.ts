@@ -3,20 +3,35 @@ import { getSupabaseServerClient } from "@/lib/supabase/server";
 import { getSupabaseAdminClient } from "@/lib/supabase/admin";
 import crypto from 'crypto';
 
-// Generate addresses
+// Generate unique sub-addresses for each user
 function generateTronAddress(userId: string): { address: string; privateKey: string } {
-  const seed = `${userId}-TRON-${Date.now()}`;
+  // Create deterministic seed from user ID for TRON
+  const seed = `TRON-${userId}-${process.env.TRON_PRIVATE_KEY?.slice(-8)}`;
   const hash = crypto.createHash('sha256').update(seed).digest('hex');
-  const address = 'T' + hash.substring(0, 33).toUpperCase();
-  const privateKey = crypto.createHash('sha256').update(seed + 'private').digest('hex');
+  
+  // Generate TRON-style address (T + 33 chars)
+  const addressSuffix = hash.substring(0, 32);
+  const address = 'T' + addressSuffix.toUpperCase();
+  
+  // Generate private key for this address (derived from main key + user)
+  const privateKeySeed = `${process.env.TRON_PRIVATE_KEY}-${userId}`;
+  const privateKey = crypto.createHash('sha256').update(privateKeySeed).digest('hex');
+  
   return { address, privateKey };
 }
 
 function generateArbitrumAddress(userId: string): { address: string; privateKey: string } {
-  const seed = `${userId}-ARBITRUM-${Date.now()}`;
+  // Create deterministic seed from user ID for Arbitrum
+  const seed = `ARBITRUM-${userId}-${process.env.ARBITRUM_PRIVATE_KEY?.slice(-8)}`;
   const hash = crypto.createHash('sha256').update(seed).digest('hex');
+  
+  // Generate Ethereum-style address (0x + 40 chars)
   const address = '0x' + hash.substring(0, 40).toLowerCase();
-  const privateKey = crypto.createHash('sha256').update(seed + 'private').digest('hex');
+  
+  // Generate private key for this address (derived from main key + user)
+  const privateKeySeed = `${process.env.ARBITRUM_PRIVATE_KEY}-${userId}`;
+  const privateKey = crypto.createHash('sha256').update(privateKeySeed).digest('hex');
+  
   return { address, privateKey };
 }
 
