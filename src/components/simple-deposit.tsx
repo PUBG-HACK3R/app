@@ -59,7 +59,17 @@ export default function SimpleDeposit({ amount, showAmount = true }: SimpleDepos
     setError(null);
     
     try {
-      const response = await fetch(`/api/wallet/deposit-address?network=${selectedNetwork}`);
+      // Create deposit intent with the new event-based system
+      const response = await fetch('/api/deposits/create-intent', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          network: selectedNetwork === 'TRON' ? 'TRC20' : 'BEP20',
+          amount_usdt: 100 // Default amount
+        })
+      });
       const data = await response.json();
       
       if (data.success) {

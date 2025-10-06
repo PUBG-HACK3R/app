@@ -29,10 +29,14 @@ interface DepositAddressData {
   symbol: string;
   contractAddress: string;
   hotWallet: string;
-  created_at: string;
+  created_at?: string;
   balance: number;
   totalReceived: number;
   isNew?: boolean;
+  // New event-based system fields
+  referenceCode?: string;
+  amount?: number;
+  expiresAt?: string;
 }
 
 type NetworkType = 'trc20' | 'arbitrum';
@@ -55,32 +59,49 @@ export default function CentralizedDeposit({ amount, onSuccess, onError }: Centr
 
       // Map frontend network names to backend network names
       const networkMapping = {
-        'trc20': 'TRON',
-        'arbitrum': 'ARBITRUM'
+        'trc20': 'TRC20',
+        'arbitrum': 'BEP20' // Using BSC instead of Arbitrum for the new system
       };
       
       const backendNetwork = networkMapping[selectedNetwork];
-      const response = await fetch(`/api/wallet/deposit-address?network=${backendNetwork}`);
+      
+      // Create deposit intent with the new event-based system
+      const response = await fetch('/api/deposits/create-intent', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          network: backendNetwork,
+          amount_usdt: 100 // Default amount, user can change this
+        })
+      });
       const data = await response.json();
 
       if (!response.ok) {
-        throw new Error(data.error || 'Failed to fetch deposit address');
+        throw new Error(data.error || 'Failed to create deposit intent');
       }
 
+      const intent = data.deposit_intent;
+      const instructions = data.instructions[backendNetwork];
+      
       setDepositAddress({
-        address: data.address,
-        network: data.network,
-        networkName: data.networkName || (selectedNetwork === 'trc20' ? 'TRON (TRC20)' : 'Arbitrum'),
-        symbol: data.symbol || 'USDT',
-        contractAddress: data.contractAddress || '',
-        hotWallet: data.hotWallet || '',
-        created_at: data.created_at,
-        balance: data.balance || 0,
-        totalReceived: data.totalReceived || 0,
-        isNew: data.isNew || false
+        address: intent.main_wallet_address,
+        network: intent.network,
+        networkName: selectedNetwork === 'trc20' ? 'TRON (TRC20)' : 'BSC (BEP20)',
+        symbol: 'USDT',
+        contractAddress: instructions?.contract_address,
+        hotWallet: intent.main_wallet_address,
+        balance: 0,
+        totalReceived: 0,
+        // New event-based system data
+        referenceCode: intent.reference_code,
+        amount: intent.amount_usdt,
+        expiresAt: intent.expires_at
       });
-    } catch (err) {
-      const errorMessage = err instanceof Error ? err.message : 'Failed to load deposit address';
+
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : 'Failed to fetch deposit address';
       setError(errorMessage);
       onError?.(errorMessage);
     } finally {
