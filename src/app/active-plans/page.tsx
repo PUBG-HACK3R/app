@@ -54,33 +54,28 @@ export default async function ActivePlansPage() {
     .eq("active", true)
     .order("created_at", { ascending: false });
 
-  // Remove fallback query since we're using the correct column names now
-
-  // Debug logging
+  // Debug logging - check what data we actually got
+  console.log("Active Plans Debug:", {
+    subscriptionsCount: subscriptions?.length || 0,
+    subscriptions: subscriptions?.map(sub => ({
+      id: sub.id,
+      plan_name: sub.plans?.[0]?.name,
+      total_earned: sub.total_earned,
+      amount_invested: sub.amount_invested
+    }))
+  });
   if (subscriptionsError) {
     console.error("Subscriptions query error:", subscriptionsError);
   }
   console.log("Subscriptions data:", subscriptions);
 
-  // Get earnings for each subscription
-  const subscriptionsWithEarnings = await Promise.all(
-    (subscriptions || []).map(async (sub) => {
-      const { data: earnings } = await supabase
-        .from("transactions")
-        .select("amount_usdt")
-        .eq("user_id", user.id)
-        .eq("type", "earning")
-        .eq("reference_id", sub.id);
-      
-      const totalEarned = earnings?.reduce((sum, earning) => sum + Number(earning.amount_usdt), 0) || 0;
-      
-      return {
-        ...sub,
-        total_earned: totalEarned,
-        plan: Array.isArray(sub.plans) ? sub.plans[0] : sub.plans
-      };
-    })
-  );
+  // Use the total_earned from database directly (no need to recalculate)
+  const subscriptionsWithEarnings = (subscriptions || []).map((sub) => {
+    return {
+      ...sub,
+      plan: Array.isArray(sub.plans) ? sub.plans[0] : sub.plans
+    };
+  });
 
   const calculateProgress = (startDate: string, endDate: string) => {
     const start = new Date(startDate).getTime();
