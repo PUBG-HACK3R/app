@@ -17,11 +17,11 @@ export function BalanceSection({ walletBalance }: BalanceSectionProps) {
   return (
     <div className="relative">
       <div className="flex items-center justify-between mb-2">
-        <div className="flex items-center gap-2 text-gray-400">
+        <div className="flex items-center gap-2 text-gray-600 dark:text-gray-400">
           <span className="text-sm">Balance</span>
           <button
             onClick={toggleBalanceVisibility}
-            className="hover:text-gray-300 transition-colors cursor-pointer"
+            className="hover:text-gray-500 dark:hover:text-gray-300 transition-colors cursor-pointer"
             aria-label={showBalance ? "Hide balance" : "Show balance"}
           >
             {showBalance ? (
@@ -40,10 +40,10 @@ export function BalanceSection({ walletBalance }: BalanceSectionProps) {
         </div>
       </div>
       
-      <div className="text-4xl font-bold text-white mb-1">
+      <div className="text-4xl font-bold text-gray-900 dark:text-white mb-1">
         {showBalance ? `$${walletBalance.toFixed(2)}` : "••••••"}
       </div>
-      <div className="text-gray-400 text-sm">
+      <div className="text-gray-600 dark:text-gray-400 text-sm">
         USDT Balance
       </div>
     </div>

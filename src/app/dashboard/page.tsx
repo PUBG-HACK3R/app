@@ -67,54 +67,52 @@ export default async function DashboardPage() {
       .select("id, plan_id, end_date, active")
       .eq("user_id", authUser.id)
       .eq("active", true)
-      .limit(1)
       .maybeSingle();
 
     // Create a set of plan IDs that user has subscriptions for
     const userPlanIds = new Set(userSubscriptions?.map(sub => sub.plan_id) || []);
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-900 via-orange-900/10 to-gray-900 pt-2 pb-20">
-
-      <div className="px-4 py-6 space-y-6">
+    <div className="min-h-screen bg-gradient-to-br from-gray-100 via-orange-50 to-gray-100 dark:from-gray-900 dark:via-orange-900/10 dark:to-gray-900 text-gray-900 dark:text-white">
+      <div className="mx-auto max-w-md px-4 py-6 space-y-6">
         {/* Balance Section */}
         <BalanceSection walletBalance={walletBalance} />
 
         {/* Action Buttons */}
         <div className="grid grid-cols-4 gap-4">
-          <Link href="/wallet/deposit" className="flex flex-col items-center gap-2 p-4 bg-gray-800/50 rounded-2xl border border-gray-700/50 hover:border-gray-600/50 transition-all">
+          <Link href="/wallet/deposit" className="flex flex-col items-center gap-2 p-4 bg-gray-200/50 dark:bg-gray-800/50 rounded-2xl border border-gray-300/50 dark:border-gray-700/50 hover:border-gray-400/50 dark:hover:border-gray-600/50 transition-all">
             <div className="w-12 h-12 bg-gradient-to-br from-green-500 to-emerald-600 rounded-2xl flex items-center justify-center">
               <ArrowDownRight className="w-6 h-6 text-white" />
             </div>
-            <span className="text-white text-sm font-medium">Deposit</span>
+            <span className="text-gray-700 dark:text-white text-sm font-medium">Deposit</span>
           </Link>
 
-          <Link href="/wallet/withdraw" className="flex flex-col items-center gap-2 p-4 bg-gray-800/50 rounded-2xl border border-gray-700/50 hover:border-gray-600/50 transition-all">
+          <Link href="/wallet/withdraw" className="flex flex-col items-center gap-2 p-4 bg-gray-200/50 dark:bg-gray-800/50 rounded-2xl border border-gray-300/50 dark:border-gray-700/50 hover:border-gray-400/50 dark:hover:border-gray-600/50 transition-all">
             <div className="w-12 h-12 bg-gradient-to-br from-orange-500 to-red-600 rounded-2xl flex items-center justify-center">
               <ArrowUpRight className="w-6 h-6 text-white" />
             </div>
-            <span className="text-white text-sm font-medium">Withdraw</span>
+            <span className="text-gray-700 dark:text-white text-sm font-medium">Withdraw</span>
           </Link>
 
-          <Link href="/referrals" className="flex flex-col items-center gap-2 p-4 bg-gray-800/50 rounded-2xl border border-gray-700/50 hover:border-gray-600/50 transition-all">
+          <Link href="/referrals" className="flex flex-col items-center gap-2 p-4 bg-gray-200/50 dark:bg-gray-800/50 rounded-2xl border border-gray-300/50 dark:border-gray-700/50 hover:border-gray-400/50 dark:hover:border-gray-600/50 transition-all">
             <div className="w-12 h-12 bg-gradient-to-br from-purple-500 to-pink-600 rounded-2xl flex items-center justify-center">
               <Users className="w-6 h-6 text-white" />
             </div>
-            <span className="text-white text-sm font-medium">Invite</span>
+            <span className="text-gray-700 dark:text-white text-sm font-medium">Invite</span>
           </Link>
 
-          <Link href="/wallet/history" className="flex flex-col items-center gap-2 p-4 bg-gray-800/50 rounded-2xl border border-gray-700/50 hover:border-gray-600/50 transition-all">
+          <Link href="/wallet/history" className="flex flex-col items-center gap-2 p-4 bg-gray-200/50 dark:bg-gray-800/50 rounded-2xl border border-gray-300/50 dark:border-gray-700/50 hover:border-gray-400/50 dark:hover:border-gray-600/50 transition-all">
             <div className="w-12 h-12 bg-gradient-to-br from-blue-500 to-cyan-600 rounded-2xl flex items-center justify-center">
               <TrendingUp className="w-6 h-6 text-white" />
             </div>
-            <span className="text-white text-sm font-medium">History</span>
+            <span className="text-gray-700 dark:text-white text-sm font-medium">History</span>
           </Link>
         </div>
 
         {/* Mining Plans - Horizontal Scroll */}
         <div className="space-y-4">
           <div className="flex items-center justify-between">
-            <h2 className="text-xl font-bold text-white">Mining Plans</h2>
+            <h2 className="text-xl font-bold text-gray-900 dark:text-white">Mining Plans</h2>
           </div>
           
           <HorizontalPlans 
