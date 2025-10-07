@@ -30,12 +30,12 @@ export async function GET() {
     // Analyze the data
     const analysis = {
       totalDeposits: deposits?.length || 0,
-      statusBreakdown: {},
-      waitingDeposits: [],
-      completedDeposits: [],
+      statusBreakdown: {} as Record<string, number>,
+      waitingDeposits: [] as any[],
+      completedDeposits: [] as any[],
       transactionCount: transactions?.length || 0,
-      depositsWithoutTransactions: [],
-      webhookIssues: []
+      depositsWithoutTransactions: [] as any[],
+      webhookIssues: [] as any[]
     };
 
     // Analyze each deposit
@@ -97,7 +97,7 @@ export async function GET() {
         };
       }
     } catch (error) {
-      nowpaymentsStatus = { error: error.message };
+      nowpaymentsStatus = { error: error instanceof Error ? error.message : String(error) };
     }
 
     return NextResponse.json({
