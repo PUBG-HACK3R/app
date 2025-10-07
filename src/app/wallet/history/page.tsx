@@ -105,30 +105,19 @@ export default async function WalletHistoryPage() {
   console.log("Transactions found:", confirmedTxs.length);
   console.log("Pending deposits found:", pendingTxs.length);
   console.log("Total items:", items.length);
-
   return (
     <main className="mx-auto max-w-3xl px-4 py-8 space-y-6">
       <div>
         <h1 className="text-2xl font-semibold">Transaction History</h1>
         <p className="text-muted-foreground">Deposits, earnings, and withdrawals.</p>
-        {/* Debug info - remove after testing */}
-        <div className="text-xs text-gray-500 mt-2">
-          Debug: {confirmedTxs.length} transactions, {pendingTxs.length} pending deposits
-          <br />
-          Current User ID: {user.id}
-          <br />
-          DB User ID from debug: 148077ef-d0a0-44e0-88fa-e98cd26ff5bb
-          <br />
-          Match: {user.id === "148077ef-d0a0-44e0-88fa-e98cd26ff5bb" ? "YES" : "NO"}
-        </div>
       </div>
 
       <Card>
         <CardHeader>
           <CardTitle>Recent Activity</CardTitle>
           <CardDescription>
-          Last {items.length} entries {pendingTxs.length > 0 && `(${pendingTxs.length} pending)`}
-        </CardDescription>
+            Last {items.length} entries {pendingTxs.length > 0 && `(${pendingTxs.length} pending)`}
+          </CardDescription>
         </CardHeader>
         <CardContent>
           {items.length === 0 ? (
