@@ -45,18 +45,46 @@ export async function GET(request: Request) {
       const amount = Number(sub.daily_earning || 0);
       if (!amount) continue;
 
+      // Check if subscription has started (should be earning)
+      const startDate = new Date(sub.start_date);
+      const todayDate = new Date(`${today}T00:00:00.000Z`);
+      
+      // Skip if subscription hasn't started yet
+      if (todayDate < startDate) {
+        console.log(`Subscription ${sub.id} hasn't started yet`);
+        continue;
+      }
+
       // If subscription has ended, deactivate and skip credit
       if (sub.end_date) {
         const endDate = new Date(sub.end_date as string);
-        const todayDate = new Date(`${today}T00:00:00.000Z`);
         if (todayDate > endDate) {
           await admin
             .from("subscriptions")
             .update({ active: false })
             .eq("id", sub.id);
+          console.log(`Subscription ${sub.id} expired, deactivated`);
           continue;
         }
       }
+
+      // Check if we already credited earnings for today
+      const { data: todayEarning } = await admin
+        .from("transactions")
+        .select("id")
+        .eq("user_id", sub.user_id)
+        .eq("type", "earning")
+        .eq("reference_id", sub.id)
+        .gte("created_at", `${today}T00:00:00.000Z`)
+        .lt("created_at", `${today}T23:59:59.999Z`)
+        .maybeSingle();
+
+      if (todayEarning) {
+        console.log(`Already credited earnings for subscription ${sub.id} today`);
+        continue;
+      }
+
+      console.log(`Processing earnings for subscription ${sub.id}: $${amount}`);
 
       // Insert earning transaction
       const { error: txErr } = await admin.from("transactions").insert({
@@ -107,7 +135,14 @@ export async function GET(request: Request) {
         .eq("id", sub.id);
     }
 
-    return NextResponse.json({ ok: true, credited });
+    return NextResponse.json({ 
+      ok: true, 
+      credited,
+      processed_at: nowIso,
+      total_subscriptions: subs?.length || 0,
+      active_subscriptions: subs?.filter(s => s.active).length || 0,
+      message: `Processed ${credited} earnings out of ${subs?.length || 0} subscriptions`
+    });
   } catch (e: any) {
     return NextResponse.json({ error: e.message || "Unexpected error" }, { status: 500 });
   }
