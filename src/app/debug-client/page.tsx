@@ -189,6 +189,14 @@ export default function DebugClientPage() {
         >
           🚀 FORCE $100 PLAN EARNING (TEST)
         </button>
+        
+        <button 
+          onClick={() => testAPI('/api/debug/active-plans-data')}
+          className="bg-indigo-600 text-white px-4 py-2 rounded hover:bg-indigo-700 disabled:opacity-50"
+          disabled={loading}
+        >
+          🔍 DEBUG ACTIVE PLANS DATA
+        </button>
       </div>
 
       {loading && (
