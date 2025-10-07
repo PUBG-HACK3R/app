@@ -28,7 +28,6 @@ export async function GET() {
         start_date,
         end_date,
         active,
-        next_earning_at,
         created_at,
         plans!inner (
           name,
