@@ -25,13 +25,14 @@ export async function GET(request: Request) {
     console.log("Cron job starting:", { now: nowIso, today });
 
     // Find subscriptions that are active and due for earning credit
+    // New logic: Check individual 24-hour cycles for each subscription
     // Conditions:
     // - active = true
-    // - (next_earning_at is null OR next_earning_at <= now)
+    // - next_earning_at is null (first earning) OR next_earning_at <= now
     let query = admin
       .from("subscriptions")
       .select(
-        "id,user_id,amount_invested,daily_earning,start_date,end_date,active"
+        "id,user_id,amount_invested,daily_earning,start_date,end_date,active,next_earning_at,created_at"
       )
       .eq("active", true);
 
@@ -54,29 +55,34 @@ export async function GET(request: Request) {
       
       console.log(`Subscription ${sub.id} daily_earning: $${amount}`);
 
-      // Check if subscription has started (should be earning)
-      // Parse start_date as UTC to avoid timezone issues
-      const startDateStr = sub.start_date.includes('T') ? sub.start_date : `${sub.start_date}T00:00:00.000Z`;
-      const startDate = new Date(startDateStr);
-      const todayDate = new Date(`${today}T00:00:00.000Z`);
+      // Individual 24-hour timing logic
+      const createdAt = new Date(sub.created_at);
+      const nextEarningAt = sub.next_earning_at ? new Date(sub.next_earning_at) : null;
       
-      console.log(`Subscription ${sub.id} date check:`, {
-        start_date: sub.start_date,
-        start_date_parsed: startDate.toISOString(),
-        today_date: todayDate.toISOString(),
-        has_started: todayDate >= startDate
-      });
-      
-      // Skip if subscription hasn't started yet
-      if (todayDate < startDate) {
-        console.log(`Subscription ${sub.id} hasn't started yet - skipping`);
-        continue;
+      // If no next_earning_at, set it to 24 hours after creation
+      if (!nextEarningAt) {
+        const firstEarningTime = new Date(createdAt.getTime() + (24 * 60 * 60 * 1000)); // +24 hours
+        console.log(`Subscription ${sub.id} first earning scheduled for: ${firstEarningTime.toISOString()}`);
+        
+        // Check if it's time for first earning
+        if (now < firstEarningTime) {
+          console.log(`Subscription ${sub.id} not ready for first earning yet - skipping`);
+          continue;
+        }
+      } else {
+        // Check if it's time for next earning
+        if (now < nextEarningAt) {
+          console.log(`Subscription ${sub.id} next earning at ${nextEarningAt.toISOString()} - not ready yet`);
+          continue;
+        }
       }
+      
+      console.log(`Subscription ${sub.id} is ready for earning at ${now.toISOString()}`);
 
       // If subscription has ended, deactivate and skip credit
       if (sub.end_date) {
         const endDate = new Date(sub.end_date as string);
-        if (todayDate > endDate) {
+        if (now > endDate) {
           await admin
             .from("subscriptions")
             .update({ active: false })
@@ -86,27 +92,8 @@ export async function GET(request: Request) {
         }
       }
 
-      // Check if we already credited earnings for today
-      console.log(`Checking for existing earnings for subscription ${sub.id} on ${today}`);
-      const { data: todayEarning, error: duplicateCheckError } = await admin
-        .from("transactions")
-        .select("id,created_at,amount_usdt,description")
-        .eq("user_id", sub.user_id)
-        .eq("type", "earning")
-        .gte("created_at", `${today}T00:00:00.000Z`)
-        .lt("created_at", `${today}T23:59:59.999Z`)
-        .maybeSingle();
-
-      if (duplicateCheckError) {
-        console.log(`Error checking duplicates for ${sub.id}:`, duplicateCheckError);
-      }
-
-      if (todayEarning) {
-        console.log(`Already credited earnings for subscription ${sub.id} today:`, todayEarning);
-        continue;
-      }
-      
-      console.log(`No existing earnings found for ${sub.id} today - proceeding to credit`);
+      // Individual timing means no need for daily duplicate check
+      // Each subscription earns exactly 24 hours after previous earning
 
       console.log(`Processing earnings for subscription ${sub.id}: $${amount}`);
 
@@ -147,7 +134,7 @@ export async function GET(request: Request) {
           .eq("user_id", sub.user_id);
       }
 
-      // Update total_earned in subscription (get current value first)
+      // Update subscription: total_earned AND next_earning_at
       const { data: currentSub } = await admin
         .from("subscriptions")
         .select("total_earned")
@@ -156,10 +143,18 @@ export async function GET(request: Request) {
       
       const newTotalEarned = Number(currentSub?.total_earned || 0) + amount;
       
+      // Set next earning time to exactly 24 hours from now
+      const nextEarning = new Date(now.getTime() + (24 * 60 * 60 * 1000));
+      
       await admin
         .from("subscriptions")
-        .update({ total_earned: newTotalEarned })
+        .update({ 
+          total_earned: newTotalEarned,
+          next_earning_at: nextEarning.toISOString()
+        })
         .eq("id", sub.id);
+        
+      console.log(`Subscription ${sub.id} next earning scheduled for: ${nextEarning.toISOString()}`);
     }
 
     return NextResponse.json({ 
