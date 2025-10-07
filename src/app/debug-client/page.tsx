@@ -245,6 +245,22 @@ export default function DebugClientPage() {
         >
           👤 CHECK USER SUBSCRIPTIONS
         </button>
+        
+        <button 
+          onClick={() => testAPI('/api/debug/check-balance-tables', 'GET')}
+          className="bg-red-600 text-white px-4 py-2 rounded hover:bg-red-700 disabled:opacity-50"
+          disabled={loading}
+        >
+          💰 CHECK BALANCE TABLES
+        </button>
+        
+        <button 
+          onClick={() => testAPI('/api/debug/fix-balance-record', 'POST')}
+          className="bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700 disabled:opacity-50"
+          disabled={loading}
+        >
+          🔧 FIX BALANCE RECORD
+        </button>
       </div>
 
       {loading && (
