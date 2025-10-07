@@ -63,6 +63,9 @@ export default async function WalletHistoryPage() {
     .single();
   
   console.log("User balance record:", balanceRecord);
+  // Define success statuses and container for NOWPayments confirmed deposits
+  const successStatuses = new Set(["finished", "confirmed", "completed", "succeeded"]);
+  let successfulNowPayments: any[] = [];
 
   // Get pending deposits from deposit_transactions table using admin client
   let pendingDeposits = [];
@@ -71,7 +74,7 @@ export default async function WalletHistoryPage() {
       .from("deposit_transactions")
       .select("amount, created_at, status, tx_hash")
       .eq("user_id", user.id)
-      .in("status", ["pending", "confirmed"])
+      .eq("status", "pending")
       .order("created_at", { ascending: false })
       .limit(10);
     if (data) pendingDeposits.push(...data);
@@ -87,17 +90,9 @@ export default async function WalletHistoryPage() {
       .eq("user_id", user.id)
       .order("created_at", { ascending: false })
       .limit(10);
+    // Filter only successful NOWPayments deposits
     if (data) {
-      // Add NOWPayments deposits to pending list
-      const nowpaymentsDeposits = data.map((deposit: any) => ({
-        amount: deposit.amount_usdt,
-        created_at: deposit.created_at,
-        status: deposit.status,
-        tx_hash: deposit.tx_hash,
-        order_id: deposit.order_id,
-        source: 'nowpayments'
-      }));
-      pendingDeposits.push(...nowpaymentsDeposits);
+      successfulNowPayments = data.filter((d: any) => successStatuses.has(String(d.status || '').toLowerCase()));
     }
   } catch (error) {
     console.log("deposits table not found, skipping NOWPayments deposits");
@@ -105,6 +100,14 @@ export default async function WalletHistoryPage() {
 
   // Combine and format all items - ensure we handle the data properly
   const confirmedTxs = (txs as Tx[] | null) || [];
+  // Map successful NOWPayments deposits to normal deposit entries
+  const extraConfirmed: Tx[] = (successfulNowPayments || []).map((deposit: any) => ({
+    type: "deposit",
+    amount_usdt: deposit.amount_usdt || 0,
+    created_at: deposit.created_at,
+    status: deposit.status,
+    description: `NOWPayments deposit (${deposit.order_id || deposit.tx_hash || ''})`
+  }));
   const pendingTxs = (pendingDeposits || []).map((deposit: any) => ({
     type: "pending_deposit" as const,
     amount_usdt: deposit.amount || deposit.amount_usdt || 0,
@@ -115,10 +118,11 @@ export default async function WalletHistoryPage() {
 
   // Debug the processed data
   console.log("Processed confirmed transactions:", confirmedTxs.length);
+  console.log("Extra confirmed NOWPayments deposits:", extraConfirmed.length);
   console.log("Processed pending deposits:", pendingTxs.length);
 
   // Combine and sort by date
-  const allItems = [...confirmedTxs, ...pendingTxs]
+  const allItems = [...confirmedTxs, ...extraConfirmed, ...pendingTxs]
     .sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())
     .slice(0, 50);
 

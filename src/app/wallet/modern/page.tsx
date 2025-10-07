@@ -35,7 +35,7 @@ export default async function ModernWalletPage() {
     .order("created_at", { ascending: false })
     .limit(10);
 
-  // Also fetch NOWPayments deposits (pending and completed)
+  // Also fetch NOWPayments deposits
   const { data: deposits } = await admin
     .from("deposits")
     .select("amount_usdt, created_at, status, order_id")
@@ -43,14 +43,17 @@ export default async function ModernWalletPage() {
     .order("created_at", { ascending: false })
     .limit(10);
 
-  // Convert deposits to transaction format for display
-  const depositTxs = (deposits || []).map((deposit: any) => ({
-    type: deposit.status === 'pending' ? 'pending_deposit' : 'deposit',
-    amount_usdt: deposit.amount_usdt,
-    created_at: deposit.created_at,
-    description: `NOWPayments deposit (${deposit.order_id})`,
-    status: deposit.status
-  }));
+  // Only include successful NOWPayments deposits
+  const successStatuses = new Set(["finished", "confirmed", "completed", "succeeded"]);
+  const depositTxs = (deposits || [])
+    .filter((d: any) => successStatuses.has(String(d.status || '').toLowerCase()))
+    .map((deposit: any) => ({
+      type: 'deposit' as const,
+      amount_usdt: deposit.amount_usdt,
+      created_at: deposit.created_at,
+      description: `NOWPayments deposit (${deposit.order_id})`,
+      status: deposit.status
+    }));
 
   // Combine transactions and deposits, then sort by date
   const allTransactions = [...(allTx || []), ...depositTxs]
