@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import { getSupabaseServerClient } from "@/lib/supabase/server";
+import { getSupabaseAdminClient } from "@/lib/supabase/admin";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { 
@@ -18,6 +19,7 @@ import {
 
 export default async function ModernWalletPage() {
   const supabase = await getSupabaseServerClient();
+  const admin = getSupabaseAdminClient();
   const {
     data: { user },
   } = await supabase.auth.getUser();
@@ -28,10 +30,32 @@ export default async function ModernWalletPage() {
   // Fetch all user transactions to compute balance
   const { data: allTx } = await supabase
     .from("transactions")
-    .select("type, amount_usdt, created_at")
+    .select("type, amount_usdt, created_at, description, status")
     .eq("user_id", user.id)
     .order("created_at", { ascending: false })
     .limit(10);
+
+  // Also fetch NOWPayments deposits (pending and completed)
+  const { data: deposits } = await admin
+    .from("deposits")
+    .select("amount_usdt, created_at, status, order_id")
+    .eq("user_id", user.id)
+    .order("created_at", { ascending: false })
+    .limit(10);
+
+  // Convert deposits to transaction format for display
+  const depositTxs = (deposits || []).map((deposit: any) => ({
+    type: deposit.status === 'pending' ? 'pending_deposit' : 'deposit',
+    amount_usdt: deposit.amount_usdt,
+    created_at: deposit.created_at,
+    description: `NOWPayments deposit (${deposit.order_id})`,
+    status: deposit.status
+  }));
+
+  // Combine transactions and deposits, then sort by date
+  const allTransactions = [...(allTx || []), ...depositTxs]
+    .sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())
+    .slice(0, 10);
 
   const totalEarnings = (allTx || [])
     .filter((t) => t.type === "earning")
@@ -52,8 +76,8 @@ export default async function ModernWalletPage() {
   // New balance calculation: deposits + earnings + returns - investments - withdrawals
   const walletBalance = totalDeposits + totalEarnings + totalReturns - totalInvestments - totalWithdrawals;
 
-  // Recent transactions for display
-  const recentTx = allTx?.slice(0, 5) || [];
+  // Recent transactions for display (now includes NOWPayments deposits)
+  const recentTx = allTransactions.slice(0, 5);
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-900 via-blue-900/20 to-gray-900 pt-16 pb-20">
@@ -122,6 +146,7 @@ export default async function ModernWalletPage() {
                     <div className="flex items-center gap-3">
                       <div className={`w-10 h-10 rounded-xl flex items-center justify-center ${
                         tx.type === 'deposit' ? 'bg-green-500/20' :
+                        tx.type === 'pending_deposit' ? 'bg-yellow-500/20' :
                         tx.type === 'earning' ? 'bg-blue-500/20' :
                         tx.type === 'investment' ? 'bg-red-500/20' :
                         tx.type === 'investment_return' ? 'bg-purple-500/20' :
@@ -129,6 +154,8 @@ export default async function ModernWalletPage() {
                       }`}>
                         {tx.type === 'deposit' ? (
                           <ArrowDownRight className="w-5 h-5 text-green-400" />
+                        ) : tx.type === 'pending_deposit' ? (
+                          <Clock className="w-5 h-5 text-yellow-400" />
                         ) : tx.type === 'earning' ? (
                           <TrendingUp className="w-5 h-5 text-blue-400" />
                         ) : tx.type === 'investment' ? (
@@ -144,6 +171,8 @@ export default async function ModernWalletPage() {
                           {tx.type === 'earning' ? 'Daily Earning' : 
                            tx.type === 'investment' ? 'Miner Purchase' :
                            tx.type === 'investment_return' ? 'Investment Return' :
+                           tx.type === 'pending_deposit' ? 'Pending Deposit' :
+                           tx.type === 'deposit' ? 'Deposit' :
                            tx.type}
                         </div>
                         <div className="text-sm text-gray-400">
@@ -152,7 +181,8 @@ export default async function ModernWalletPage() {
                       </div>
                     </div>
                     <div className={`font-bold ${
-                      (tx.type === 'withdrawal' || tx.type === 'investment') ? 'text-red-400' : 'text-green-400'
+                      (tx.type === 'withdrawal' || tx.type === 'investment') ? 'text-red-400' : 
+                      tx.type === 'pending_deposit' ? 'text-yellow-400' : 'text-green-400'
                     }`}>
                       {(tx.type === 'withdrawal' || tx.type === 'investment') ? '-' : '+'}${Number(tx.amount_usdt).toFixed(2)}
                     </div>
