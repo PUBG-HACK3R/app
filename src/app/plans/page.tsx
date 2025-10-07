@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { getSupabaseAdminClient } from "@/lib/supabase/admin";
+import { getSupabaseServerClient } from "@/lib/supabase/server";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -46,6 +47,13 @@ interface PlanDisplay extends Omit<DatabasePlan, 'features'> {
   icon: any;
   gradient: string;
   bgGradient: string;
+  userHasActive?: boolean;
+  activeSubscription?: {
+    id: string;
+    created_at: string;
+    total_earned: number;
+    days_remaining: number;
+  };
 }
 
 // Bitcoin Mining Plan display configurations
@@ -156,10 +164,15 @@ const planConfigs: Record<string, {description: string; features: string[]; popu
   }
 };
 
-async function getPlans(): Promise<PlanDisplay[]> {
+async function getPlansWithUserData(): Promise<PlanDisplay[]> {
   try {
-    // Fetch plans directly from database using admin client
+    const supabase = await getSupabaseServerClient();
     const admin = getSupabaseAdminClient();
+    
+    // Get current user
+    const { data: { user } } = await supabase.auth.getUser();
+    
+    // Fetch plans directly from database using admin client
     const { data: dbPlans, error } = await admin
       .from("plans")
       .select("*")
@@ -175,6 +188,50 @@ async function getPlans(): Promise<PlanDisplay[]> {
       console.log('No plans found in database');
       return [];
     }
+
+    // Get user's active subscriptions if logged in
+    let userSubscriptions: any[] = [];
+    if (user) {
+      const { data: subscriptions } = await admin
+        .from("subscriptions")
+        .select(`
+          id,
+          plan_id,
+          created_at,
+          is_active,
+          duration_days
+        `)
+        .eq("user_id", user.id)
+        .eq("is_active", true);
+      
+      userSubscriptions = subscriptions || [];
+
+      // Get total earnings for each subscription
+      if (userSubscriptions.length > 0) {
+        const subscriptionIds = userSubscriptions.map(s => s.id);
+        const { data: earnings } = await admin
+          .from("transactions")
+          .select("description, amount_usdt")
+          .in("description", subscriptionIds.map(id => `Daily earning for subscription ${id}`));
+        
+        // Calculate total earned per subscription
+        userSubscriptions = userSubscriptions.map(sub => {
+          const subEarnings = earnings?.filter(e => e.description.includes(sub.id)) || [];
+          const totalEarned = subEarnings.reduce((sum, e) => sum + Number(e.amount_usdt), 0);
+          
+          // Calculate days remaining
+          const createdDate = new Date(sub.created_at);
+          const daysPassed = Math.floor((Date.now() - createdDate.getTime()) / (1000 * 60 * 60 * 24));
+          const daysRemaining = Math.max(0, sub.duration_days - daysPassed);
+          
+          return {
+            ...sub,
+            total_earned: totalEarned,
+            days_remaining: daysRemaining
+          };
+        });
+      }
+    }
     
     // Transform database plans to display plans
     return dbPlans.map((plan, index) => {
@@ -184,11 +241,16 @@ async function getPlans(): Promise<PlanDisplay[]> {
       // Mark middle plan as popular if there are 3 plans
       const isPopular = dbPlans.length === 3 && index === 1 ? true : config.popular;
       
+      // Check if user has active subscription for this plan
+      const activeSubscription = userSubscriptions.find(sub => sub.plan_id === plan.id);
+      
       return {
         ...plan,
         ...config,
         popular: isPopular,
-        features: config.features // Ensure features is properly mapped
+        features: config.features,
+        userHasActive: !!activeSubscription,
+        activeSubscription: activeSubscription || undefined
       };
     });
   } catch (error) {
@@ -199,7 +261,7 @@ async function getPlans(): Promise<PlanDisplay[]> {
 }
 
 export default async function PlansPage() {
-  const plans = await getPlans();
+  const plans = await getPlansWithUserData();
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-900 via-orange-900/10 to-gray-900 pt-16 pb-20">
       <div className="mx-auto max-w-7xl px-4 py-8 sm:py-12 space-y-8 sm:space-y-12">
@@ -233,11 +295,12 @@ export default async function PlansPage() {
           </div>
         ) : (
           <div className="grid gap-6 sm:gap-8 sm:grid-cols-2 lg:grid-cols-3">
-            {plans.map((plan) => {
+            {plans.map((plan: PlanDisplay) => {
             const Icon = plan.icon;
-            const totalReturn = (plan.min_amount * (plan.roi_daily_percent / 100) * plan.duration_days).toFixed(2);
-            const totalProfit = (parseFloat(totalReturn) - plan.min_amount).toFixed(2);
-            const totalROI = ((parseFloat(totalProfit) / plan.min_amount) * 100).toFixed(1);
+            const dailyEarning = plan.min_amount * (plan.roi_daily_percent / 100);
+            const totalReturn = dailyEarning * plan.duration_days;
+            const totalProfit = totalReturn - plan.min_amount;
+            const totalROI = ((totalProfit / plan.min_amount) * 100).toFixed(1);
             
             return (
               <Card 
@@ -246,11 +309,20 @@ export default async function PlansPage() {
                   plan.popular ? 'ring-2 ring-purple-500 scale-105' : ''
                 }`}
               >
-                {plan.popular && (
+                {plan.popular && !plan.userHasActive && (
                   <div className="absolute -top-4 left-1/2 transform -translate-x-1/2 z-10">
                     <Badge className="bg-gradient-to-r from-purple-500 to-pink-500 text-white px-4 py-2 shadow-lg">
                       <Star className="h-3 w-3 mr-1" />
                       Most Popular
+                    </Badge>
+                  </div>
+                )}
+                
+                {plan.userHasActive && (
+                  <div className="absolute -top-4 left-1/2 transform -translate-x-1/2 z-10">
+                    <Badge className="bg-gradient-to-r from-green-500 to-emerald-500 text-white px-4 py-2 shadow-lg">
+                      <CheckCircle className="h-3 w-3 mr-1" />
+                      Active Plan
                     </Badge>
                   </div>
                 )}
@@ -282,16 +354,35 @@ export default async function PlansPage() {
                       <div className="text-xs text-gray-400">Daily Mining</div>
                     </div>
                     <div className="text-center">
-                      <div className="text-lg font-bold text-blue-400">{plan.duration_days} days</div>
+                      <div className="text-lg font-bold text-blue-400">
+                        {plan.userHasActive && plan.activeSubscription 
+                          ? `${plan.activeSubscription.days_remaining} left`
+                          : `${plan.duration_days} days`
+                        }
+                      </div>
                       <div className="text-xs text-gray-400">Duration</div>
                     </div>
                     <div className="text-center">
-                      <div className="text-lg font-bold text-orange-400">${totalReturn}</div>
-                      <div className="text-xs text-gray-400">Total Earned</div>
+                      <div className="text-lg font-bold text-orange-400">
+                        ${plan.userHasActive && plan.activeSubscription 
+                          ? plan.activeSubscription.total_earned.toFixed(2)
+                          : totalReturn.toFixed(2)
+                        }
+                      </div>
+                      <div className="text-xs text-gray-400">
+                        {plan.userHasActive ? 'Earned So Far' : 'Total Earned'}
+                      </div>
                     </div>
                     <div className="text-center">
-                      <div className="text-lg font-bold text-yellow-400">+{totalROI}%</div>
-                      <div className="text-xs text-gray-400">Total Profit</div>
+                      <div className="text-lg font-bold text-yellow-400">
+                        +{plan.userHasActive && plan.activeSubscription 
+                          ? ((plan.activeSubscription.total_earned / plan.min_amount) * 100).toFixed(1)
+                          : totalROI
+                        }%
+                      </div>
+                      <div className="text-xs text-gray-400">
+                        {plan.userHasActive ? 'Current Profit' : 'Total Profit'}
+                      </div>
                     </div>
                   </div>
                   
@@ -299,11 +390,25 @@ export default async function PlansPage() {
                   <div className="space-y-3 p-4 bg-gradient-to-r from-orange-900/20 to-red-900/20 rounded-lg border border-orange-500/20">
                     <div className="flex justify-between text-sm">
                       <span className="text-gray-300">Mining Profit</span>
-                      <span className="font-bold text-green-400">${totalProfit}</span>
+                      <span className="font-bold text-green-400">
+                        ${plan.userHasActive && plan.activeSubscription 
+                          ? (plan.activeSubscription.total_earned - plan.min_amount).toFixed(2)
+                          : totalProfit.toFixed(2)
+                        }
+                      </span>
                     </div>
-                    <Progress value={parseFloat(totalROI)} className="h-3 bg-gray-700" />
+                    <Progress 
+                      value={plan.userHasActive && plan.activeSubscription 
+                        ? Math.min(100, (plan.activeSubscription.total_earned / totalReturn) * 100)
+                        : parseFloat(totalROI)
+                      } 
+                      className="h-3 bg-gray-700" 
+                    />
                     <div className="text-xs text-center text-gray-400">
-                      {totalROI}% total mining profit over {plan.duration_days} days
+                      {plan.userHasActive && plan.activeSubscription 
+                        ? `${((plan.activeSubscription.total_earned / totalReturn) * 100).toFixed(1)}% progress • ${plan.activeSubscription.days_remaining} days left`
+                        : `${totalROI}% total mining profit over ${plan.duration_days} days`
+                      }
                     </div>
                   </div>
                   
@@ -314,7 +419,7 @@ export default async function PlansPage() {
                       What's Included
                     </h4>
                     <ul className="space-y-2">
-                      {plan.features.map((feature, index) => (
+                      {plan.features.map((feature: string, index: number) => (
                         <li key={index} className="flex items-center text-sm text-gray-300">
                           <CheckCircle className="h-3 w-3 mr-2 text-green-400 flex-shrink-0" />
                           {feature}
@@ -324,12 +429,30 @@ export default async function PlansPage() {
                   </div>
                   
                   {/* CTA Button */}
-                  <PlanPurchaseButton
-                    planId={plan.id}
-                    planName={plan.name}
-                    planPrice={plan.min_amount}
-                    gradient={plan.gradient}
-                  />
+                  {plan.userHasActive ? (
+                    <div className="space-y-3">
+                      <Button 
+                        className="w-full bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700 text-white font-semibold py-3 px-6 rounded-lg shadow-lg transition-all duration-300"
+                        disabled
+                      >
+                        <CheckCircle className="h-4 w-4 mr-2" />
+                        Plan Active
+                      </Button>
+                      <Link href="/active-plans">
+                        <Button variant="outline" className="w-full border-green-500/50 text-green-400 hover:bg-green-500/10">
+                          <TrendingUp className="h-4 w-4 mr-2" />
+                          View Progress
+                        </Button>
+                      </Link>
+                    </div>
+                  ) : (
+                    <PlanPurchaseButton
+                      planId={plan.id}
+                      planName={plan.name}
+                      planPrice={plan.min_amount}
+                      gradient={plan.gradient}
+                    />
+                  )}
                   
                   {/* Mining Disclaimer */}
                   <div className="flex items-start space-x-2 p-3 bg-amber-900/20 border border-amber-700/30 rounded-lg">
