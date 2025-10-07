@@ -92,20 +92,7 @@ export function HorizontalPlans({ plans }: HorizontalPlansProps) {
         </div>
       ))}
       
-      {/* Add a "View All" card at the end */}
-      <div className="flex-shrink-0 w-64 bg-gradient-to-br from-purple-800/50 to-pink-800/50 rounded-2xl border border-purple-700/50 p-4 hover:border-purple-600/50 transition-all duration-300">
-        <div className="space-y-3 h-full flex flex-col justify-center items-center text-center">
-          <div className="text-white font-bold text-lg">View All Plans</div>
-          <div className="text-purple-200 text-sm">
-            Discover more investment opportunities
-          </div>
-          <Link href="/plans" className="w-full">
-            <Button className="w-full bg-gradient-to-r from-purple-500 to-pink-600 hover:from-purple-600 hover:to-pink-700 text-white font-semibold">
-              Browse All
-            </Button>
-          </Link>
-        </div>
-      </div>
+      {/* Removed "View All Plans" card */}
     </div>
   );
 }

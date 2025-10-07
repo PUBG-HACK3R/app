@@ -115,9 +115,6 @@ export default async function DashboardPage() {
         <div className="space-y-4">
           <div className="flex items-center justify-between">
             <h2 className="text-xl font-bold text-white">Mining Plans</h2>
-            <Link href="/plans" className="text-orange-400 text-sm font-medium">
-              View All →
-            </Link>
           </div>
           
           <HorizontalPlans 
