@@ -37,8 +37,8 @@ interface CurrencyOption {
 }
 
 const SUPPORTED_CURRENCIES: CurrencyOption[] = [
-  { code: 'usdttrc20', name: 'USDT TRC20', network: 'TRON', minAmount: 12, icon: '₮' },
-  { code: 'usdtbsc', name: 'USDT BEP20', network: 'BSC', minAmount: 12, icon: '₮' },
+  { code: 'usdttrc20', name: 'USDT TRC20', network: 'TRON', minAmount: 20, icon: '₮' },
+  { code: 'usdtbsc', name: 'USDT BEP20', network: 'BSC', minAmount: 20, icon: '₮' },
 ];
 
 export default function NowPaymentsDeposit({ 
@@ -52,7 +52,7 @@ export default function NowPaymentsDeposit({
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [pendingDeposit, setPendingDeposit] = useState<any>(null);
-  const [minAmount, setMinAmount] = useState<number>(12);
+  const [minAmount, setMinAmount] = useState<number>(20);
   const [availableCurrencies, setAvailableCurrencies] = useState<string[]>([]);
 
   // Get selected currency info
@@ -60,7 +60,7 @@ export default function NowPaymentsDeposit({
 
   // Update minimum amount when currency changes
   useEffect(() => {
-    setMinAmount(currentCurrency.minAmount || 12);
+    setMinAmount(currentCurrency.minAmount || 20);
     setError(null);
   }, [selectedCurrency, currentCurrency]);
 
@@ -139,10 +139,18 @@ export default function NowPaymentsDeposit({
       }
 
       if (data.invoice_url) {
-        // Open payment page in new window
-        window.open(data.invoice_url, '_blank', 'width=800,height=600,scrollbars=yes,resizable=yes');
+        // Better Safari compatibility - try window.open first, fallback to location.href
+        const newWindow = window.open(data.invoice_url, '_blank', 'width=800,height=600,scrollbars=yes,resizable=yes');
         
-        toast.success('Payment invoice created! Complete payment in the new window.');
+        // Check if popup was blocked (common in Safari)
+        if (!newWindow || newWindow.closed || typeof newWindow.closed == 'undefined') {
+          // Fallback: redirect current window
+          toast.success('Redirecting to payment page...');
+          window.location.href = data.invoice_url;
+        } else {
+          toast.success('Payment invoice created! Complete payment in the new window.');
+        }
+        
         onSuccess?.(data);
       } else {
         throw new Error('No payment URL received');

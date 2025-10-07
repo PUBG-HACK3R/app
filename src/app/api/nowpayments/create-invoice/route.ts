@@ -6,7 +6,7 @@ export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
 const CreateInvoiceSchema = z.object({
-  amount: z.number().positive().min(12, "Minimum amount is $12 USDT for USDT TRC20"),
+  amount: z.number().positive().min(20, "Minimum amount is $20 USDT for USDT TRC20"),
   priceCurrency: z.string().default("usd"),
   payCurrency: z.string().default("usdttrc20"),
   planId: z.string().optional(),
@@ -86,7 +86,7 @@ export async function POST(request: Request) {
       
       if (minAmountRes.ok) {
         const minAmountData = await minAmountRes.json();
-        const minAmount = parseFloat(minAmountData.min_amount || "12");
+        const minAmount = Math.max(parseFloat(minAmountData.min_amount || "20"), 20);
         console.log(`Minimum amount for ${priceCurrency} to ${finalPayCurrency}:`, minAmount);
         
         if (amount < minAmount) {
@@ -99,10 +99,10 @@ export async function POST(request: Request) {
       } else {
         console.warn("Failed to fetch minimum amount, using default validation");
         // Fallback to our hardcoded minimum
-        if (amount < 12) {
+        if (amount < 20) {
           return NextResponse.json({ 
-            error: "Minimum amount is $12 USDT for USDT TRC20",
-            min_amount: 12,
+            error: "Minimum amount is $20 USDT for USDT TRC20",
+            min_amount: 20,
             requested_amount: amount
           }, { status: 400 });
         }
@@ -110,10 +110,10 @@ export async function POST(request: Request) {
     } catch (minAmountError) {
       console.warn("Error checking minimum amount:", minAmountError);
       // Fallback validation
-      if (amount < 12) {
+      if (amount < 20) {
         return NextResponse.json({ 
-          error: "Minimum amount is $12 USDT for USDT TRC20",
-          min_amount: 12,
+          error: "Minimum amount is $20 USDT for USDT TRC20",
+          min_amount: 20,
           requested_amount: amount
         }, { status: 400 });
       }
@@ -224,7 +224,7 @@ export async function POST(request: Request) {
       } else if (data?.message?.includes('minimal') || data?.message?.includes('minimum')) {
         // Extract minimum amount from error message if possible
         const minMatch = data.message.match(/([0-9.]+)/);
-        const suggestedMin = minMatch ? parseFloat(minMatch[1]) : 12;
+        const suggestedMin = minMatch ? Math.max(parseFloat(minMatch[1]), 20) : 20;
         userError = `Minimum amount is $${Math.ceil(suggestedMin)} USDT. Please increase your deposit amount.`;
       } else if (res.status === 401) {
         userError = "Payment service authentication failed. Please contact support.";
