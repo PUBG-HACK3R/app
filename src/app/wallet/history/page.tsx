@@ -65,7 +65,7 @@ export default async function WalletHistoryPage() {
   console.log("User balance record:", balanceRecord);
 
   // Get pending deposits from deposit_transactions table using admin client
-  let pendingDeposits = null;
+  let pendingDeposits = [];
   try {
     const { data } = await admin
       .from("deposit_transactions")
@@ -74,10 +74,33 @@ export default async function WalletHistoryPage() {
       .in("status", ["pending", "confirmed"])
       .order("created_at", { ascending: false })
       .limit(10);
-    pendingDeposits = data;
+    if (data) pendingDeposits.push(...data);
   } catch (error) {
-    console.log("deposit_transactions table not found, skipping pending deposits");
-    pendingDeposits = [];
+    console.log("deposit_transactions table not found, skipping");
+  }
+
+  // Also get NOWPayments deposits from deposits table
+  try {
+    const { data } = await admin
+      .from("deposits")
+      .select("amount_usdt, created_at, status, tx_hash, order_id")
+      .eq("user_id", user.id)
+      .order("created_at", { ascending: false })
+      .limit(10);
+    if (data) {
+      // Add NOWPayments deposits to pending list
+      const nowpaymentsDeposits = data.map((deposit: any) => ({
+        amount: deposit.amount_usdt,
+        created_at: deposit.created_at,
+        status: deposit.status,
+        tx_hash: deposit.tx_hash,
+        order_id: deposit.order_id,
+        source: 'nowpayments'
+      }));
+      pendingDeposits.push(...nowpaymentsDeposits);
+    }
+  } catch (error) {
+    console.log("deposits table not found, skipping NOWPayments deposits");
   }
 
   // Combine and format all items - ensure we handle the data properly
