@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import "./globals.css";
 import { ThemeProvider } from "@/components/theme-provider";
+import { SimpleThemeDetector } from "@/components/simple-theme-detector";
 import { ConditionalBottomNav } from "@/components/conditional-bottom-nav";
 import { ConditionalHeader } from "@/components/conditional-header";
 import { ErrorBoundary } from "@/components/error-boundary";
@@ -61,6 +62,7 @@ export default function RootLayout({
       <body className="font-sans min-h-screen antialiased flex flex-col">
         <ErrorBoundary>
           <ThemeProvider attribute="class" defaultTheme="system" enableSystem disableTransitionOnChange>
+            <SimpleThemeDetector />
             <ConditionalHeader />
             <main className="flex-1">
               {children}
