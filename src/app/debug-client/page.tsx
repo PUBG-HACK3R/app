@@ -197,6 +197,14 @@ export default function DebugClientPage() {
         >
           🔍 DEBUG ACTIVE PLANS DATA
         </button>
+        
+        <button 
+          onClick={() => testAPI('/api/debug/check-pending-deposits')}
+          className="bg-yellow-600 text-white px-4 py-2 rounded hover:bg-yellow-700 disabled:opacity-50"
+          disabled={loading}
+        >
+          💰 CHECK PENDING DEPOSITS
+        </button>
       </div>
 
       {loading && (
