@@ -237,6 +237,14 @@ export default function DebugClientPage() {
         >
           📋 TEST PLAN SAVE
         </button>
+        
+        <button 
+          onClick={() => testAPI('/api/debug/check-user-subscriptions', 'GET')}
+          className="bg-indigo-600 text-white px-4 py-2 rounded hover:bg-indigo-700 disabled:opacity-50"
+          disabled={loading}
+        >
+          👤 CHECK USER SUBSCRIPTIONS
+        </button>
       </div>
 
       {loading && (

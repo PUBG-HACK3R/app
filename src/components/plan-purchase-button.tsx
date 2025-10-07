@@ -12,6 +12,7 @@ interface PlanPurchaseButtonProps {
   planPrice: number;
   gradient: string;
   className?: string;
+  onPurchaseSuccess?: () => void;
 }
 
 export function PlanPurchaseButton({ 
@@ -19,7 +20,8 @@ export function PlanPurchaseButton({
   planName, 
   planPrice, 
   gradient, 
-  className = "" 
+  className = "",
+  onPurchaseSuccess
 }: PlanPurchaseButtonProps) {
   const [loading, setLoading] = useState(false);
   const [userBalance, setUserBalance] = useState<number | null>(null);
@@ -85,8 +87,14 @@ export function PlanPurchaseButton({
 
       if (response.ok) {
         toast.success(`Successfully purchased ${planName}!`);
-        // Refresh the current page to update the button status
-        window.location.reload();
+        // Call the success callback if provided
+        if (onPurchaseSuccess) {
+          onPurchaseSuccess();
+        } else {
+          // Fallback to page refresh for server-side pages
+          router.refresh();
+          setTimeout(() => window.location.reload(), 1000);
+        }
       } else {
         if (data.error === 'Insufficient balance') {
           router.push(`/wallet/deposit?plan=${planId}&amount=${planPrice}`);
