@@ -168,7 +168,7 @@ export function AdvancedPlanManagement() {
       power_consumption: plan.power_consumption,
       risk_level: plan.risk_level,
       category_id: "",
-      features: plan.features.join(', '),
+      features: plan.features ? plan.features.join(', ') : '',
       is_active: plan.is_active
     });
     setIsDialogOpen(true);
