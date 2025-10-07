@@ -35,8 +35,7 @@ export default function SimpleWithdrawal({ balance, onSuccess, onError }: Simple
   const [pendingWithdrawal, setPendingWithdrawal] = useState<WithdrawalRequest | null>(null);
   const [timeRemaining, setTimeRemaining] = useState(900); // 15 minutes in seconds
   const [processingMessages, setProcessingMessages] = useState<string[]>([]);
-  const [currentMessageIndex, setCurrentMessageIndex] = useState(0);
-  const [isClearing, setIsClearing] = useState(false);
+  // Removed unused state variables
 
   useEffect(() => {
     const checkPendingWithdrawal = async () => {
