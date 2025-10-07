@@ -117,6 +117,22 @@ export default function DebugClientPage() {
         >
           ✅ CREATE MANUAL WITHDRAWAL
         </button>
+        
+        <button 
+          onClick={() => testAPI('/api/debug/check-subscriptions')}
+          className="bg-purple-500 text-white px-4 py-2 rounded hover:bg-purple-600 disabled:opacity-50"
+          disabled={loading}
+        >
+          🔍 CHECK SUBSCRIPTIONS & EARNINGS
+        </button>
+        
+        <button 
+          onClick={() => testAPI('/api/test/trigger-earnings', 'POST')}
+          className="bg-orange-500 text-white px-4 py-2 rounded hover:bg-orange-600 disabled:opacity-50"
+          disabled={loading}
+        >
+          ⚡ TRIGGER DAILY EARNINGS NOW
+        </button>
       </div>
 
       {loading && (
