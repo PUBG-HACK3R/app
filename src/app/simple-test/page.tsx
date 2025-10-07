@@ -15,14 +15,13 @@ export default function SimpleTestPage() {
         // Test add transaction
         try {
           const txResponse = await fetch('/api/test/add-transaction', { 
-            method: 'POST',
             headers: { 'Content-Type': 'application/json' }
           });
           const txResult = await txResponse.json();
-          setResults(prev => ({ ...prev, addTransaction: txResult }));
+          setResults((prev: any) => ({ ...prev, addTransaction: txResult }));
           console.log("Add transaction result:", txResult);
-        } catch (e) {
-          setResults(prev => ({ ...prev, addTransaction: { error: e.message } }));
+        } catch (e: any) {
+          setResults((prev: any) => ({ ...prev, addTransaction: { error: e.message } }));
           console.error("Add transaction error:", e);
         }
 
@@ -33,27 +32,25 @@ export default function SimpleTestPage() {
             headers: { 'Content-Type': 'application/json' }
           });
           const wdResult = await wdResponse.json();
-          setResults(prev => ({ ...prev, createWithdrawal: wdResult }));
-          console.log("Create withdrawal result:", wdResult);
-        } catch (e) {
-          setResults(prev => ({ ...prev, createWithdrawal: { error: e.message } }));
-          console.error("Create withdrawal error:", e);
+          setResults((prev: any) => ({ ...prev, createWithdrawal: wdResult }));
+        } catch (e: any) {
+          setResults((prev: any) => ({ ...prev, createWithdrawal: { error: e.message } }));
         }
 
-        // Test history page
+        // Test clear withdrawals
         try {
-          const historyResponse = await fetch('/wallet/history');
-          const historyStatus = historyResponse.status;
-          setResults(prev => ({ ...prev, historyPage: { status: historyStatus, ok: historyResponse.ok } }));
-          console.log("History page status:", historyStatus);
-        } catch (e) {
-          setResults(prev => ({ ...prev, historyPage: { error: e.message } }));
-          console.error("History page error:", e);
+          const clearResponse = await fetch('/api/test/clear-withdrawals', { 
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' }
+          });
+          const clearResult = await clearResponse.json();
+          setResults((prev: any) => ({ ...prev, clearWithdrawals: clearResult }));
+        } catch (e: any) {
+          setResults((prev: any) => ({ ...prev, clearWithdrawals: { error: e.message } }));
         }
 
-      } catch (error) {
+      } catch (error: any) {
         console.error("Test error:", error);
-        setResults({ error: error.message });
       } finally {
         setLoading(false);
       }
