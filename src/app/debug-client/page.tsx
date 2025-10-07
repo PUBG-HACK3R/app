@@ -165,6 +165,22 @@ export default function DebugClientPage() {
         >
           📋 ALL SUBSCRIPTIONS & EARNINGS
         </button>
+        
+        <button 
+          onClick={() => testAPI('/api/debug/purchase-history')}
+          className="bg-amber-500 text-white px-4 py-2 rounded hover:bg-amber-600 disabled:opacity-50"
+          disabled={loading}
+        >
+          💰 PURCHASE HISTORY & TRANSACTIONS
+        </button>
+        
+        <button 
+          onClick={() => testAPI('/api/debug/create-missing-subscription', 'POST')}
+          className="bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700 disabled:opacity-50"
+          disabled={loading}
+        >
+          🔧 CREATE MISSING $100 SUBSCRIPTION
+        </button>
       </div>
 
       {loading && (
