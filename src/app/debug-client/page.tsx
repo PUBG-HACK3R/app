@@ -157,6 +157,14 @@ export default function DebugClientPage() {
         >
           🔄 CHECK FRESH PLAN DATA
         </button>
+        
+        <button 
+          onClick={() => testAPI('/api/debug/all-subscriptions')}
+          className="bg-teal-500 text-white px-4 py-2 rounded hover:bg-teal-600 disabled:opacity-50"
+          disabled={loading}
+        >
+          📋 ALL SUBSCRIPTIONS & EARNINGS
+        </button>
       </div>
 
       {loading && (
