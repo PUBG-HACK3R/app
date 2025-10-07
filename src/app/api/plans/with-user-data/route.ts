@@ -5,24 +5,8 @@ import { getSupabaseAdminClient } from "@/lib/supabase/admin";
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
-// Bitcoin Mining Plan display configurations
+// Bitcoin Mining Plan display configurations - ONLY for actual database plans
 const planConfigs: Record<string, {description: string; features: string[]; popular: boolean; icon: string; gradient: string; bgGradient: string}> = {
-  "microbitcoinminer": {
-    description: "Perfect starter plan for new miners. Low risk, steady returns with shared ASIC mining.",
-    features: ["Shared ASIC Mining", "Daily Payouts", "24/7 Support", "Mobile Monitoring"],
-    popular: false,
-    icon: "Bitcoin",
-    gradient: "from-orange-500 to-orange-600",
-    bgGradient: "from-orange-50 to-orange-100 dark:from-orange-950 dark:to-orange-900"
-  },
-  "basicbitcoinminer": {
-    description: "Popular choice for beginners. Dedicated mining power with good daily returns.",
-    features: ["Dedicated Mining", "Real-time Stats", "Daily Rewards", "Email Notifications"],
-    popular: true,
-    icon: "Bitcoin",
-    gradient: "from-blue-500 to-blue-600",
-    bgGradient: "from-blue-50 to-blue-100 dark:from-blue-950 dark:to-blue-900"
-  },
   default: {
     description: "Professional Bitcoin mining with enterprise-grade equipment",
     features: ["Daily mining rewards", "24/7 Monitoring", "Secure mining", "Real-time stats"],
@@ -57,6 +41,8 @@ export async function GET() {
       console.log('No plans found in database');
       return NextResponse.json({ plans: [] });
     }
+
+    console.log('Found plans in database:', dbPlans.map(p => ({ id: p.id, name: p.name, min_amount: p.min_amount })));
 
     // Get user's active subscriptions if logged in
     let userSubscriptions: any[] = [];
