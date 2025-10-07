@@ -133,6 +133,14 @@ export default function DebugClientPage() {
         >
           ⚡ TRIGGER DAILY EARNINGS NOW
         </button>
+        
+        <button 
+          onClick={() => testAPI('/api/debug/cron-detailed')}
+          className="bg-pink-500 text-white px-4 py-2 rounded hover:bg-pink-600 disabled:opacity-50"
+          disabled={loading}
+        >
+          🔬 DETAILED CRON ANALYSIS
+        </button>
       </div>
 
       {loading && (

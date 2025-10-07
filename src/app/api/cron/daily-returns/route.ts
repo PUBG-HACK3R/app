@@ -21,6 +21,8 @@ export async function GET(request: Request) {
     const now = new Date();
     const nowIso = now.toISOString();
     const today = now.toISOString().slice(0, 10); // YYYY-MM-DD
+    
+    console.log("Cron job starting:", { now: nowIso, today });
 
     // Find subscriptions that are active and due for earning credit
     // Conditions:
