@@ -1,7 +1,8 @@
 import { redirect } from "next/navigation";
 import Link from "next/link";
 import { getSupabaseServerClient } from "@/lib/supabase/server";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { getSupabaseAdminClient } from "@/lib/supabase/admin";
+import { Card, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
@@ -23,14 +24,15 @@ export const revalidate = 0;
 
 export default async function ActivePlansPage() {
   const supabase = await getSupabaseServerClient();
+  const admin = getSupabaseAdminClient();
   const {
     data: { user },
   } = await supabase.auth.getUser();
   
   if (!user) redirect("/login?next=/active-plans");
 
-  // Get active subscriptions with plan details
-  let { data: subscriptions, error: subscriptionsError } = await supabase
+  // Get active subscriptions with plan details using admin client to bypass RLS
+  let { data: subscriptions, error: subscriptionsError } = await admin
     .from("subscriptions")
     .select(`
       id,
