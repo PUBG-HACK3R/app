@@ -19,7 +19,7 @@ export async function PUT(
     const { 
       name, 
       description,
-      min_amount, 
+      min_amount,
       roi_daily_percent, 
       duration_days,
       category_id,
@@ -55,6 +55,7 @@ export async function PUT(
         name,
         description: description || '',
         min_amount: parseFloat(min_amount),
+        max_amount: parseFloat(min_amount) * 10, // Default to 10x min_amount
         roi_daily_percent: parseFloat(roi_daily_percent),
         duration_days: parseInt(duration_days),
         category_id: category_id || null,
