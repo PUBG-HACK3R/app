@@ -55,7 +55,7 @@ export function HorizontalPlans({ plans }: HorizontalPlansProps) {
           <div className="space-y-3">
             <div className="flex items-center justify-between">
               <h3 className="font-bold text-white text-lg">{plan.name}</h3>
-              <Badge className="bg-gradient-to-r from-blue-500/20 to-purple-500/20 text-blue-300 border-blue-500/30 font-semibold">
+              <Badge className="bg-gradient-to-r from-blue-500/20 to-purple-500/20 text-blue-300 border-blue-500/30 font-semibold whitespace-nowrap">
                 {plan.roi_daily_percent}% Daily
               </Badge>
             </div>

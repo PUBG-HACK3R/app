@@ -17,6 +17,54 @@ import {
 import { CheckCircle, X, Clock, AlertTriangle } from "lucide-react";
 import { toast } from "sonner";
 
+// Persistent Timer Component that survives refresh
+function CountdownTimer({ createdAt }: { createdAt: string }) {
+  const [timeRemaining, setTimeRemaining] = React.useState(900); // Start with 15 minutes
+
+  React.useEffect(() => {
+    // Try to get stored time for this withdrawal, or start fresh
+    const storageKey = `withdrawal_timer_${createdAt}`;
+    const storedTime = localStorage.getItem(storageKey);
+    
+    if (storedTime) {
+      const remaining = parseInt(storedTime);
+      if (remaining > 0) {
+        setTimeRemaining(remaining);
+      }
+    }
+
+    const timer = setInterval(() => {
+      setTimeRemaining(prev => {
+        const newTime = prev <= 0 ? 0 : prev - 1;
+        // Store the current time
+        localStorage.setItem(storageKey, newTime.toString());
+        return newTime;
+      });
+    }, 1000);
+
+    return () => clearInterval(timer);
+  }, [createdAt]);
+
+  const formatTime = (seconds: number) => {
+    if (seconds <= 0) return "EXPIRED";
+    
+    const minutes = Math.floor(seconds / 60);
+    const secs = seconds % 60;
+    return `${minutes}:${secs.toString().padStart(2, '0')}`;
+  };
+
+  const isExpired = timeRemaining === 0;
+
+  return (
+    <div className={`flex items-center gap-1 text-xs ${
+      isExpired ? 'text-red-600' : 'text-orange-600'
+    }`}>
+      <Clock className="h-3 w-3" />
+      <span>{formatTime(timeRemaining)}</span>
+    </div>
+  );
+}
+
 export type PendingWithdrawal = {
   id: string;
   user_id: string;
@@ -184,16 +232,10 @@ export function PendingWithdrawalsTable({ initial }: { initial: PendingWithdrawa
                       </code>
                     </div>
                     
-                    {timeRemaining !== null && (
-                      <div className="text-xs">
-                        <p className="text-gray-500 dark:text-gray-400 mb-1">Time Remaining:</p>
-                        <div className={`font-mono text-sm font-bold ${
-                          urgent ? 'text-red-600' : expired ? 'text-gray-500' : 'text-blue-600'
-                        }`}>
-                          {expired ? 'EXPIRED' : formatTimeRemaining(timeRemaining)}
-                        </div>
-                      </div>
-                    )}
+                    <div className="text-xs">
+                      <p className="text-gray-500 dark:text-gray-400 mb-1">Time Remaining:</p>
+                      <CountdownTimer createdAt={w.created_at} />
+                    </div>
                   </div>
 
                   {/* Amount Details */}

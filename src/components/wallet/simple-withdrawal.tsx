@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Separator } from "@/components/ui/separator";
+import { getSupabaseBrowserClient } from "@/lib/supabase/client";
 import { 
   Clock, 
   CheckCircle, 
@@ -32,30 +33,111 @@ export default function SimpleWithdrawal({ balance, onSuccess, onError }: Simple
   const [address, setAddress] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [pendingWithdrawal, setPendingWithdrawal] = useState<WithdrawalRequest | null>(null);
-  const [timeRemaining, setTimeRemaining] = useState(0);
+  const [timeRemaining, setTimeRemaining] = useState(900); // 15 minutes in seconds
   const [processingMessages, setProcessingMessages] = useState<string[]>([]);
+  const [currentMessageIndex, setCurrentMessageIndex] = useState(0);
+  const [isClearing, setIsClearing] = useState(false);
 
-  // Timer for 15-minute processing window
+  useEffect(() => {
+    const checkPendingWithdrawal = async () => {
+      try {
+        const supabase = getSupabaseBrowserClient();
+        const { data: { user } } = await supabase.auth.getUser();
+        if (!user) return;
+
+        const { data: pending } = await supabase
+          .from("withdrawals")
+          .select("id, amount_usdt, address, status, created_at")
+          .eq("user_id", user.id)
+          .eq("status", "pending")
+          .single();
+
+        if (pending) {
+          const now = new Date().getTime();
+          const created = new Date(pending.created_at).getTime();
+          const elapsed = now - created;
+          const fifteenMinutes = 15 * 60 * 1000; // 15 minutes
+          
+          console.log("Withdrawal date check:", {
+            now: new Date(now).toISOString(),
+            created: new Date(created).toISOString(),
+            elapsed: elapsed,
+            isInFuture: elapsed < 0,
+            isExpired: elapsed > fifteenMinutes
+          });
+          
+          // Only delete if withdrawal has future date (clearly invalid)
+          if (elapsed < -60000) { // Only if more than 1 minute in future
+            console.log("Withdrawal has invalid future date, deleting from database...");
+            
+            // Delete invalid withdrawal with future date
+            try {
+              await fetch('/api/test/clear-withdrawals', { method: 'POST' });
+              console.log("Invalid withdrawal deleted successfully");
+            } catch (e) {
+              console.error("Failed to delete invalid withdrawal:", e);
+            }
+            
+            setPendingWithdrawal(null);
+            return;
+          }
+          
+          // Don't auto-delete based on age - let user/admin handle it manually
+          
+          // Withdrawal is still valid, show it
+          setPendingWithdrawal({
+            id: pending.id,
+            amount: pending.amount_usdt,
+            address: pending.address,
+            status: pending.status,
+            created_at: pending.created_at
+          });
+          
+          const remaining = Math.max(0, fifteenMinutes - elapsed);
+          setTimeRemaining(remaining);
+        }
+      } catch (error) {
+        console.error("Error checking pending withdrawal:", error);
+      }
+    };
+
+    checkPendingWithdrawal();
+  }, []);
+
+  // Persistent timer that survives refresh
   useEffect(() => {
     if (pendingWithdrawal) {
-      const timer = setInterval(() => {
-        const now = new Date().getTime();
-        const created = new Date(pendingWithdrawal.created_at).getTime();
-        const elapsed = now - created;
-        const remaining = Math.max(0, (15 * 60 * 1000) - elapsed); // 15 minutes
-        
-        setTimeRemaining(remaining);
-        
-        if (remaining === 0) {
-          // Auto-complete after 15 minutes
-          setPendingWithdrawal(null);
-          onSuccess(pendingWithdrawal.id);
+      // Try to restore timer from localStorage
+      const storageKey = `user_withdrawal_timer_${pendingWithdrawal.id}`;
+      const storedTime = localStorage.getItem(storageKey);
+      
+      if (storedTime) {
+        const remaining = parseInt(storedTime);
+        if (remaining > 0) {
+          setTimeRemaining(remaining);
         }
+      }
+
+      const timer = setInterval(() => {
+        setTimeRemaining(prev => {
+          const newTime = prev <= 0 ? 0 : prev - 1;
+          
+          // Store current time
+          localStorage.setItem(storageKey, newTime.toString());
+          
+          if (newTime <= 0) {
+            // Clean up storage when expired
+            localStorage.removeItem(storageKey);
+            setPendingWithdrawal(null);
+            return 0;
+          }
+          return newTime;
+        });
       }, 1000);
 
       return () => clearInterval(timer);
     }
-  }, [pendingWithdrawal, onSuccess]);
+  }, [pendingWithdrawal]);
 
   // Processing messages simulation
   useEffect(() => {
@@ -151,10 +233,10 @@ export default function SimpleWithdrawal({ balance, onSuccess, onError }: Simple
     }
   };
 
-  const formatTime = (ms: number) => {
-    const minutes = Math.floor(ms / (1000 * 60));
-    const seconds = Math.floor((ms % (1000 * 60)) / 1000);
-    return `${minutes}:${seconds.toString().padStart(2, '0')}`;
+  const formatTimeRemaining = (seconds: number) => {
+    const minutes = Math.floor(seconds / 60);
+    const secs = seconds % 60;
+    return `${minutes}:${secs.toString().padStart(2, '0')}`;
   };
 
   const calculateFee = (amount: number) => {
@@ -204,7 +286,7 @@ export default function SimpleWithdrawal({ balance, onSuccess, onError }: Simple
               <div className="flex items-center justify-center space-x-2 mb-3">
                 <Clock className="h-5 w-5 text-yellow-600" />
                 <span className="text-lg font-bold text-yellow-800 dark:text-yellow-200">
-                  {formatTime(timeRemaining)}
+                  {formatTimeRemaining(timeRemaining)}
                 </span>
               </div>
               <p className="text-sm text-yellow-700 dark:text-yellow-300 mb-3">
@@ -233,16 +315,15 @@ export default function SimpleWithdrawal({ balance, onSuccess, onError }: Simple
   }
 
   return (
-    <div className="bg-gradient-to-br from-gray-800/50 to-gray-900/50 rounded-3xl border border-gray-700/30 p-6">
-      <div className="text-center mb-6">
-        <div className="w-16 h-16 bg-gradient-to-br from-orange-500/20 to-red-500/20 rounded-full flex items-center justify-center mx-auto mb-4">
-          <TrendingDown className="w-8 h-8 text-orange-400" />
+    <Card className="bg-gradient-to-br from-blue-900/50 to-purple-900/50 border-blue-700/50 backdrop-blur-sm max-w-md mx-auto">
+      <CardContent className="p-4 space-y-4">
+        <div className="text-center">
+          <div className="w-12 h-12 bg-gradient-to-br from-orange-500/20 to-red-500/20 rounded-full flex items-center justify-center mx-auto mb-3">
+            <TrendingDown className="w-6 h-6 text-orange-400" />
+          </div>
+          <div className="text-lg font-semibold text-white">Withdraw USDT</div>
+          <div className="text-xs text-gray-400 mt-1">Available: ${balance.toFixed(2)} • Min: $30 • Fee: 5%</div>
         </div>
-        <div className="text-lg font-semibold text-white">How much do you want to withdraw?</div>
-        <div className="text-sm text-gray-400 mt-2">Minimum: $30 • Fee: 5% • TRC20 Network</div>
-      </div>
-
-      <div className="space-y-6">
         {/* Amount Input */}
         <div>
           <div className="relative">
@@ -264,15 +345,16 @@ export default function SimpleWithdrawal({ balance, onSuccess, onError }: Simple
         {/* Quick Amount Buttons */}
         {quickAmounts.length > 0 && (
           <div>
-            <div className="text-sm text-gray-400 mb-3 text-center">Quick amounts</div>
-            <div className="grid grid-cols-3 gap-3">
+            <div className="text-xs text-gray-400 mb-2 text-center">Quick amounts</div>
+            <div className="grid grid-cols-3 gap-2">
               {quickAmounts.slice(0, 6).map((amt, index) => (
                 <Button
                   key={index}
                   type="button"
                   variant="outline"
+                  size="sm"
                   onClick={() => setAmount(amt.toFixed(2))}
-                  className="border-gray-600 text-gray-300 hover:bg-gray-700 hover:text-white py-3 rounded-xl"
+                  className="border-gray-600 text-gray-300 hover:bg-gray-700 hover:text-white text-xs"
                   disabled={isSubmitting}
                 >
                   ${amt.toFixed(0)}
@@ -349,7 +431,7 @@ export default function SimpleWithdrawal({ balance, onSuccess, onError }: Simple
         <div className="text-xs text-gray-400 text-center">
           All withdrawals are processed automatically within 15 minutes
         </div>
-      </div>
-    </div>
+      </CardContent>
+    </Card>
   );
 }

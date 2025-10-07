@@ -69,56 +69,47 @@ export default function WithdrawPage() {
 
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-900 via-blue-900/20 to-gray-900 pt-16 pb-20">
-      <div className="px-4 py-6 space-y-6">
-        {/* Header */}
-        <div className="flex items-center justify-between mb-6">
-          <Link href="/wallet" className="flex items-center space-x-2 text-gray-300 hover:text-white">
-            <ArrowLeft className="h-5 w-5" />
-            <span>Back to Wallet</span>
-          </Link>
-          <div className="text-center">
-            <h1 className="text-2xl font-bold text-white">Mining Withdrawal</h1>
-            <p className="text-gray-400">Secure USDT withdrawal to your crypto wallet</p>
+    <main className="min-h-screen bg-gradient-to-br from-slate-900 via-blue-900/10 to-slate-900 overflow-hidden">
+      <div className="h-screen flex flex-col">
+        <div className="flex-1 flex items-center justify-center p-4">
+          <div className="w-full max-w-lg space-y-4">
+            {/* Status Messages */}
+            {message && (
+              <div className="bg-green-900/20 border border-green-700/50 rounded-lg p-4">
+                <div className="flex items-center space-x-2">
+                  <CheckCircle className="h-5 w-5 text-green-400" />
+                  <span className="text-green-300 font-medium text-sm">{message}</span>
+                </div>
+              </div>
+            )}
+            
+            {error && (
+              <div className="bg-red-900/20 border border-red-700/50 rounded-lg p-4">
+                <div className="flex items-center space-x-2">
+                  <AlertCircle className="h-5 w-5 text-red-400" />
+                  <span className="text-red-300 font-medium text-sm">{error}</span>
+                </div>
+              </div>
+            )}
+
+            {/* Simple Withdrawal Component */}
+            {balance !== null && (
+              <SimpleWithdrawal 
+                balance={balance}
+                onSuccess={handleWithdrawalSuccess}
+                onError={handleWithdrawalError}
+              />
+            )}
+            
+            {balance === null && (
+              <div className="text-center py-8">
+                <Wallet className="h-12 w-12 text-gray-500 mx-auto mb-4" />
+                <p className="text-gray-400">Loading your balance...</p>
+              </div>
+            )}
           </div>
-          <div className="w-20"></div> {/* Spacer for centering */}
         </div>
-
-        {/* Status Messages */}
-        {message && (
-          <div className="bg-green-50 dark:bg-green-950/20 border border-green-200 dark:border-green-800 rounded-lg p-4">
-            <div className="flex items-center space-x-2">
-              <CheckCircle className="h-5 w-5 text-green-600" />
-              <span className="text-green-800 dark:text-green-200 font-medium">{message}</span>
-            </div>
-          </div>
-        )}
-        
-        {error && (
-          <div className="bg-red-50 dark:bg-red-950/20 border border-red-200 dark:border-red-800 rounded-lg p-4">
-            <div className="flex items-center space-x-2">
-              <AlertCircle className="h-5 w-5 text-red-600" />
-              <span className="text-red-800 dark:text-red-200 font-medium">{error}</span>
-            </div>
-          </div>
-        )}
-
-        {/* Simple Withdrawal Component */}
-        {balance !== null && (
-          <SimpleWithdrawal 
-            balance={balance}
-            onSuccess={handleWithdrawalSuccess}
-            onError={handleWithdrawalError}
-          />
-        )}
-        
-        {balance === null && (
-          <div className="text-center py-8">
-            <Wallet className="h-12 w-12 text-gray-500 mx-auto mb-4" />
-            <p className="text-gray-400">Loading your balance...</p>
-          </div>
-        )}
       </div>
-    </div>
+    </main>
   );
 }

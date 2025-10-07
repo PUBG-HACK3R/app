@@ -50,17 +50,7 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: "Plan not found or inactive" }, { status: 404 });
     }
 
-    // Check if user already has an active subscription
-    const { data: activeSub } = await admin
-      .from("subscriptions")
-      .select("id")
-      .eq("user_id", user.id)
-      .eq("active", true)
-      .maybeSingle();
-
-    if (activeSub) {
-      return NextResponse.json({ error: "You already have an active subscription" }, { status: 400 });
-    }
+    // Allow multiple active subscriptions - removed restriction
 
     // Get current balance from balances table
     console.log("Purchase API - Checking balance for user:", user.id);

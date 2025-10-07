@@ -99,8 +99,8 @@ export function SiteHeader() {
               <Image 
                 src="/logo.png" 
                 alt="WeEarn Logo" 
-                width={80} 
-                height={80} 
+                width={100} 
+                height={100} 
                 className="rounded-lg shadow-sm group-hover:shadow-md transition-shadow"
               />
               <div className="absolute inset-0 rounded-lg bg-gradient-to-br from-blue-600/20 to-purple-600/20 opacity-0 group-hover:opacity-100 transition-opacity"></div>
@@ -193,7 +193,7 @@ export function SiteHeader() {
                       <div className="w-8 h-8 bg-gradient-to-br from-green-400 to-emerald-500 rounded-full flex items-center justify-center">
                         <UserIcon className="h-4 w-4 text-white" />
                       </div>
-                      <div className="flex flex-col">
+                      <div className="flex items-center gap-2">
                         <span className="text-xs font-medium text-green-700 dark:text-green-300">
                           {user.email?.split('@')[0]}
                         </span>
@@ -251,8 +251,8 @@ export function SiteHeader() {
                     <Image 
                       src="/logo.png" 
                       alt="WeEarn Logo" 
-                      width={64} 
-                      height={64} 
+                      width={80} 
+                      height={80} 
                       className="rounded-lg shadow-sm"
                     />
                   </div>
@@ -389,13 +389,14 @@ export function SiteHeader() {
                         <div className="w-10 h-10 bg-gradient-to-br from-green-400 to-emerald-500 rounded-full flex items-center justify-center">
                           <UserIcon className="h-5 w-5 text-white" />
                         </div>
-                        <div className="flex flex-col">
+                        <div className="flex items-center gap-2">
                           <span className="text-sm font-medium text-green-700 dark:text-green-300">
                             {user.email?.split('@')[0]}
                           </span>
-                          <span className="text-xs text-green-600 dark:text-green-400">
-                            {user.email}
-                          </span>
+                          <div className="flex items-center gap-1">
+                            <div className="w-1.5 h-1.5 bg-green-500 rounded-full"></div>
+                            <span className="text-xs text-green-600 dark:text-green-400">Online</span>
+                          </div>
                         </div>
                       </div>
                       <Button 

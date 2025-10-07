@@ -46,30 +46,58 @@ export async function POST(request: Request) {
     if (wdErr || !wd) return NextResponse.json({ error: wdErr?.message || "Withdrawal not found" }, { status: 404 });
     if (wd.status !== "pending") return NextResponse.json({ error: "Withdrawal is not pending" }, { status: 400 });
 
-    // Reject withdrawal (only update status - other columns don't exist)
+    // Get current user balance
+    const { data: balanceData } = await admin
+      .from("balances")
+      .select("available_usdt")
+      .eq("user_id", wd.user_id)
+      .single();
+
+    if (!balanceData) {
+      return NextResponse.json({ error: "Unable to fetch user balance" }, { status: 500 });
+    }
+
+    // Reject withdrawal and add rejection reason (only update existing columns)
     const { error: updErr } = await admin
       .from("withdrawals")
-      .update({ status: "rejected" })
+      .update({ 
+        status: "rejected"
+      })
       .eq("id", wd.id);
     if (updErr) return NextResponse.json({ error: updErr.message }, { status: 400 });
 
-    // Log the rejection reason in a transaction record for audit trail
-    const description = `Withdrawal rejected by admin ${user.id}: ${reason}`;
-    const { error: logErr } = await admin.from("transactions").insert({
-      user_id: wd.user_id,
-      type: "withdrawal",
-      amount_usdt: 0, // No actual amount since it's rejected
-      status: "rejected",
-      description: description
-    });
+    // Reverse the balance deduction (add the amount back)
+    const currentBalance = Number(balanceData.available_usdt || 0);
+    const newBalance = currentBalance + wd.amount_usdt;
+    
+    const { error: balanceErr } = await admin
+      .from("balances")
+      .update({ available_usdt: newBalance })
+      .eq("user_id", wd.user_id);
 
-    if (logErr) {
-      console.error("Error logging rejection:", logErr);
-      // Don't fail the rejection, just log the error
+    if (balanceErr) {
+      console.error("Error reversing balance:", balanceErr);
+      return NextResponse.json({ error: "Failed to reverse balance" }, { status: 500 });
     }
 
-    // Note: We don't create a withdrawal transaction or update balances for rejected withdrawals
-    // The user keeps their balance since the withdrawal was not processed
+    // Update the existing transaction record to rejected status
+    await admin
+      .from("transactions")
+      .update({ 
+        status: "rejected",
+        description: `Withdrawal rejected: ${reason}`
+      })
+      .eq("withdrawal_id", wd.id);
+
+    // Log the rejection for audit trail with the reason
+    await admin.from("transactions").insert({
+      user_id: wd.user_id,
+      type: "balance_adjustment",
+      amount_usdt: wd.amount_usdt,
+      status: "completed",
+      description: `Balance restored - Withdrawal rejected: ${reason}`,
+      withdrawal_id: wd.id
+    });
 
     return NextResponse.json({ 
       ok: true, 

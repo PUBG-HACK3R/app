@@ -105,7 +105,7 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Create withdrawal request
+    // Start transaction: Create withdrawal request AND deduct balance immediately
     const { data: withdrawal, error: withdrawalError } = await admin
       .from("withdrawals")
       .insert({
@@ -127,6 +127,33 @@ export async function POST(request: NextRequest) {
         { status: 500 }
       );
     }
+
+    // Immediately deduct the full amount from user's balance
+    const newBalance = availableBalance - numericAmount;
+    const { error: balanceError } = await admin
+      .from("balances")
+      .update({ available_usdt: newBalance })
+      .eq("user_id", user.id);
+
+    if (balanceError) {
+      console.error("Error updating balance:", balanceError);
+      // Rollback: Delete the withdrawal request
+      await admin.from("withdrawals").delete().eq("id", withdrawal.id);
+      return NextResponse.json(
+        { error: "Failed to process withdrawal - balance update failed" },
+        { status: 500 }
+      );
+    }
+
+    // Create transaction record for the withdrawal
+    await admin.from("transactions").insert({
+      user_id: user.id,
+      type: "withdrawal",
+      amount_usdt: numericAmount,
+      description: `Withdrawal to ${address.substring(0, 8)}...${address.substring(address.length - 6)}`,
+      status: "pending",
+      withdrawal_id: withdrawal.id
+    });
 
     return NextResponse.json({
       success: true,

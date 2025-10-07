@@ -11,7 +11,9 @@ type Tx = {
   created_at: string;
   status?: string;
   order_id?: string;
+  meta?: any;
   description?: string;
+  withdrawal_id?: string;
 };
 
 export default async function WalletHistoryPage() {
@@ -23,13 +25,28 @@ export default async function WalletHistoryPage() {
   } = await supabase.auth.getUser();
   if (!user) redirect("/login?next=/wallet/history");
 
-  // Get confirmed transactions using admin client (bypasses RLS) - only select existing columns
+  // Get confirmed transactions using admin client (bypasses RLS) - removed meta column
   const { data: txs, error: txError } = await admin
     .from("transactions")
-    .select("type, amount_usdt, created_at, status, description")
+    .select("type, amount_usdt, created_at, status, reference_id, description, withdrawal_id")
     .eq("user_id", user.id)
     .order("created_at", { ascending: false })
     .limit(40);
+
+  // Get withdrawal details for rejected withdrawals
+  const withdrawalIds = txs?.filter(tx => tx.withdrawal_id).map(tx => tx.withdrawal_id) || [];
+  let withdrawalDetails = {};
+  if (withdrawalIds.length > 0) {
+    const { data: withdrawals } = await admin
+      .from("withdrawals")
+      .select("id, status, rejection_reason")
+      .in("id", withdrawalIds);
+    
+    withdrawalDetails = (withdrawals || []).reduce((acc: any, w: any) => {
+      acc[w.id] = w;
+      return acc;
+    }, {});
+  }
 
   console.log("=== TRANSACTION HISTORY DEBUG ===");
   console.log("User ID:", user.id);
@@ -37,11 +54,7 @@ export default async function WalletHistoryPage() {
   console.log("Transactions found:", txs?.length || 0);
   console.log("Transaction error:", txError?.message || txError);
   console.log("Raw transactions:", txs);
-  
-  // Force show transactions even if there's an error
-  if (txError) {
-    console.error("Transaction query failed, but continuing with empty array");
-  }
+  console.log("Withdrawal details:", withdrawalDetails);
 
   // Test admin client directly - check if there are ANY transactions
   const { data: allTxs, error: allTxError } = await admin
@@ -80,19 +93,15 @@ export default async function WalletHistoryPage() {
     pendingDeposits = [];
   }
 
-  // Combine and format all items - ensure we handle the data properly
+  // Combine and format all items
   const confirmedTxs = (txs as Tx[] | null) || [];
   const pendingTxs = (pendingDeposits || []).map((deposit: any) => ({
     type: "pending_deposit" as const,
-    amount_usdt: deposit.amount || deposit.amount_usdt || 0,
+    amount_usdt: deposit.amount || deposit.amount_usdt,
     created_at: deposit.created_at,
     status: deposit.status,
     order_id: deposit.tx_hash || deposit.order_id
   }));
-
-  // Debug the processed data
-  console.log("Processed confirmed transactions:", confirmedTxs.length);
-  console.log("Processed pending deposits:", pendingTxs.length);
 
   // Combine and sort by date
   const allItems = [...confirmedTxs, ...pendingTxs]
@@ -192,6 +201,7 @@ export default async function WalletHistoryPage() {
                         )}
                       </div>
                     </div>
+                  </div>
                     <div className={`font-semibold ${
                       isPending ? 'text-yellow-600 dark:text-yellow-400' :
                       t.type === 'investment' ? 'text-blue-600' :
