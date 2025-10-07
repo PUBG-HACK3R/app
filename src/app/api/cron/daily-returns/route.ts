@@ -43,17 +43,33 @@ export async function GET(request: Request) {
     let credited = 0;
 
     for (const sub of subs || []) {
+      console.log(`Processing subscription ${sub.id} for user ${sub.user_id}`);
+      
       // Use the daily_earning directly from the subscription
       const amount = Number(sub.daily_earning || 0);
-      if (!amount) continue;
+      if (!amount) {
+        console.log(`Subscription ${sub.id} has no daily_earning amount - skipping`);
+        continue;
+      }
+      
+      console.log(`Subscription ${sub.id} daily_earning: $${amount}`);
 
       // Check if subscription has started (should be earning)
-      const startDate = new Date(sub.start_date);
+      // Parse start_date as UTC to avoid timezone issues
+      const startDateStr = sub.start_date.includes('T') ? sub.start_date : `${sub.start_date}T00:00:00.000Z`;
+      const startDate = new Date(startDateStr);
       const todayDate = new Date(`${today}T00:00:00.000Z`);
+      
+      console.log(`Subscription ${sub.id} date check:`, {
+        start_date: sub.start_date,
+        start_date_parsed: startDate.toISOString(),
+        today_date: todayDate.toISOString(),
+        has_started: todayDate >= startDate
+      });
       
       // Skip if subscription hasn't started yet
       if (todayDate < startDate) {
-        console.log(`Subscription ${sub.id} hasn't started yet`);
+        console.log(`Subscription ${sub.id} hasn't started yet - skipping`);
         continue;
       }
 
@@ -71,9 +87,10 @@ export async function GET(request: Request) {
       }
 
       // Check if we already credited earnings for today
-      const { data: todayEarning } = await admin
+      console.log(`Checking for existing earnings for subscription ${sub.id} on ${today}`);
+      const { data: todayEarning, error: duplicateCheckError } = await admin
         .from("transactions")
-        .select("id")
+        .select("id,created_at,amount_usdt")
         .eq("user_id", sub.user_id)
         .eq("type", "earning")
         .eq("reference_id", sub.id)
@@ -81,26 +98,35 @@ export async function GET(request: Request) {
         .lt("created_at", `${today}T23:59:59.999Z`)
         .maybeSingle();
 
+      if (duplicateCheckError) {
+        console.log(`Error checking duplicates for ${sub.id}:`, duplicateCheckError);
+      }
+
       if (todayEarning) {
-        console.log(`Already credited earnings for subscription ${sub.id} today`);
+        console.log(`Already credited earnings for subscription ${sub.id} today:`, todayEarning);
         continue;
       }
+      
+      console.log(`No existing earnings found for ${sub.id} today - proceeding to credit`);
 
       console.log(`Processing earnings for subscription ${sub.id}: $${amount}`);
 
       // Insert earning transaction
-      const { error: txErr } = await admin.from("transactions").insert({
+      console.log(`Creating earning transaction for ${sub.id}: $${amount}`);
+      const { data: txData, error: txErr } = await admin.from("transactions").insert({
         user_id: sub.user_id,
         type: "earning",
         amount_usdt: amount,
         reference_id: sub.id,
         meta: { source: "cron", credited_at: nowIso },
-      });
+      }).select();
+      
       if (txErr) {
-        // Skip updating subscription if transaction failed
+        console.log(`Failed to create transaction for ${sub.id}:`, txErr);
         continue;
       }
-
+      
+      console.log(`Transaction created successfully for ${sub.id}:`, txData);
       credited += 1;
 
       // Update balances cache: increment available_usdt
