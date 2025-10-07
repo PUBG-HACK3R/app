@@ -76,14 +76,13 @@ export async function POST(request: NextRequest) {
         logs.push(`✅ Subscription ${sub.id} not expired`);
       }
 
-      // Check for existing earnings today
+      // Check for existing earnings today (without reference_id since column doesn't exist)
       logs.push(`🔍 Checking for existing earnings for ${sub.id} on ${today}`);
       const { data: todayEarning, error: duplicateCheckError } = await admin
         .from("transactions")
-        .select("id,created_at,amount_usdt")
+        .select("id,created_at,amount_usdt,description")
         .eq("user_id", sub.user_id)
         .eq("type", "earning")
-        .eq("reference_id", sub.id)
         .gte("created_at", `${today}T00:00:00.000Z`)
         .lt("created_at", `${today}T23:59:59.999Z`)
         .maybeSingle();
@@ -99,14 +98,14 @@ export async function POST(request: NextRequest) {
       }
       logs.push(`✅ No existing earnings found for ${sub.id} today`);
 
-      // Try to create transaction
+      // Try to create transaction (without reference_id since column doesn't exist)
       logs.push(`💰 Creating earning transaction for ${sub.id}: $${amount}`);
       const { data: txData, error: txErr } = await admin.from("transactions").insert({
         user_id: sub.user_id,
         type: "earning",
         amount_usdt: amount,
-        reference_id: sub.id,
-        meta: { source: "debug", credited_at: nowIso },
+        description: `Daily earning from subscription ${sub.id}`,
+        status: "completed"
       }).select();
       
       if (txErr) {

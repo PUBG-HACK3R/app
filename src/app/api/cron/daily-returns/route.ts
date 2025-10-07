@@ -90,10 +90,9 @@ export async function GET(request: Request) {
       console.log(`Checking for existing earnings for subscription ${sub.id} on ${today}`);
       const { data: todayEarning, error: duplicateCheckError } = await admin
         .from("transactions")
-        .select("id,created_at,amount_usdt")
+        .select("id,created_at,amount_usdt,description")
         .eq("user_id", sub.user_id)
         .eq("type", "earning")
-        .eq("reference_id", sub.id)
         .gte("created_at", `${today}T00:00:00.000Z`)
         .lt("created_at", `${today}T23:59:59.999Z`)
         .maybeSingle();
@@ -117,8 +116,8 @@ export async function GET(request: Request) {
         user_id: sub.user_id,
         type: "earning",
         amount_usdt: amount,
-        reference_id: sub.id,
-        meta: { source: "cron", credited_at: nowIso },
+        description: `Daily earning from subscription ${sub.id}`,
+        status: "completed"
       }).select();
       
       if (txErr) {
