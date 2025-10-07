@@ -25,14 +25,11 @@ export async function GET(request: Request) {
     console.log("Cron job starting:", { now: nowIso, today });
 
     // Find subscriptions that are active and due for earning credit
-    // New logic: Check individual 24-hour cycles for each subscription
-    // Conditions:
-    // - active = true
-    // - next_earning_at is null (first earning) OR next_earning_at <= now
+    // Individual 24-hour timing using created_at and transaction history
     let query = admin
       .from("subscriptions")
       .select(
-        "id,user_id,amount_invested,daily_earning,start_date,end_date,active,next_earning_at,created_at"
+        "id,user_id,amount_invested,daily_earning,start_date,end_date,active,created_at"
       )
       .eq("active", true);
 
@@ -55,26 +52,36 @@ export async function GET(request: Request) {
       
       console.log(`Subscription ${sub.id} daily_earning: $${amount}`);
 
-      // Individual 24-hour timing logic
+      // Individual 24-hour timing using transaction history
       const createdAt = new Date(sub.created_at);
-      const nextEarningAt = sub.next_earning_at ? new Date(sub.next_earning_at) : null;
       
-      // If no next_earning_at, set it to 24 hours after creation
-      if (!nextEarningAt) {
-        const firstEarningTime = new Date(createdAt.getTime() + (24 * 60 * 60 * 1000)); // +24 hours
-        console.log(`Subscription ${sub.id} first earning scheduled for: ${firstEarningTime.toISOString()}`);
-        
-        // Check if it's time for first earning
-        if (now < firstEarningTime) {
-          console.log(`Subscription ${sub.id} not ready for first earning yet - skipping`);
-          continue;
-        }
+      // Get the last earning transaction for this subscription
+      const { data: lastEarning } = await admin
+        .from("transactions")
+        .select("created_at")
+        .eq("user_id", sub.user_id)
+        .eq("type", "earning")
+        .like("description", `%${sub.id}%`)
+        .order("created_at", { ascending: false })
+        .limit(1)
+        .maybeSingle();
+      
+      let nextEarningTime;
+      if (!lastEarning) {
+        // First earning: 24 hours after subscription creation
+        nextEarningTime = new Date(createdAt.getTime() + (24 * 60 * 60 * 1000));
+        console.log(`Subscription ${sub.id} first earning scheduled for: ${nextEarningTime.toISOString()}`);
       } else {
-        // Check if it's time for next earning
-        if (now < nextEarningAt) {
-          console.log(`Subscription ${sub.id} next earning at ${nextEarningAt.toISOString()} - not ready yet`);
-          continue;
-        }
+        // Next earning: 24 hours after last earning
+        const lastEarningTime = new Date(lastEarning.created_at);
+        nextEarningTime = new Date(lastEarningTime.getTime() + (24 * 60 * 60 * 1000));
+        console.log(`Subscription ${sub.id} next earning scheduled for: ${nextEarningTime.toISOString()} (24h after last earning)`);
+      }
+      
+      // Check if it's time for earning
+      if (now < nextEarningTime) {
+        console.log(`Subscription ${sub.id} not ready yet - skipping`);
+        continue;
       }
       
       console.log(`Subscription ${sub.id} is ready for earning at ${now.toISOString()}`);
@@ -134,7 +141,7 @@ export async function GET(request: Request) {
           .eq("user_id", sub.user_id);
       }
 
-      // Update subscription: total_earned AND next_earning_at
+      // Update subscription total_earned
       const { data: currentSub } = await admin
         .from("subscriptions")
         .select("total_earned")
@@ -143,18 +150,12 @@ export async function GET(request: Request) {
       
       const newTotalEarned = Number(currentSub?.total_earned || 0) + amount;
       
-      // Set next earning time to exactly 24 hours from now
-      const nextEarning = new Date(now.getTime() + (24 * 60 * 60 * 1000));
-      
       await admin
         .from("subscriptions")
-        .update({ 
-          total_earned: newTotalEarned,
-          next_earning_at: nextEarning.toISOString()
-        })
+        .update({ total_earned: newTotalEarned })
         .eq("id", sub.id);
         
-      console.log(`Subscription ${sub.id} next earning scheduled for: ${nextEarning.toISOString()}`);
+      console.log(`Subscription ${sub.id} total_earned updated to: $${newTotalEarned}`);
     }
 
     return NextResponse.json({ 

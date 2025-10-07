@@ -90,9 +90,6 @@ export async function POST(request: Request) {
     const startDate = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate()));
     const endDate = new Date(startDate);
     endDate.setUTCDate(endDate.getUTCDate() + plan.duration_days);
-    
-    // Set first earning to exactly 24 hours after purchase
-    const firstEarningAt = new Date(now.getTime() + (24 * 60 * 60 * 1000));
 
     // Calculate daily earning based on plan
     const dailyEarning = (planPrice * plan.roi_daily_percent) / 100;
@@ -120,7 +117,6 @@ export async function POST(request: Request) {
         total_earned: 0,
         start_date: startDate.toISOString(),
         end_date: endDate.toISOString(),
-        next_earning_at: firstEarningAt.toISOString(),
         active: true,
       })
       .select()
