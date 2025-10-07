@@ -175,11 +175,11 @@ export default function DebugClientPage() {
         </button>
         
         <button 
-          onClick={() => testAPI('/api/debug/fix-duplicate-subscription', 'POST')}
-          className="bg-red-600 text-white px-4 py-2 rounded hover:bg-red-700 disabled:opacity-50"
+          onClick={() => testAPI('/api/debug/check-earning-timing')}
+          className="bg-purple-600 text-white px-4 py-2 rounded hover:bg-purple-700 disabled:opacity-50"
           disabled={loading}
         >
-          🗑️ REMOVE DUPLICATE $100 SUBSCRIPTION
+          ⏰ CHECK $100 PLAN EARNING TIMING
         </button>
       </div>
 
