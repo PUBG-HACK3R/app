@@ -43,10 +43,10 @@ export async function GET(request: Request) {
       supabase.from('user_balances').select('available_balance, locked_balance, total_deposited, total_withdrawn, total_earned'),
       
       // Deposits stats
-      supabase.from('deposits').select('amount_usdt, status, created_at, confirmed_at'),
+      supabase.from('deposits').select('amount_usdt, status, created_at'),
       
       // Investments stats
-      supabase.from('user_investments').select('amount_invested, status, total_earned, created_at'),
+      supabase.from('user_investments').select('user_id, plan_id, status, amount_invested, total_earned'),
       
       // Withdrawals stats
       supabase.from('withdrawals').select('amount_usdt, status, created_at'),
