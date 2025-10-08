@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { HorizontalPlans } from "@/components/auto-scroll-plans";
 import { BalanceSection } from "@/components/dashboard/balance-section";
+import { EarningsChecker } from "@/components/dashboard/earnings-checker";
 import { 
   Wallet, 
   ArrowUpRight, 
@@ -77,6 +78,9 @@ export default async function DashboardPage() {
       <div className="mx-auto max-w-md px-4 py-6 space-y-6">
         {/* Balance Section */}
         <BalanceSection walletBalance={walletBalance} />
+
+        {/* Earnings Auto-Check */}
+        <EarningsChecker />
 
         {/* Action Buttons */}
         <div className="grid grid-cols-4 gap-4">
