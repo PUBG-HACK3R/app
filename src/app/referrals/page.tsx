@@ -10,7 +10,7 @@ export default async function ReferralsPage() {
 
     // Get user's profile with referral info
     const { data: profile } = await admin
-      .from("profiles")
+      .from("user_profiles")
       .select("referral_code, referred_by, email")
       .eq("user_id", authUser.id)
       .single();
@@ -20,16 +20,16 @@ export default async function ReferralsPage() {
     if (!referralCode) {
       referralCode = `REF${authUser.id.substring(0, 8).toUpperCase()}`;
       await admin
-        .from("profiles")
+        .from("user_profiles")
         .update({ referral_code: referralCode })
         .eq("user_id", authUser.id);
     }
 
     // Get referrals count
     const { count: totalReferrals } = await admin
-      .from("referrals")
+      .from("referral_commissions")
       .select("id", { count: "exact", head: true })
-      .eq("referrer_id", authUser.id);
+      .eq("referrer_user_id", authUser.id);
 
     const referralLink = `${process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000'}/signup?ref=${referralCode}`;
 

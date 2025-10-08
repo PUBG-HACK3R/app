@@ -38,7 +38,7 @@ export default async function ModernSettingsPage() {
 
   // Get user profile data
   const { data: profile } = await supabase
-    .from("profiles")
+    .from("user_profiles")
     .select("*")
     .eq("user_id", user.id)
     .single();

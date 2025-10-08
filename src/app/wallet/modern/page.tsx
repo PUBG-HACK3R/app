@@ -29,7 +29,7 @@ export default async function ModernWalletPage() {
 
   // Fetch all user transactions to compute balance
   const { data: allTx } = await supabase
-    .from("transactions")
+    .from("transaction_logs")
     .select("type, amount_usdt, created_at, description, status")
     .eq("user_id", user.id)
     .order("created_at", { ascending: false })

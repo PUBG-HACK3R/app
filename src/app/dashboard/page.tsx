@@ -24,18 +24,18 @@ export default async function DashboardPage() {
     const authUser = await requireAuth();
     const admin = getSupabaseAdminClient();
 
-    // Get wallet balance from balances table
+    // Get wallet balance from user_balances table
     const { data: balanceData } = await admin
-      .from("balances")
-      .select("available_usdt")
+      .from("user_balances")
+      .select("available_balance")
       .eq("user_id", authUser.id)
       .maybeSingle();
 
-    const walletBalance = Number(balanceData?.available_usdt || 0);
+    const walletBalance = Number(balanceData?.available_balance || 0);
 
     // Fetch earnings transactions for stats display
     const { data: allTx } = await admin
-      .from("transactions")
+      .from("transaction_logs")
       .select("type, amount_usdt, created_at")
       .eq("user_id", authUser.id);
 
@@ -50,28 +50,28 @@ export default async function DashboardPage() {
 
     // Fetch investment plans
     const { data: plans } = await admin
-      .from("plans")
+      .from("investment_plans")
       .select("*")
       .eq("is_active", true)
       .order("min_amount", { ascending: true });
 
-    // Get all active subscriptions for this user
-    const { data: userSubscriptions, error: subError } = await admin
-      .from("subscriptions")
-      .select("plan_id, active")
+    // Get all active investments for this user
+    const { data: userInvestments, error: investError } = await admin
+      .from("user_investments")
+      .select("plan_id, status")
       .eq("user_id", authUser.id)
-      .eq("active", true);
+      .eq("status", "active");
 
-    // Get the active subscription for checking if user has any active plan
-    const { data: activeSub, error: activeSubError } = await admin
-      .from("subscriptions")
-      .select("id, plan_id, end_date, active")
+    // Get the active investment for checking if user has any active plan
+    const { data: activeInvestment, error: activeInvestError } = await admin
+      .from("user_investments")
+      .select("id, plan_id, end_date, status")
       .eq("user_id", authUser.id)
-      .eq("active", true)
+      .eq("status", "active")
       .maybeSingle();
 
-    // Create a set of plan IDs that user has subscriptions for
-    const userPlanIds = new Set(userSubscriptions?.map(sub => sub.plan_id) || []);
+    // Create a set of plan IDs that user has investments for
+    const userPlanIds = new Set(userInvestments?.map((inv: any) => inv.plan_id) || []);
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-100 via-orange-50 to-gray-100 dark:from-gray-900 dark:via-orange-900/10 dark:to-gray-900 text-gray-900 dark:text-white">
@@ -148,10 +148,10 @@ export default async function DashboardPage() {
               </div>
               <div>
                 <div className="text-sm text-blue-200">Active Miners</div>
-                <div className="text-xl font-bold text-white">{activeSub ? '1' : '0'}</div>
+                <div className="text-xl font-bold text-white">{activeInvestment ? '1' : '0'}</div>
                 {/* Debug info - remove after testing */}
                 <div className="text-xs text-gray-400">
-                  Debug: {activeSub ? `Active (ID: ${activeSub.id.slice(0,8)})` : 'No active sub'}
+                  Debug: {activeInvestment ? `Active (ID: ${activeInvestment.id.slice(0,8)})` : 'No active investment'}
                 </div>
               </div>
             </div>

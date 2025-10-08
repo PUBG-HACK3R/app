@@ -27,7 +27,7 @@ export async function GET(request: Request) {
       investments_completed: 0,
       withdrawals_expired: 0,
       deposits_expired: 0,
-      errors: []
+      errors: [] as string[]
     };
 
     // ==================== PROCESS ALL DUE EARNINGS ====================

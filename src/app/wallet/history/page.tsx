@@ -25,7 +25,7 @@ export default async function WalletHistoryPage() {
 
   // Get confirmed transactions using admin client (bypasses RLS) - only select existing columns
   const { data: txs, error: txError } = await admin
-    .from("transactions")
+    .from("transaction_logs")
     .select("type, amount_usdt, created_at, status, description")
     .eq("user_id", user.id)
     .order("created_at", { ascending: false })
@@ -45,7 +45,7 @@ export default async function WalletHistoryPage() {
 
   // Test admin client directly - check if there are ANY transactions
   const { data: allTxs, error: allTxError } = await admin
-    .from("transactions")
+    .from("transaction_logs")
     .select("user_id, type, amount_usdt, created_at")
     .limit(10);
   
@@ -57,7 +57,7 @@ export default async function WalletHistoryPage() {
 
   // Check if user has any balance records
   const { data: balanceRecord } = await admin
-    .from("balances")
+    .from("user_balances")
     .select("*")
     .eq("user_id", user.id)
     .single();
@@ -71,8 +71,8 @@ export default async function WalletHistoryPage() {
   let pendingDeposits = [];
   try {
     const { data } = await admin
-      .from("deposit_transactions")
-      .select("amount, created_at, status, tx_hash")
+      .from("deposits")
+      .select("amount_usdt, created_at, status, tx_hash")
       .eq("user_id", user.id)
       .eq("status", "pending")
       .order("created_at", { ascending: false })

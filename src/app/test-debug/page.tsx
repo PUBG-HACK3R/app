@@ -15,7 +15,7 @@ export default async function TestDebugPage() {
   let tableInfo = null;
   try {
     const { data, error } = await admin
-      .from("transactions")
+      .from("transaction_logs")
       .select("*")
       .limit(1);
     tableInfo = { data, error: error?.message };
@@ -27,7 +27,7 @@ export default async function TestDebugPage() {
   let userTxs = null;
   try {
     const { data, error } = await admin
-      .from("transactions")
+      .from("transaction_logs")
       .select("type, amount_usdt, created_at, status, description")
       .eq("user_id", user.id)
       .limit(5);
@@ -53,7 +53,7 @@ export default async function TestDebugPage() {
   let balanceInfo = null;
   try {
     const { data, error } = await admin
-      .from("balances")
+      .from("user_balances")
       .select("*")
       .eq("user_id", user.id)
       .single();

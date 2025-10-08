@@ -25,28 +25,14 @@ export default function WithdrawPage() {
         const uid = userRes.user?.id;
         if (!uid) return;
         
-        // Fetch user transactions to calculate balance
-        const { data: allTx } = await supabase
-          .from("transactions")
-          .select("type, amount_usdt")
-          .eq("user_id", uid);
+        // Fetch user balance directly from user_balances table
+        const { data: balanceData } = await supabase
+          .from("user_balances")
+          .select("available_balance")
+          .eq("user_id", uid)
+          .single();
 
-        const totalEarnings = (allTx || [])
-          .filter((t) => t.type === "earning")
-          .reduce((acc, t) => acc + Number(t.amount_usdt || 0), 0);
-        const totalDeposits = (allTx || [])
-          .filter((t) => t.type === "deposit")
-          .reduce((acc, t) => acc + Number(t.amount_usdt || 0), 0);
-        const totalInvestments = (allTx || [])
-          .filter((t) => t.type === "investment")
-          .reduce((acc, t) => acc + Number(t.amount_usdt || 0), 0);
-        const totalReturns = (allTx || [])
-          .filter((t) => t.type === "investment_return")
-          .reduce((acc, t) => acc + Number(t.amount_usdt || 0), 0);
-        const totalWithdrawals = (allTx || [])
-          .filter((t) => t.type === "withdrawal")
-          .reduce((acc, t) => acc + Number(t.amount_usdt || 0), 0);
-        const walletBalance = totalDeposits + totalEarnings + totalReturns - totalInvestments - totalWithdrawals;
+        const walletBalance = Number(balanceData?.available_balance || 0);
         
         setBalance(walletBalance);
       } catch {}

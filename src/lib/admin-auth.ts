@@ -16,7 +16,7 @@ export async function requireAdminAuth() {
     // Check admin role using admin client to bypass RLS
     const adminClient = getSupabaseAdminClient();
     const { data: profile, error: profileError } = await adminClient
-      .from("profiles")
+      .from("user_profiles")
       .select("role, email")
       .eq("user_id", user.id)
       .single();
@@ -40,7 +40,7 @@ export async function checkAdminRole(userId: string): Promise<boolean> {
   try {
     const adminClient = getSupabaseAdminClient();
     const { data: profile, error } = await adminClient
-      .from("profiles")
+      .from("user_profiles")
       .select("role")
       .eq("user_id", userId)
       .single();
