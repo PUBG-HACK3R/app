@@ -1,44 +1,40 @@
 import { NextResponse } from "next/server";
-import { getSupabaseAdminClient } from "@/lib/supabase/admin";
+import { db } from "@/lib/database/service";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
-// This runs daily at midnight UTC (Vercel cron job)
+// Optimized cron job - processes earnings in time windows
 export async function GET(request: Request) {
   try {
     // Verify this is coming from Vercel cron
     const authHeader = request.headers.get('authorization');
     if (authHeader !== `Bearer ${process.env.CRON_SECRET}`) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-    }
-
-    const admin = getSupabaseAdminClient();
-    
-    // Call the SQL function to process daily earnings
-    const { data, error } = await admin.rpc('process_daily_earnings');
-    
-    if (error) {
-      console.error('Daily earnings processing error:', error);
       return NextResponse.json({ 
-        success: false, 
-        error: error.message 
-      }, { status: 500 });
+        success: false,
+        error: 'Unauthorized' 
+      }, { status: 401 });
     }
 
-    console.log('Daily earnings processed successfully');
+    const now = new Date();
+    console.log(`🚀 Starting earnings processing at ${now.toISOString()}`);
+    
+    // Process earnings for investments due now (individual timing)
+    await db.processDailyEarnings();
+    
+    console.log('✅ Individual earnings processed successfully');
     
     return NextResponse.json({ 
       success: true, 
-      message: 'Daily earnings processed successfully',
-      timestamp: new Date().toISOString()
+      message: 'Individual earnings processed successfully',
+      timestamp: now.toISOString()
     });
 
   } catch (error: any) {
-    console.error('Cron job error:', error);
+    console.error('❌ Earnings cron job error:', error);
     return NextResponse.json({ 
       success: false, 
-      error: error.message 
+      error: error.message || 'Failed to process earnings'
     }, { status: 500 });
   }
 }

@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { createHmac, timingSafeEqual } from "crypto";
-import { getSupabaseAdminClient } from "@/lib/supabase/admin";
+import { db } from "@/lib/database/service";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -34,6 +34,7 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: "Invalid JSON" }, { status: 400 });
     }
 
+    // Verify NOWPayments signature
     const secret = process.env.NOWPAYMENTS_IPN_SECRET;
     if (!secret) {
       return NextResponse.json({ error: "IPN secret not configured" }, { status: 500 });
@@ -42,168 +43,71 @@ export async function POST(request: Request) {
     const message = canonicalJson(parsed);
     const hmac = createHmac("sha512", String(secret)).update(message).digest("hex");
 
-    // compare signatures in a timing-safe way
-    const ok = headerSig && hmac.length === headerSig.length && timingSafeEqual(Buffer.from(hmac), Buffer.from(headerSig));
+    // Compare signatures in a timing-safe way
+    const ok = headerSig && hmac.length === headerSig.length && 
+               timingSafeEqual(Buffer.from(hmac), Buffer.from(headerSig));
+    
     if (!ok) {
       return NextResponse.json({ error: "Invalid signature" }, { status: 401 });
     }
 
-    const admin = getSupabaseAdminClient();
     const orderId: string | undefined = parsed?.order_id;
     const paymentStatus: string | undefined = parsed?.payment_status;
-    const txHash: string | undefined = parsed?.payment_id || parsed?.transaction_id || parsed?.payin_hash;
+    const paymentId: string | undefined = parsed?.payment_id;
+    const txHash: string | undefined = parsed?.payin_hash || parsed?.transaction_id;
 
     if (!orderId) {
-      return NextResponse.json({ received: true, note: "no order_id in payload" });
+      return NextResponse.json({ 
+        received: true, 
+        note: "No order_id in payload" 
+      });
     }
 
-    // Fetch existing deposit to merge raw safely
-    const { data: existingDeposit, error: fetchErr } = await admin
-      .from("deposits")
-      .select("id,user_id,amount_usdt,raw")
-      .eq("order_id", orderId)
-      .single();
-    if (fetchErr || !existingDeposit) {
-      return NextResponse.json({ received: true, note: "deposit not found", error: fetchErr?.message });
+    // Get existing deposit
+    const deposit = await db.getDepositByOrderId(orderId);
+    if (!deposit) {
+      return NextResponse.json({ 
+        received: true, 
+        note: "Deposit not found" 
+      });
     }
 
-    const currentRaw = (existingDeposit as any).raw || {};
-    const mergedRaw = { ...currentRaw, webhook: parsed };
+    // Update deposit with webhook data
+    const webhookData = {
+      ...deposit.nowpayments_data,
+      webhook: parsed
+    };
 
-    // Update deposit by order_id; store merged raw payload
-    const { data: deposit, error: depErr } = await admin
-      .from("deposits")
-      .update({ status: paymentStatus || "unknown", tx_hash: txHash, raw: mergedRaw })
-      .eq("order_id", orderId)
-      .select("id,user_id,amount_usdt,raw")
-      .single();
+    await db.updateDeposit(orderId, {
+      status: paymentStatus as any || 'pending',
+      payment_id: paymentId,
+      tx_hash: txHash,
+      nowpayments_data: webhookData
+    });
 
-    if (depErr) {
-      // If no deposit was found, ignore but still ack
-      return NextResponse.json({ received: true, note: "deposit not found", error: depErr.message });
-    }
-
-    // If payment is confirmed/finished, record a transaction of type 'deposit' (idempotent)
-    const successStatuses = new Set(["finished", "confirmed", "completed", "succeeded"]);
-    if (paymentStatus && successStatuses.has(paymentStatus.toLowerCase())) {
-      // Check if a deposit transaction already exists for this deposit
-      const { data: existingTx, error: existingErr } = await admin
-        .from("transactions")
-        .select("id")
-        .eq("type", "deposit")
-        .eq("reference_id", deposit.id)
-        .maybeSingle();
-
-      if (!existingTx && !existingErr) {
-        const { error: insErr } = await admin.from("transactions").insert({
-          user_id: deposit.user_id,
-          type: "deposit",
-          amount_usdt: deposit.amount_usdt,
-          reference_id: deposit.id,
-          meta: { order_id: orderId, payment_status: paymentStatus, txHash },
-        });
-        if (!insErr) {
-          // Update balances cache: increment available_usdt
-          // Read current balance; upsert if missing
-          const { data: balRow } = await admin
-            .from("balances")
-            .select("available_usdt")
-            .eq("user_id", deposit.user_id)
-            .maybeSingle();
-          if (!balRow) {
-            await admin.from("balances").insert({
-              user_id: deposit.user_id,
-              available_usdt: deposit.amount_usdt,
-            });
-          } else {
-            const newBal = Number(balRow.available_usdt || 0) + Number(deposit.amount_usdt || 0);
-            await admin
-              .from("balances")
-              .update({ available_usdt: newBal })
-              .eq("user_id", deposit.user_id);
-          }
-
-          // Process referral commission for this deposit
-          try {
-            await admin.rpc('process_referral_commission', {
-              p_referred_user_id: deposit.user_id,
-              p_transaction_id: null, // We'll get the transaction ID after insert
-              p_source_amount: deposit.amount_usdt,
-              p_source_type: 'deposit'
-            });
-          } catch (referralErr) {
-            console.warn("Referral commission processing failed:", referralErr);
-            // Non-fatal - deposit still processed successfully
-          }
-        }
-
-        // Create subscription once if a planId was provided at invoice time
-        const planIdFromMeta: string | undefined = (deposit as any)?.raw?.meta?.planId || (currentRaw as any)?.meta?.planId;
-        const subscriptionCreated: boolean | undefined = (deposit as any)?.raw?.meta?.subscriptionCreated;
-        if (planIdFromMeta && !subscriptionCreated) {
-          // Map plan slug to details
-          const planMap: Record<string, { name: string; price: number; roi: number; days: number }> = {
-            starter: { name: "Starter", price: 50, roi: 1.0, days: 30 },
-            pro: { name: "Pro", price: 200, roi: 1.2, days: 45 },
-            elite: { name: "Elite", price: 500, roi: 1.5, days: 60 },
-          };
-          const details = planMap[planIdFromMeta as keyof typeof planMap];
-          if (details) {
-            // Ensure a matching plan row exists (by name/price/roi), otherwise create
-            const { data: existingPlan } = await admin
-              .from("plans")
-              .select("id")
-              .eq("name", details.name)
-              .maybeSingle();
-            let planRowId = existingPlan?.id as string | undefined;
-            if (!planRowId) {
-              const { data: newPlan } = await admin
-                .from("plans")
-                .insert({
-                  name: details.name,
-                  price_usdt: details.price,
-                  roi_daily_percent: details.roi,
-                  duration_days: details.days,
-                  is_active: true,
-                })
-                .select("id")
-                .single();
-              planRowId = newPlan?.id as string | undefined;
-            }
-
-            if (planRowId) {
-              const now = new Date();
-              const startDate = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate()));
-              const endDate = new Date(startDate);
-              endDate.setUTCDate(endDate.getUTCDate() + details.days);
-              const nextEarningAt = new Date(startDate);
-              nextEarningAt.setUTCDate(nextEarningAt.getUTCDate() + 1);
-
-              await admin.from("subscriptions").insert({
-                user_id: deposit.user_id,
-                plan_id: planRowId,
-                principal_usdt: details.price,
-                roi_daily_percent: details.roi,
-                start_date: startDate.toISOString().slice(0, 10),
-                end_date: endDate.toISOString().slice(0, 10),
-                active: true,
-                next_earning_at: nextEarningAt.toISOString(),
-              });
-
-              // Mark subscriptionCreated in deposit.raw.meta for idempotency
-              const updatedRaw = { ...(deposit as any).raw, meta: { ...((deposit as any).raw?.meta || {}), subscriptionCreated: true } };
-              await admin
-                .from("deposits")
-                .update({ raw: updatedRaw })
-                .eq("id", deposit.id);
-            }
-          }
-        }
+    // If payment is confirmed, process the deposit
+    const successStatuses = ["finished", "confirmed", "completed", "succeeded"];
+    if (paymentStatus && successStatuses.includes(paymentStatus.toLowerCase())) {
+      // Confirm deposit (this handles balance updates, referral commissions, etc.)
+      const confirmed = await db.confirmDeposit(orderId, paymentId, txHash);
+      
+      if (confirmed) {
+        console.log(`✅ Deposit ${orderId} confirmed successfully`);
+      } else {
+        console.warn(`⚠️ Failed to confirm deposit ${orderId}`);
       }
     }
 
-    return NextResponse.json({ received: true, order_id: orderId, status: paymentStatus });
+    return NextResponse.json({ 
+      received: true, 
+      order_id: orderId, 
+      status: paymentStatus 
+    });
+
   } catch (err: any) {
-    return NextResponse.json({ error: err.message || "Unexpected error" }, { status: 500 });
+    console.error("NOWPayments webhook error:", err);
+    return NextResponse.json({ 
+      error: err.message || "Unexpected error" 
+    }, { status: 500 });
   }
 }

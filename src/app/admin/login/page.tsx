@@ -2,7 +2,6 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { getSupabaseBrowserClient } from "@/lib/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -10,7 +9,7 @@ import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Shield, Eye, EyeOff, Loader2 } from "lucide-react";
 
 export default function AdminLoginPage() {
-  const [email, setEmail] = useState("");
+  const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
@@ -23,126 +22,102 @@ export default function AdminLoginPage() {
     setError("");
 
     try {
-      const supabase = getSupabaseBrowserClient();
-      
-      // Sign in the user
-      const { data: authData, error: authError } = await supabase.auth.signInWithPassword({
-        email,
-        password,
+      const response = await fetch('/api/admin/auth/login', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          username,
+          password,
+        }),
       });
 
-      if (authError) {
-        setError(authError.message);
+      const data = await response.json();
+
+      if (!response.ok || !data.success) {
+        setError(data.error || 'Login failed');
         setLoading(false);
         return;
       }
 
-      if (!authData.user) {
-        setError("Authentication failed");
-        setLoading(false);
-        return;
-      }
+      // Login successful, redirect to admin dashboard
+      router.push('/admin/dashboard');
 
-      // Check if user has admin role
-      const { data: profile, error: profileError } = await supabase
-        .from("profiles")
-        .select("role")
-        .eq("user_id", authData.user.id)
-        .single();
-
-      if (profileError || !profile || profile.role !== 'admin') {
-        // Sign out the user if they're not an admin
-        await supabase.auth.signOut();
-        setError("Access denied. Admin privileges required.");
-        setLoading(false);
-        return;
-      }
-
-      // Redirect to admin dashboard
-      router.push("/admin");
     } catch (err: any) {
-      setError(err.message || "An unexpected error occurred");
+      console.error('Admin login error:', err);
+      setError('Login failed. Please try again.');
+    } finally {
       setLoading(false);
     }
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-900 via-orange-900/10 to-gray-900 flex items-center justify-center p-4">
-      <Card className="w-full max-w-md bg-gray-800/50 border-gray-700/50 backdrop-blur-sm">
-        <CardHeader className="text-center space-y-4">
-          <div className="flex justify-center">
-            <div className="w-16 h-16 bg-gradient-to-br from-orange-500 to-red-600 rounded-full flex items-center justify-center">
-              <Shield className="w-8 h-8 text-white" />
-            </div>
+    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-50 to-indigo-100 p-4">
+      <Card className="w-full max-w-md">
+        <CardHeader className="text-center">
+          <div className="mx-auto w-12 h-12 bg-blue-600 rounded-full flex items-center justify-center mb-4">
+            <Shield className="w-6 h-6 text-white" />
           </div>
-          <div>
-            <CardTitle className="text-2xl font-bold text-white">Admin Access</CardTitle>
-            <CardDescription className="text-gray-400">
-              Sign in to access the admin dashboard
-            </CardDescription>
-          </div>
+          <CardTitle className="text-2xl font-bold text-gray-900">Admin Login</CardTitle>
+          <CardDescription>
+            Sign in to access the WeEarn admin dashboard
+          </CardDescription>
         </CardHeader>
-        
         <CardContent>
           <form onSubmit={handleLogin} className="space-y-4">
             {error && (
-              <Alert className="border-red-500/50 bg-red-950/20">
-                <AlertDescription className="text-red-300">
-                  {error}
-                </AlertDescription>
+              <Alert variant="destructive">
+                <AlertDescription>{error}</AlertDescription>
               </Alert>
             )}
             
             <div className="space-y-2">
-              <label htmlFor="email" className="text-sm font-medium text-gray-300">
-                Admin Email
+              <label htmlFor="username" className="text-sm font-medium text-gray-700">
+                Username
               </label>
               <Input
-                id="email"
-                type="email"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                placeholder="admin@weearn.com"
-                className="bg-gray-700/50 border-gray-600/50 text-white placeholder:text-gray-400"
+                id="username"
+                type="text"
+                placeholder="Enter your username"
+                value={username}
+                onChange={(e) => setUsername(e.target.value)}
                 required
                 disabled={loading}
+                className="w-full"
               />
             </div>
-            
+
             <div className="space-y-2">
-              <label htmlFor="password" className="text-sm font-medium text-gray-300">
+              <label htmlFor="password" className="text-sm font-medium text-gray-700">
                 Password
               </label>
               <div className="relative">
                 <Input
                   id="password"
                   type={showPassword ? "text" : "password"}
+                  placeholder="Enter your password"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
-                  placeholder="Enter admin password"
-                  className="bg-gray-700/50 border-gray-600/50 text-white placeholder:text-gray-400 pr-10"
                   required
                   disabled={loading}
+                  className="w-full pr-10"
                 />
                 <button
                   type="button"
                   onClick={() => setShowPassword(!showPassword)}
-                  className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-300"
+                  className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600"
                   disabled={loading}
                 >
-                  {showPassword ? (
-                    <EyeOff className="w-4 h-4" />
-                  ) : (
-                    <Eye className="w-4 h-4" />
-                  )}
+                  {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
                 </button>
               </div>
             </div>
-            
+
             <Button
               type="submit"
-              className="w-full bg-gradient-to-r from-orange-500 to-red-600 hover:from-orange-600 hover:to-red-700 text-white"
-              disabled={loading}
+              disabled={loading || !username || !password}
+              className="w-full bg-blue-600 hover:bg-blue-700"
             >
               {loading ? (
                 <>
@@ -150,17 +125,14 @@ export default function AdminLoginPage() {
                   Signing in...
                 </>
               ) : (
-                <>
-                  <Shield className="w-4 h-4 mr-2" />
-                  Sign In as Admin
-                </>
+                'Sign In'
               )}
             </Button>
           </form>
-          
+
           <div className="mt-6 text-center">
-            <p className="text-sm text-gray-400">
-              Need help? Contact system administrator
+            <p className="text-xs text-gray-500">
+              Default credentials: admin / admin123
             </p>
           </div>
         </CardContent>

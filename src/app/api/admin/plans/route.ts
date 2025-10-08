@@ -1,100 +1,169 @@
-import { NextRequest, NextResponse } from "next/server";
-import { requireAdminAuth } from "@/lib/admin-auth";
+import { NextResponse } from "next/server";
+import { adminAuth } from "@/lib/admin/auth";
 import { getSupabaseAdminClient } from "@/lib/supabase/admin";
+import { z } from "zod";
+
+export const runtime = "nodejs";
+export const dynamic = "force-dynamic";
+
+const CreatePlanSchema = z.object({
+  name: z.string().min(1, "Plan name is required"),
+  description: z.string().optional(),
+  min_amount: z.number().positive("Minimum amount must be positive"),
+  max_amount: z.number().positive("Maximum amount must be positive"),
+  daily_roi_percentage: z.number().positive("Daily ROI must be positive"),
+  duration_days: z.number().int().positive("Duration must be positive"),
+  is_active: z.boolean().default(true)
+});
+
+const UpdatePlanSchema = z.object({
+  id: z.string().uuid(),
+  name: z.string().min(1).optional(),
+  description: z.string().optional(),
+  min_amount: z.number().positive().optional(),
+  max_amount: z.number().positive().optional(),
+  daily_roi_percentage: z.number().positive().optional(),
+  duration_days: z.number().int().positive().optional(),
+  is_active: z.boolean().optional()
+});
 
 // GET - Fetch all plans (admin only)
-export async function GET() {
+export async function GET(request: Request) {
   try {
-    // Use standardized auth helper
-    await requireAdminAuth();
+    // Verify admin authentication
+    const token = request.headers.get('cookie')?.split('admin_token=')[1]?.split(';')[0];
+    if (!token) {
+      return NextResponse.json({ 
+        success: false,
+        error: "Admin authentication required" 
+      }, { status: 401 });
+    }
 
-    // Use admin client to fetch all plans (including inactive ones)
-    const admin = getSupabaseAdminClient();
-    const { data: plans, error } = await admin
-      .from("plans")
+    const adminUser = await adminAuth.verifyToken(token);
+    if (!adminUser) {
+      return NextResponse.json({ 
+        success: false,
+        error: "Invalid admin token" 
+      }, { status: 401 });
+    }
+
+    const supabase = getSupabaseAdminClient();
+    
+    // Get all plans with investment statistics
+    const { data: plans, error } = await supabase
+      .from("investment_plans")
       .select("*")
       .order("created_at", { ascending: false });
 
     if (error) {
       console.error("Error fetching plans:", error);
-      return NextResponse.json({ error: "Failed to fetch plans" }, { status: 500 });
+      return NextResponse.json({ 
+        success: false,
+        error: "Failed to fetch plans" 
+      }, { status: 500 });
     }
 
-    return NextResponse.json({ plans });
+    // Get investment statistics for each plan
+    const { data: investments } = await supabase
+      .from('user_investments')
+      .select('plan_id, status, amount_invested, total_earned');
+
+    // Add statistics to each plan
+    const plansWithStats = (plans || []).map(plan => {
+      const planInvestments = (investments || []).filter(inv => inv.plan_id === plan.id);
+      
+      return {
+        ...plan,
+        stats: {
+          total_investments: planInvestments.length,
+          active_investments: planInvestments.filter(inv => inv.status === 'active').length,
+          completed_investments: planInvestments.filter(inv => inv.status === 'completed').length,
+          total_invested: planInvestments.reduce((sum, inv) => sum + Number(inv.amount_invested || 0), 0),
+          total_earned: planInvestments.reduce((sum, inv) => sum + Number(inv.total_earned || 0), 0)
+        }
+      };
+    });
+
+    return NextResponse.json({ 
+      success: true,
+      plans: plansWithStats 
+    });
   } catch (error) {
     console.error("Plans GET error:", error);
-    return NextResponse.json({ error: "Internal server error" }, { status: 500 });
+    return NextResponse.json({ 
+      success: false,
+      error: "Internal server error" 
+    }, { status: 500 });
   }
 }
 
 // POST - Create new plan (admin only)
-export async function POST(request: NextRequest) {
+export async function POST(request: Request) {
   try {
-    // Use standardized auth helper
-    await requireAdminAuth();
-
-    const body = await request.json();
-    const { 
-      name, 
-      description,
-      min_amount,
-      roi_daily_percent, 
-      duration_days,
-      category_id,
-      mining_type,
-      hash_rate,
-      power_consumption,
-      risk_level,
-      features,
-      is_active = true 
-    } = body;
-
-    // Validate required fields
-    if (!name || !min_amount || !roi_daily_percent || !duration_days) {
-      return NextResponse.json(
-        { error: "Missing required fields: name, min_amount, roi_daily_percent, duration_days" },
-        { status: 400 }
-      );
+    // Verify admin authentication
+    const token = request.headers.get('cookie')?.split('admin_token=')[1]?.split(';')[0];
+    if (!token) {
+      return NextResponse.json({ 
+        success: false,
+        error: "Admin authentication required" 
+      }, { status: 401 });
     }
 
-    // Validate numeric values
-    if (min_amount <= 0 || roi_daily_percent <= 0 || duration_days <= 0) {
-      return NextResponse.json(
-        { error: "Amount, ROI, and duration must be positive numbers" },
-        { status: 400 }
-      );
+    const adminUser = await adminAuth.verifyToken(token);
+    if (!adminUser) {
+      return NextResponse.json({ 
+        success: false,
+        error: "Invalid admin token" 
+      }, { status: 401 });
     }
 
-    // Use admin client to create plan
-    const admin = getSupabaseAdminClient();
-    const { data: plan, error } = await admin
-      .from("plans")
-      .insert({
-        name,
-        description: description || '',
-        min_amount: parseFloat(min_amount),
-        max_amount: parseFloat(min_amount) * 10, // Default to 10x min_amount
-        roi_daily_percent: parseFloat(roi_daily_percent),
-        duration_days: parseInt(duration_days),
-        category_id: category_id || null,
-        mining_type: mining_type || 'ASIC Mining',
-        hash_rate: hash_rate || '0 TH/s',
-        power_consumption: power_consumption || '0W',
-        risk_level: risk_level || 'Medium',
-        features: JSON.stringify(features || []),
-        is_active,
-      })
+    const json = await request.json();
+    const planData = CreatePlanSchema.parse(json);
+
+    // Validate max_amount >= min_amount
+    if (planData.max_amount < planData.min_amount) {
+      return NextResponse.json({ 
+        success: false,
+        error: "Maximum amount must be greater than or equal to minimum amount" 
+      }, { status: 400 });
+    }
+
+    const supabase = getSupabaseAdminClient();
+
+    const { data: newPlan, error } = await supabase
+      .from("investment_plans")
+      .insert(planData)
       .select()
       .single();
 
     if (error) {
       console.error("Error creating plan:", error);
-      return NextResponse.json({ error: "Failed to create plan" }, { status: 500 });
+      return NextResponse.json({ 
+        success: false,
+        error: "Failed to create plan" 
+      }, { status: 500 });
     }
 
-    return NextResponse.json({ plan }, { status: 201 });
-  } catch (error) {
-    console.error("Plans POST error:", error);
-    return NextResponse.json({ error: "Internal server error" }, { status: 500 });
+    return NextResponse.json({ 
+      success: true,
+      plan: newPlan,
+      message: "Plan created successfully" 
+    });
+
+  } catch (err: any) {
+    console.error("Plan creation error:", err);
+    
+    if (err instanceof z.ZodError) {
+      return NextResponse.json({ 
+        success: false,
+        error: "Invalid plan data", 
+        issues: err.issues 
+      }, { status: 400 });
+    }
+    
+    return NextResponse.json({ 
+      success: false,
+      error: "Failed to create plan" 
+    }, { status: 500 });
   }
 }

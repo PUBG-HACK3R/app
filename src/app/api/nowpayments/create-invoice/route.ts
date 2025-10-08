@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
 import { getSupabaseServerClient } from "@/lib/supabase/server";
+import { db } from "@/lib/database/service";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -245,24 +246,25 @@ export async function POST(request: Request) {
       }, { status: res.status });
     }
 
-    // Ensure profile exists to satisfy FK constraint
-    await supabase
-      .from("profiles")
-      .upsert({ user_id: user.id, email: user.email || "", role: "user" }, { onConflict: "user_id" });
-
-    // Record a pending deposit for this user
-    const { error: insertErr } = await supabase.from("deposits").insert({
-      user_id: user.id,
-      order_id: orderId,
-      amount_usdt: amount,
-      pay_currency: finalPayCurrency,
-      status: "pending",
-      raw: { invoice: data, meta: { planId: planId || null } },
-    });
-    if (insertErr) {
+    // Record a pending deposit using clean database service
+    const deposit = await db.createDeposit(user.id, orderId, amount);
+    if (!deposit) {
       // Non-fatal: return invoice anyway but include warning
-      return NextResponse.json({ invoice_url: data?.invoice_url, id: data?.id, warning: "Failed to persist pending deposit", details: insertErr.message });
+      return NextResponse.json({ 
+        invoice_url: data?.invoice_url, 
+        id: data?.id, 
+        warning: "Failed to persist pending deposit" 
+      });
     }
+
+    // Update deposit with NOWPayments data
+    await db.updateDeposit(orderId, {
+      nowpayments_data: { 
+        invoice: data, 
+        meta: { planId: planId || null },
+        pay_currency: finalPayCurrency
+      }
+    });
 
     return NextResponse.json({ 
       invoice_url: data?.invoice_url, 
