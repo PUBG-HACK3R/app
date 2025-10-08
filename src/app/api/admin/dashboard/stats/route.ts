@@ -46,7 +46,7 @@ export async function GET(request: Request) {
       supabase.from('deposits').select('amount_usdt, status, created_at'),
       
       // Investments stats
-      supabase.from('user_investments').select('user_id, plan_id, status, amount_invested, total_earned'),
+      supabase.from('user_investments').select('user_id, plan_id, status, amount_invested, total_earned, created_at'),
       
       // Withdrawals stats
       supabase.from('withdrawals').select('amount_usdt, status, created_at'),
