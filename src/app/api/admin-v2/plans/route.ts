@@ -38,15 +38,15 @@ export async function GET() {
       .select("plan_id, status, amount_invested");
 
     // Process plans with stats
-    const processedPlans = (plans || []).map(plan => {
-      const planInvestments = (investments || []).filter(inv => inv.plan_id === plan.id);
+    const processedPlans = (plans || []).map((plan: any) => {
+      const planInvestments = (investments || []).filter((inv: any) => inv.plan_id === plan.id);
       
       return {
         ...plan,
         stats: {
           total_investments: planInvestments.length,
-          active_investments: planInvestments.filter(inv => inv.status === 'active').length,
-          total_invested: planInvestments.reduce((sum, inv) => sum + (inv.amount_invested || 0), 0)
+          active_investments: planInvestments.filter((inv: any) => inv.status === 'active').length,
+          total_invested: planInvestments.reduce((sum: number, inv: any) => sum + (inv.amount_invested || 0), 0)
         }
       };
     });

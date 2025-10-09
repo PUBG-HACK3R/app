@@ -3,8 +3,6 @@ import { getSupabaseAdminClient } from "@/lib/supabase/admin";
 import { redirect } from "next/navigation";
 import { AdminMain } from "@/components/admin-v2/admin-main";
 
-// New Admin Panel v2 - Modern UI with proper database integration
-
 export default async function AdminPage() {
   // Check authentication first
   const supabase = await getSupabaseServerClient();

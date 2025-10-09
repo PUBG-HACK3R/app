@@ -47,8 +47,8 @@ export async function GET() {
       .select("user_id, status, amount_invested, total_earned");
 
     // Process user data
-    const processedUsers = (users || []).map(user => {
-      const userInvestments = (investments || []).filter(inv => inv.user_id === user.user_id);
+    const processedUsers = (users || []).map((user: any) => {
+      const userInvestments = (investments || []).filter((inv: any) => inv.user_id === user.user_id);
       
       return {
         id: user.id,
@@ -67,9 +67,9 @@ export async function GET() {
           total_earned: 0
         },
         investments: {
-          active: userInvestments.filter(inv => inv.status === 'active').length,
-          completed: userInvestments.filter(inv => inv.status === 'completed').length,
-          total_invested: userInvestments.reduce((sum, inv) => sum + (inv.amount_invested || 0), 0)
+          active: userInvestments.filter((inv: any) => inv.status === 'active').length,
+          completed: userInvestments.filter((inv: any) => inv.status === 'completed').length,
+          total_invested: userInvestments.reduce((sum: number, inv: any) => sum + (inv.amount_invested || 0), 0)
         }
       };
     });

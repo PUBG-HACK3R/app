@@ -37,7 +37,7 @@ export async function GET() {
       `)
       .order("created_at", { ascending: false });
 
-    const formattedWithdrawals = (withdrawals || []).map(withdrawal => ({
+    const formattedWithdrawals = (withdrawals || []).map((withdrawal: any) => ({
       id: withdrawal.id,
       user_id: withdrawal.user_id,
       user_email: withdrawal.user_profiles?.email || 'Unknown',

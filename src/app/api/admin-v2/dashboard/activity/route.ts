@@ -34,6 +34,7 @@ export async function GET() {
         type,
         amount_usdt,
         created_at,
+        user_id,
         user_profiles!inner (
           email
         )
@@ -41,7 +42,7 @@ export async function GET() {
       .order("created_at", { ascending: false })
       .limit(20);
 
-    const formattedActivities = (activities || []).map(activity => ({
+    const formattedActivities = (activities || []).map((activity: any) => ({
       id: activity.id,
       type: activity.type,
       amount: activity.amount_usdt || 0,
