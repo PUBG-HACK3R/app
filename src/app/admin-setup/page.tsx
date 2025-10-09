@@ -26,10 +26,15 @@ export default function AdminSetupPage() {
       setResult(data);
 
       if (data.success) {
-        // Redirect to admin panel after 2 seconds
+        // Check admin role status first
+        const roleCheck = await fetch('/api/debug/check-admin-role');
+        const roleData = await roleCheck.json();
+        console.log('Role check after setup:', roleData);
+        
+        // Force a page refresh to clear any cached middleware state
         setTimeout(() => {
-          window.location.href = '/admin';
-        }, 2000);
+          window.location.href = '/admin?t=' + Date.now();
+        }, 1000);
       }
     } catch (error: any) {
       setResult({
