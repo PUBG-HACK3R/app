@@ -136,26 +136,8 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: referralError.message }, { status: 400 });
     }
 
-    // Update referrer's total referrals count
-    // First get current count
-    const { data: currentProfile } = await supabase
-      .from("user_profiles")
-      .select("total_referrals")
-      .eq("user_id", referrer.user_id)
-      .single();
-
-    const currentCount = currentProfile?.total_referrals || 0;
-    
-    const { error: countError } = await supabase
-      .from("user_profiles")
-      .update({ 
-        total_referrals: currentCount + 1
-      })
-      .eq("user_id", referrer.user_id);
-
-    if (countError) {
-      console.error("Error updating referral count:", countError);
-    }
+    // Note: total_referrals column doesn't exist in schema
+    // Referral count is calculated dynamically from referral_commissions table
 
     return NextResponse.json({ 
       success: true, 
