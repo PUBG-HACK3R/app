@@ -10,7 +10,7 @@ interface Plan {
   id: string;
   name: string;
   min_amount: number;
-  roi_daily_percent: number;
+  daily_roi_percentage: number;
   duration_days: number;
   is_active?: boolean;
   user_has_subscription?: boolean;
@@ -56,7 +56,7 @@ export function HorizontalPlans({ plans }: HorizontalPlansProps) {
             <div className="flex items-center justify-between">
               <h3 className="font-bold text-gray-900 dark:text-white text-lg">{plan.name}</h3>
               <Badge className="bg-gradient-to-r from-blue-500/20 to-purple-500/20 text-blue-600 dark:text-blue-300 border-blue-500/30 font-semibold whitespace-nowrap">
-                {plan.roi_daily_percent}% Daily
+                {plan.daily_roi_percentage}% Daily
               </Badge>
             </div>
             
@@ -65,10 +65,10 @@ export function HorizontalPlans({ plans }: HorizontalPlansProps) {
                 ${(plan.min_amount || 0).toLocaleString()}
               </div>
               <div className="text-sm text-gray-600 dark:text-gray-400">
-                {plan.duration_days} days • {(plan.roi_daily_percent * plan.duration_days).toFixed(1)}% total ROI
+                {plan.duration_days} days • {(plan.daily_roi_percentage * plan.duration_days).toFixed(1)}% total ROI
               </div>
               <div className="text-xs text-green-600 dark:text-green-400 font-medium">
-                Daily profit: ${((plan.min_amount || 0) * (plan.roi_daily_percent || 0) / 100).toFixed(2)}+
+                Daily profit: ${((plan.min_amount || 0) * (plan.daily_roi_percentage || 0) / 100).toFixed(2)}+
               </div>
             </div>
             

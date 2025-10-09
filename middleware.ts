@@ -44,10 +44,39 @@ export async function middleware(req: NextRequest) {
     return NextResponse.redirect(redirectUrl);
   }
 
-  // Admin-only guard
+  // Admin-only guard - check database role
   if (pathname === "/admin" || pathname.startsWith("/admin/")) {
-    const role = (user.app_metadata as any)?.role || (user.user_metadata as any)?.role || "user";
-    if (role !== "admin") {
+    // Create admin client to check role in database
+    const adminSupabase = createServerClient(
+      process.env.NEXT_PUBLIC_SUPABASE_URL!,
+      process.env.SUPABASE_SERVICE_ROLE_KEY!,
+      {
+        cookies: {
+          get(name: string) {
+            return req.cookies.get(name)?.value;
+          },
+          set(name: string, value: string, options: CookieOptions) {
+            res.cookies.set({ name, value, ...options });
+          },
+          remove(name: string, options: CookieOptions) {
+            res.cookies.set({ name, value: "", ...options });
+          },
+        },
+      }
+    );
+    
+    try {
+      const { data: profile } = await adminSupabase
+        .from("user_profiles")
+        .select("role")
+        .eq("user_id", user.id)
+        .single();
+        
+      if (!profile || profile.role !== "admin") {
+        return NextResponse.redirect(new URL("/dashboard", url.origin));
+      }
+    } catch (error) {
+      console.error("Admin role check error:", error);
       return NextResponse.redirect(new URL("/dashboard", url.origin));
     }
   }

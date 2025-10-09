@@ -29,7 +29,7 @@ interface DatabasePlan {
   id: string;
   name: string;
   min_amount: number;
-  roi_daily_percent: number;
+  daily_roi_percentage: number;
   duration_days: number;
   is_active: boolean;
   mining_type?: string;
@@ -161,7 +161,7 @@ export default function ClientPlansPage() {
           <div className="grid gap-6 sm:gap-8 sm:grid-cols-2 lg:grid-cols-3">
             {plans.map((plan: PlanDisplay) => {
             const Icon = plan.icon;
-            const dailyEarning = plan.min_amount * (plan.roi_daily_percent / 100);
+            const dailyEarning = plan.min_amount * (plan.daily_roi_percentage / 100);
             const totalReturn = dailyEarning * plan.duration_days;
             const totalProfit = Math.max(0, totalReturn - plan.min_amount); // Ensure positive
             const totalROI = Math.max(0, ((totalProfit / plan.min_amount) * 100)); // Ensure positive
@@ -214,7 +214,7 @@ export default function ClientPlansPage() {
                   {/* Key Metrics */}
                   <div className="grid grid-cols-2 gap-3 sm:gap-4 p-4 bg-gray-700/30 rounded-lg border border-gray-600/30">
                     <div className="text-center">
-                      <div className="text-lg font-bold text-green-400">{plan.roi_daily_percent}%</div>
+                      <div className="text-lg font-bold text-green-400">{plan.daily_roi_percentage}%</div>
                       <div className="text-xs text-gray-400">Daily Mining</div>
                     </div>
                     <div className="text-center">

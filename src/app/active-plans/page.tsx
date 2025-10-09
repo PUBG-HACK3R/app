@@ -46,7 +46,7 @@ export default async function ActivePlansPage() {
       plans!inner (
         name,
         min_amount,
-        roi_daily_percent,
+        daily_roi_percentage,
         duration_days
       )
     `)
@@ -201,7 +201,7 @@ export default async function ActivePlansPage() {
                     </div>
                     <div>
                       <div className="text-sm text-gray-400">Daily Rate</div>
-                      <div className="text-lg font-semibold text-blue-400">{Number(subscription.plan?.roi_daily_percent || 0).toFixed(1)}%</div>
+                      <div className="text-lg font-semibold text-blue-400">{Number(subscription.plan?.daily_roi_percentage || 0).toFixed(1)}%</div>
                     </div>
                   </div>
                 </div>
