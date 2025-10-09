@@ -43,7 +43,7 @@ interface Plan {
   name: string;
   description: string;
   min_amount: number;
-  roi_daily_percent: number;
+  daily_roi_percentage: number;
   duration_days: number;
   mining_type: string;
   hash_rate: string;
@@ -71,7 +71,7 @@ export function AdvancedPlanManagement() {
     name: "",
     description: "",
     min_amount: "",
-    roi_daily_percent: "",
+    daily_roi_percentage: "",
     duration_days: "",
     mining_type: "ASIC Mining",
     hash_rate: "0 TH/s",
@@ -121,7 +121,7 @@ export function AdvancedPlanManagement() {
       const planData = {
         ...formData,
         min_amount: parseFloat(formData.min_amount),
-        roi_daily_percent: parseFloat(formData.roi_daily_percent),
+        daily_roi_percentage: parseFloat(formData.daily_roi_percentage),
         duration_days: parseInt(formData.duration_days),
         features: formData.features.split(',').map(f => f.trim()).filter(f => f)
       };
@@ -161,7 +161,7 @@ export function AdvancedPlanManagement() {
       name: plan.name,
       description: plan.description,
       min_amount: plan.min_amount.toString(),
-      roi_daily_percent: plan.roi_daily_percent.toString(),
+      daily_roi_percentage: plan.daily_roi_percentage.toString(),
       duration_days: plan.duration_days.toString(),
       mining_type: plan.mining_type,
       hash_rate: plan.hash_rate,
@@ -220,7 +220,7 @@ export function AdvancedPlanManagement() {
       name: "",
       description: "",
       min_amount: "",
-      roi_daily_percent: "",
+      daily_roi_percentage: "",
       duration_days: "",
       mining_type: "ASIC Mining",
       hash_rate: "0 TH/s",
@@ -330,13 +330,13 @@ export function AdvancedPlanManagement() {
 
                 <div className="grid grid-cols-2 gap-4">
                   <div>
-                    <Label htmlFor="roi_daily_percent" className="text-white">Daily ROI (%)</Label>
+                    <Label htmlFor="daily_roi_percentage" className="text-white">Daily ROI (%)</Label>
                     <Input
-                      id="roi_daily_percent"
+                      id="daily_roi_percentage"
                       type="number"
                       step="0.01"
-                      value={formData.roi_daily_percent}
-                      onChange={(e) => setFormData({...formData, roi_daily_percent: e.target.value})}
+                      value={formData.daily_roi_percentage}
+                      onChange={(e) => setFormData({...formData, daily_roi_percentage: e.target.value}))
                       className="bg-gray-700 border-gray-600 text-white"
                       required
                     />
@@ -461,7 +461,7 @@ export function AdvancedPlanManagement() {
                     ${plan.min_amount}
                   </TableCell>
                   <TableCell className="text-green-400 font-semibold">
-                    {plan.roi_daily_percent}%
+                    {plan.daily_roi_percentage}%
                   </TableCell>
                   <TableCell className="text-gray-300">
                     {plan.duration_days} days

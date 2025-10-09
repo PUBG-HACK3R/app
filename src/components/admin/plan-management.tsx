@@ -35,7 +35,7 @@ interface Plan {
   id: string;
   name: string;
   price_usdt: number;
-  roi_daily_percent: number;
+  daily_roi_percentage: number;
   duration_days: number;
   is_active: boolean;
   created_at: string;
@@ -45,7 +45,7 @@ interface Plan {
 interface PlanFormData {
   name: string;
   price_usdt: string;
-  roi_daily_percent: string;
+  daily_roi_percentage: string;
   duration_days: string;
   is_active: boolean;
 }
@@ -53,7 +53,7 @@ interface PlanFormData {
 const initialFormData: PlanFormData = {
   name: "",
   price_usdt: "",
-  roi_daily_percent: "",
+  daily_roi_percentage: "",
   duration_days: "",
   is_active: true,
 };
@@ -129,7 +129,7 @@ export function PlanManagement() {
     setFormData({
       name: plan.name,
       price_usdt: plan.price_usdt.toString(),
-      roi_daily_percent: plan.roi_daily_percent.toString(),
+      daily_roi_percentage: plan.daily_roi_percentage.toString(),
       duration_days: plan.duration_days.toString(),
       is_active: plan.is_active,
     });
@@ -247,8 +247,8 @@ export function PlanManagement() {
                           step="0.01"
                           min="0.01"
                           max="100"
-                          value={formData.roi_daily_percent}
-                          onChange={(e) => setFormData({ ...formData, roi_daily_percent: e.target.value })}
+                          value={formData.daily_roi_percentage}
+                          onChange={(e) => setFormData({ ...formData, daily_roi_percentage: e.target.value })}
                           placeholder="1.0"
                           required
                         />
@@ -274,18 +274,18 @@ export function PlanManagement() {
                       />
                       <Label htmlFor="active">Active Plan</Label>
                     </div>
-                    {formData.price_usdt && formData.roi_daily_percent && formData.duration_days && (
+                    {formData.price_usdt && formData.daily_roi_percentage && formData.duration_days && (
                       <div className="p-4 bg-muted rounded-lg">
                         <h4 className="font-semibold mb-2">Plan Preview</h4>
                         <div className="grid grid-cols-2 gap-2 text-sm">
                           <div>Total Return: ${calculateTotalReturn(
                             parseFloat(formData.price_usdt) || 0,
-                            parseFloat(formData.roi_daily_percent) || 0,
+                            parseFloat(formData.daily_roi_percentage) || 0,
                             parseInt(formData.duration_days) || 0
                           )}</div>
                           <div>Total Profit: ${calculateProfit(
                             parseFloat(formData.price_usdt) || 0,
-                            parseFloat(formData.roi_daily_percent) || 0,
+                            parseFloat(formData.daily_roi_percentage) || 0,
                             parseInt(formData.duration_days) || 0
                           )}</div>
                         </div>
@@ -331,7 +331,7 @@ export function PlanManagement() {
                     </div>
                     <div className="flex items-center">
                       <TrendingUp className="h-4 w-4 mr-1 text-blue-500" />
-                      <span className="font-semibold">{plan.roi_daily_percent}%/day</span>
+                      <span className="font-semibold">{plan.daily_roi_percentage}%/day</span>
                     </div>
                     <div className="flex items-center">
                       <Calendar className="h-4 w-4 mr-1 text-purple-500" />
@@ -340,7 +340,7 @@ export function PlanManagement() {
                     <div className="text-right">
                       <div className="text-xs text-muted-foreground">Total Return</div>
                       <div className="font-semibold text-green-600">
-                        ${calculateTotalReturn(plan.price_usdt, plan.roi_daily_percent, plan.duration_days)}
+                        ${calculateTotalReturn(plan.price_usdt, plan.daily_roi_percentage, plan.duration_days)}
                       </div>
                     </div>
                   </div>
