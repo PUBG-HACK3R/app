@@ -29,48 +29,44 @@ export async function POST(request: NextRequest) {
     // Create profile
     if (data.user) {
       try {
-        // Generate referral code for new user
-        const newUserReferralCode = `REF${data.user.id.substring(0, 8).toUpperCase()}`;
+        // Wait for trigger to complete (database triggers should handle profile/balance creation)
+        await new Promise(resolve => setTimeout(resolve, 2000));
         
-        // Wait a moment for the trigger to complete
-        await new Promise(resolve => setTimeout(resolve, 1000));
-        
-        // Check if profile was created by trigger
-        const { data: existingProfile, error: profileCheckError } = await admin
+        // Verify that profile and balance were created by trigger
+        const { data: profile, error: profileError } = await admin
           .from("user_profiles")
-          .select("id, referral_code")
+          .select("id, referral_code, role")
           .eq("user_id", data.user.id)
           .single();
 
-        if (profileCheckError || !existingProfile) {
-          // Trigger didn't work, create profile manually
-          const { error: insertError } = await admin.from("user_profiles").insert({
-            user_id: data.user.id,
-            email: data.user.email,
-            role: "user",
-            referral_code: newUserReferralCode,
-          });
-          
-          if (insertError) {
-            console.error("Profile creation error:", insertError);
-            throw new Error(`Failed to create user profile: ${insertError.message}`);
-          }
-        } else if (!existingProfile.referral_code) {
-          // Profile exists but no referral code, update it
-          await admin.from("user_profiles").update({
-            referral_code: newUserReferralCode,
-          }).eq("user_id", data.user.id);
-        }
-
-        // Ensure user_balances record exists (trigger should create this too)
-        const { data: existingBalance, error: balanceCheckError } = await admin
+        const { data: balance, error: balanceError } = await admin
           .from("user_balances")
           .select("id")
           .eq("user_id", data.user.id)
           .single();
 
-        if (balanceCheckError || !existingBalance) {
-          const { error: balanceInsertError } = await admin.from("user_balances").insert({
+        // If trigger failed, create manually as fallback
+        if (profileError || !profile) {
+          console.log("Trigger failed for profile, creating manually...");
+          const referralCode = `REF${data.user.id.substring(0, 8).toUpperCase()}`;
+          
+          const { error: manualProfileError } = await admin.from("user_profiles").insert({
+            user_id: data.user.id,
+            email: data.user.email,
+            role: "user",
+            referral_code: referralCode,
+          });
+          
+          if (manualProfileError) {
+            console.error("Manual profile creation failed:", manualProfileError);
+            throw new Error(`Profile creation failed: ${manualProfileError.message}`);
+          }
+        }
+
+        if (balanceError || !balance) {
+          console.log("Trigger failed for balance, creating manually...");
+          
+          const { error: manualBalanceError } = await admin.from("user_balances").insert({
             user_id: data.user.id,
             available_balance: 0,
             locked_balance: 0,
@@ -79,9 +75,9 @@ export async function POST(request: NextRequest) {
             total_earned: 0
           });
           
-          if (balanceInsertError) {
-            console.error("Balance creation error:", balanceInsertError);
-            throw new Error(`Failed to create user balance: ${balanceInsertError.message}`);
+          if (manualBalanceError) {
+            console.error("Manual balance creation failed:", manualBalanceError);
+            throw new Error(`Balance creation failed: ${manualBalanceError.message}`);
           }
         }
 
