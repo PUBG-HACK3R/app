@@ -57,8 +57,9 @@ CREATE TABLE investment_plans (
     description TEXT,
     min_amount DECIMAL(10,2) NOT NULL CHECK (min_amount > 0),
     max_amount DECIMAL(10,2) NOT NULL CHECK (max_amount >= min_amount),
-    daily_roi_percentage DECIMAL(5,3) NOT NULL CHECK (daily_roi_percentage > 0),
+    daily_roi_percentage DECIMAL(6,2) NOT NULL CHECK (daily_roi_percentage > 0),
     duration_days INTEGER NOT NULL CHECK (duration_days > 0),
+    payout_type TEXT DEFAULT 'daily' CHECK (payout_type IN ('daily', 'end')),
     is_active BOOLEAN DEFAULT true,
     created_at TIMESTAMPTZ DEFAULT NOW(),
     updated_at TIMESTAMPTZ DEFAULT NOW()
@@ -96,8 +97,9 @@ CREATE TABLE user_investments (
     user_id UUID NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
     plan_id UUID NOT NULL REFERENCES investment_plans(id) ON DELETE RESTRICT,
     amount_invested DECIMAL(10,2) NOT NULL CHECK (amount_invested > 0),
-    daily_roi_percentage DECIMAL(5,3) NOT NULL CHECK (daily_roi_percentage > 0),
+    daily_roi_percentage DECIMAL(6,2) NOT NULL CHECK (daily_roi_percentage > 0),
     duration_days INTEGER NOT NULL CHECK (duration_days > 0),
+    payout_type TEXT DEFAULT 'daily' CHECK (payout_type IN ('daily', 'end')),
     start_date DATE NOT NULL,
     end_date DATE NOT NULL,
     status TEXT NOT NULL DEFAULT 'active' CHECK (status IN ('active', 'completed', 'cancelled')),
@@ -185,10 +187,12 @@ CREATE INDEX idx_transaction_logs_user_id ON transaction_logs(user_id);
 CREATE INDEX idx_transaction_logs_type ON transaction_logs(type);
 
 -- Insert default investment plans
-INSERT INTO investment_plans (name, description, min_amount, max_amount, daily_roi_percentage, duration_days) VALUES
-('Starter Plan', 'Perfect for beginners - Low risk, steady returns', 50.00, 499.99, 1.0, 30),
-('Pro Plan', 'For experienced investors - Higher returns', 500.00, 1999.99, 1.2, 45),
-('Elite Plan', 'Premium plan - Maximum returns for serious investors', 2000.00, 10000.00, 1.5, 60);
+INSERT INTO investment_plans (name, description, min_amount, max_amount, daily_roi_percentage, duration_days, payout_type) VALUES
+('Daily Plan', 'Quick returns - 1 day investment with 2% daily ROI', 50.00, 100000.00, 2.0, 1, 'daily'),
+('3-Day Plan', 'Short term investment - 3 days with 2.3% daily ROI', 100.00, 100000.00, 2.3, 3, 'daily'),
+('10-Day Plan', 'Medium term investment - 10 days with 2.6% daily ROI', 200.00, 100000.00, 2.6, 10, 'daily'),
+('Monthly Plan', 'Long term investment - 1 month with 120% total return at completion', 100.00, 100000.00, 120.0, 30, 'end'),
+('Bi-Monthly Plan', 'Extended investment - 2 months with 150% total return at completion', 100.00, 100000.00, 150.0, 60, 'end');
 
 -- Insert default admin user (password: admin123 - change this!)
 INSERT INTO admin_users (username, email, password_hash, full_name, role, permissions) VALUES

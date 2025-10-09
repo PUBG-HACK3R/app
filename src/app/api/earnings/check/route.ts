@@ -25,7 +25,7 @@ export async function GET() {
     // Get user's investments that are due for earnings
     const { data: investments, error } = await adminClient
       .from('user_investments')
-      .select('*')
+      .select('*, investment_plans!inner(payout_type)')
       .eq('user_id', user.id)
       .eq('status', 'active')
       .lte('next_earning_time', now.toISOString());
@@ -64,8 +64,23 @@ export async function GET() {
           continue;
         }
 
-        // Calculate daily earning
-        const dailyEarning = (investment.amount_invested * investment.daily_roi_percentage) / 100;
+        // Calculate earning based on payout type
+        let dailyEarning = 0;
+        const payoutType = investment.payout_type || investment.investment_plans?.payout_type || 'daily';
+        
+        if (payoutType === 'daily') {
+          // Standard daily earnings
+          dailyEarning = (investment.amount_invested * investment.daily_roi_percentage) / 100;
+        } else if (payoutType === 'end') {
+          // Only pay at the end of the investment period
+          if (today >= investment.end_date) {
+            // Calculate total return percentage
+            dailyEarning = (investment.amount_invested * investment.daily_roi_percentage) / 100;
+          } else {
+            // Skip earning for 'end' type plans until completion
+            continue;
+          }
+        }
 
         // Create earning record
         const { data: earning, error: earningError } = await adminClient

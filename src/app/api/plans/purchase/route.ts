@@ -106,18 +106,29 @@ export async function POST(request: Request) {
       active: true,
     });
 
+    // Set next earning time (24 hours from now for daily plans, end date for end-payout plans)
+    const nextEarningTime = new Date();
+    if (plan.payout_type === 'end') {
+      nextEarningTime.setTime(endDate.getTime());
+    } else {
+      nextEarningTime.setDate(nextEarningTime.getDate() + 1);
+    }
+
     const { data: subscription, error: subError } = await admin
       .from("user_investments")
       .insert({
-        id: crypto.randomUUID(),
         user_id: user.id,
-        plan_id: parseInt(planId),
+        plan_id: planId,
         amount_invested: planPrice,
-        daily_earning: dailyEarning,
+        daily_roi_percentage: plan.daily_roi_percentage,
+        duration_days: plan.duration_days,
+        payout_type: plan.payout_type || 'daily',
+        start_date: startDate.toISOString().split('T')[0],
+        end_date: endDate.toISOString().split('T')[0],
+        status: 'active',
         total_earned: 0,
-        start_date: startDate.toISOString(),
-        end_date: endDate.toISOString(),
-        active: true,
+        next_earning_time: nextEarningTime.toISOString(),
+        investment_time: now.toISOString()
       })
       .select()
       .single();
@@ -137,15 +148,28 @@ export async function POST(request: Request) {
       }, { status: 500 });
     }
 
+    // Update balance in balances table after successful purchase
+    // Move money from available_balance to locked_balance
+    const { data: currentBalanceData } = await admin
+      .from("user_balances")
+      .select("available_balance, locked_balance")
+      .eq("user_id", user.id)
+      .single();
+
+    const newAvailableBalance = (currentBalanceData?.available_balance || 0) - planPrice;
+    const newLockedBalance = (currentBalanceData?.locked_balance || 0) + planPrice;
+
     // Create investment transaction for the plan purchase
     const { error: txError } = await admin
       .from("transaction_logs")
       .insert({
         user_id: user.id,
         type: "investment",
-        amount_usdt: planPrice,
-        status: "completed",
-        description: `Purchased ${plan.name} mining plan - ${plan.duration_days} days at ${plan.daily_roi_percentage}% daily ROI`,
+        amount_usdt: -planPrice, // Negative because it's a deduction
+        description: `Purchased ${plan.name} plan - ${plan.duration_days} days at ${plan.daily_roi_percentage}% ${plan.payout_type === 'end' ? 'total' : 'daily'} ROI`,
+        reference_id: subscription.id,
+        balance_before: currentBalance,
+        balance_after: (currentBalanceData?.available_balance || 0) - planPrice
       });
 
     if (txError) {
@@ -153,14 +177,13 @@ export async function POST(request: Request) {
       // Don't fail the request, but log the error
     }
 
-    // Update balance in balances table after successful purchase
-    const newBalance = currentBalance - planPrice;
     const { error: balanceUpdateError } = await admin
       .from("user_balances")
-      .upsert({
-        user_id: user.id,
-        available_balance: newBalance
-      }, { onConflict: "user_id" });
+      .update({
+        available_balance: newAvailableBalance,
+        locked_balance: newLockedBalance
+      })
+      .eq("user_id", user.id);
 
     if (balanceUpdateError) {
       console.error("Error updating balance:", balanceUpdateError);
@@ -174,12 +197,13 @@ export async function POST(request: Request) {
         id: subscription.id,
         plan_name: plan.name,
         amount_invested: subscription.amount_invested,
-        daily_earning: subscription.daily_earning,
+        daily_roi_percentage: subscription.daily_roi_percentage,
+        payout_type: subscription.payout_type,
         start_date: subscription.start_date,
         end_date: subscription.end_date,
         duration_days: plan.duration_days
       },
-      new_balance: newBalance
+      new_balance: newAvailableBalance
     });
 
   } catch (err: any) {

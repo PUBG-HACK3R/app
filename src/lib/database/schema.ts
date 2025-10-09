@@ -23,8 +23,9 @@ export interface InvestmentPlan {
   description: string;
   min_amount: number; // Minimum investment in USDT
   max_amount: number; // Maximum investment in USDT
-  daily_roi_percentage: number; // Daily ROI percentage (e.g., 1.5 = 1.5%)
+  daily_roi_percentage: number; // Daily ROI percentage (e.g., 1.5 = 1.5%) or total percentage for 'end' type
   duration_days: number; // Plan duration in days
+  payout_type: 'daily' | 'end'; // Whether earnings are paid daily or at the end
   is_active: boolean;
   created_at: string;
   updated_at: string;
@@ -62,8 +63,9 @@ export interface UserInvestment {
   user_id: string;
   plan_id: string;
   amount_invested: number; // USDT amount invested
-  daily_roi_percentage: number; // ROI at time of investment
+  daily_roi_percentage: number; // ROI at time of investment (daily % or total % for 'end' type)
   duration_days: number; // Duration at time of investment
+  payout_type: 'daily' | 'end'; // Whether earnings are paid daily or at the end
   start_date: string;
   end_date: string;
   status: 'active' | 'completed' | 'cancelled';

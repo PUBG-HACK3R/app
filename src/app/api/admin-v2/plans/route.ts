@@ -101,6 +101,7 @@ export async function POST(request: Request) {
         max_amount: planData.max_amount,
         daily_roi_percentage: planData.daily_roi_percentage,
         duration_days: planData.duration_days,
+        payout_type: planData.payout_type || 'daily',
         is_active: planData.is_active ?? true
       })
       .select()
