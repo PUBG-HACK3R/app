@@ -16,7 +16,7 @@ export async function GET() {
     const adminClient = getSupabaseAdminClient();
     const { data: profile } = await adminClient
       .from("user_profiles")
-      .select("role")
+      .select("role, email")
       .eq("user_id", user.id)
       .single();
 
@@ -69,10 +69,10 @@ export async function GET() {
       .eq("status", "active");
 
     // Calculate totals
-    const totalDeposits = (deposits || []).reduce((sum, d) => sum + (d.amount_usdt || 0), 0);
-    const totalWithdrawals = (withdrawals || []).reduce((sum, w) => sum + (w.amount_usdt || 0), 0);
-    const totalEarnings = (earnings || []).reduce((sum, e) => sum + (e.amount_usdt || 0), 0);
-    const totalInvestments = (investments || []).reduce((sum, i) => sum + (i.amount_invested || 0), 0);
+    const totalDeposits = (deposits || []).reduce((sum: number, d: any) => sum + (d.amount_usdt || 0), 0);
+    const totalWithdrawals = (withdrawals || []).reduce((sum: number, w: any) => sum + (w.amount_usdt || 0), 0);
+    const totalEarnings = (earnings || []).reduce((sum: number, e: any) => sum + (e.amount_usdt || 0), 0);
+    const totalInvestments = (investments || []).reduce((sum: number, i: any) => sum + (i.amount_invested || 0), 0);
     const platformBalance = totalDeposits - totalWithdrawals;
 
     return NextResponse.json({

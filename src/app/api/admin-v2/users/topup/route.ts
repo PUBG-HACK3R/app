@@ -16,7 +16,7 @@ export async function POST(request: Request) {
     const adminClient = getSupabaseAdminClient();
     const { data: profile } = await adminClient
       .from("user_profiles")
-      .select("role")
+      .select("role, email")
       .eq("user_id", user.id)
       .single();
 

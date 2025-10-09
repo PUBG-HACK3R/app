@@ -14,13 +14,13 @@ export async function POST(request: Request) {
 
     // Check admin role
     const adminClient = getSupabaseAdminClient();
-    const { data: profile } = await adminClient
+    const { data: profile, error: profileError } = await adminClient
       .from("user_profiles")
-      .select("role")
+      .select("role, email")
       .eq("user_id", user.id)
       .single();
 
-    if (!profile || profile.role !== 'admin') {
+    if (profileError || !profile || profile.role !== 'admin') {
       return NextResponse.json({ error: "Forbidden" }, { status: 403 });
     }
 
