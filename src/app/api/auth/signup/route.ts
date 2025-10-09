@@ -32,36 +32,45 @@ export async function POST(request: NextRequest) {
         // Generate referral code for new user
         const newUserReferralCode = `REF${data.user.id.substring(0, 8).toUpperCase()}`;
         
-        // Check if profile already exists (might be created by trigger)
-        const { data: existingProfile } = await admin
+        // Wait a moment for the trigger to complete
+        await new Promise(resolve => setTimeout(resolve, 1000));
+        
+        // Check if profile was created by trigger
+        const { data: existingProfile, error: profileCheckError } = await admin
           .from("user_profiles")
-          .select("id")
+          .select("id, referral_code")
           .eq("user_id", data.user.id)
           .single();
 
-        if (!existingProfile) {
-          await admin.from("user_profiles").insert({
+        if (profileCheckError || !existingProfile) {
+          // Trigger didn't work, create profile manually
+          const { error: insertError } = await admin.from("user_profiles").insert({
             user_id: data.user.id,
             email: data.user.email,
             role: "user",
             referral_code: newUserReferralCode,
           });
-        } else {
-          // Update existing profile with referral code
+          
+          if (insertError) {
+            console.error("Profile creation error:", insertError);
+            throw new Error(`Failed to create user profile: ${insertError.message}`);
+          }
+        } else if (!existingProfile.referral_code) {
+          // Profile exists but no referral code, update it
           await admin.from("user_profiles").update({
             referral_code: newUserReferralCode,
           }).eq("user_id", data.user.id);
         }
 
-        // Ensure user_balances record exists
-        const { data: existingBalance } = await admin
+        // Ensure user_balances record exists (trigger should create this too)
+        const { data: existingBalance, error: balanceCheckError } = await admin
           .from("user_balances")
           .select("id")
           .eq("user_id", data.user.id)
           .single();
 
-        if (!existingBalance) {
-          await admin.from("user_balances").insert({
+        if (balanceCheckError || !existingBalance) {
+          const { error: balanceInsertError } = await admin.from("user_balances").insert({
             user_id: data.user.id,
             available_balance: 0,
             locked_balance: 0,
@@ -69,6 +78,11 @@ export async function POST(request: NextRequest) {
             total_withdrawn: 0,
             total_earned: 0
           });
+          
+          if (balanceInsertError) {
+            console.error("Balance creation error:", balanceInsertError);
+            throw new Error(`Failed to create user balance: ${balanceInsertError.message}`);
+          }
         }
 
         // Handle referral code if provided
