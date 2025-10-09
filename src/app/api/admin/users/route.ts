@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { adminAuth } from "@/lib/admin/auth";
+import { getSupabaseServerClient } from "@/lib/supabase/server";
 import { getSupabaseAdminClient } from "@/lib/supabase/admin";
 
 export const runtime = "nodejs";
@@ -7,27 +7,36 @@ export const dynamic = "force-dynamic";
 
 export async function GET(request: Request) {
   try {
-    // Verify admin authentication
-    const token = request.headers.get('cookie')?.split('admin_token=')[1]?.split(';')[0];
-    if (!token) {
+    // Use same auth method as admin page
+    const supabase = await getSupabaseServerClient();
+    const { data: { user }, error: authError } = await supabase.auth.getUser();
+    
+    if (authError || !user) {
       return NextResponse.json({ 
         success: false,
-        error: "Admin authentication required" 
+        error: "Not authenticated" 
       }, { status: 401 });
     }
 
-    const adminUser = await adminAuth.verifyToken(token);
-    if (!adminUser) {
+    // Check admin role using admin client (same as admin page)
+    const adminClient = getSupabaseAdminClient();
+    const { data: profile, error: profileError } = await adminClient
+      .from("user_profiles")
+      .select("role")
+      .eq("user_id", user.id)
+      .single();
+
+    if (profileError || !profile || profile.role !== 'admin') {
       return NextResponse.json({ 
         success: false,
-        error: "Invalid admin token" 
-      }, { status: 401 });
+        error: "Forbidden - Admin access required" 
+      }, { status: 403 });
     }
 
-    const supabase = getSupabaseAdminClient();
+    const admin = getSupabaseAdminClient();
 
     // Get all users with their profiles, balances, and stats
-    const { data: users, error: usersError } = await supabase
+    const { data: users, error: usersError } = await admin
       .from('user_profiles')
       .select(`
         *,
@@ -50,12 +59,12 @@ export async function GET(request: Request) {
     }
 
     // Get investment counts for each user
-    const { data: investments } = await supabase
+    const { data: investments } = await admin
       .from('user_investments')
       .select('user_id, status, amount_invested, total_earned');
 
     // Get recent transactions for each user
-    const { data: transactions } = await supabase
+    const { data: transactions } = await admin
       .from('transaction_logs')
       .select('user_id, type, amount_usdt, created_at')
       .order('created_at', { ascending: false })

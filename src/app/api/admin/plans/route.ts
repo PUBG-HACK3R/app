@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { adminAuth } from "@/lib/admin/auth";
+import { getSupabaseServerClient } from "@/lib/supabase/server";
 import { getSupabaseAdminClient } from "@/lib/supabase/admin";
 import { z } from "zod";
 
@@ -30,27 +30,36 @@ const UpdatePlanSchema = z.object({
 // GET - Fetch all plans (admin only)
 export async function GET(request: Request) {
   try {
-    // Verify admin authentication
-    const token = request.headers.get('cookie')?.split('admin_token=')[1]?.split(';')[0];
-    if (!token) {
+    // Use same auth method as other admin APIs
+    const supabase = await getSupabaseServerClient();
+    const { data: { user }, error: authError } = await supabase.auth.getUser();
+    
+    if (authError || !user) {
       return NextResponse.json({ 
         success: false,
-        error: "Admin authentication required" 
+        error: "Not authenticated" 
       }, { status: 401 });
     }
 
-    const adminUser = await adminAuth.verifyToken(token);
-    if (!adminUser) {
+    // Check admin role using admin client
+    const adminClient = getSupabaseAdminClient();
+    const { data: profile, error: profileError } = await adminClient
+      .from("user_profiles")
+      .select("role")
+      .eq("user_id", user.id)
+      .single();
+
+    if (profileError || !profile || profile.role !== 'admin') {
       return NextResponse.json({ 
         success: false,
-        error: "Invalid admin token" 
-      }, { status: 401 });
+        error: "Forbidden - Admin access required" 
+      }, { status: 403 });
     }
 
-    const supabase = getSupabaseAdminClient();
+    const admin = getSupabaseAdminClient();
     
     // Get all plans with investment statistics
-    const { data: plans, error } = await supabase
+    const { data: plans, error } = await admin
       .from("investment_plans")
       .select("*")
       .order("created_at", { ascending: false });
@@ -100,21 +109,30 @@ export async function GET(request: Request) {
 // POST - Create new plan (admin only)
 export async function POST(request: Request) {
   try {
-    // Verify admin authentication
-    const token = request.headers.get('cookie')?.split('admin_token=')[1]?.split(';')[0];
-    if (!token) {
+    // Use same auth method as other admin APIs
+    const userClient = await getSupabaseServerClient();
+    const { data: { user }, error: authError } = await userClient.auth.getUser();
+    
+    if (authError || !user) {
       return NextResponse.json({ 
         success: false,
-        error: "Admin authentication required" 
+        error: "Not authenticated" 
       }, { status: 401 });
     }
 
-    const adminUser = await adminAuth.verifyToken(token);
-    if (!adminUser) {
+    // Check admin role using admin client
+    const adminClient = getSupabaseAdminClient();
+    const { data: profile, error: profileError } = await adminClient
+      .from("user_profiles")
+      .select("role")
+      .eq("user_id", user.id)
+      .single();
+
+    if (profileError || !profile || profile.role !== 'admin') {
       return NextResponse.json({ 
         success: false,
-        error: "Invalid admin token" 
-      }, { status: 401 });
+        error: "Forbidden - Admin access required" 
+      }, { status: 403 });
     }
 
     const json = await request.json();
