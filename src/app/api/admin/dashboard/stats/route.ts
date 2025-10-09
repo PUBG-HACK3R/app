@@ -154,7 +154,7 @@ export async function GET(request: Request) {
         investments: {
           active_count: activeInvestments.length,
           completed_count: completedInvestments.length,
-          total_invested: totalInvested,
+          locked_balance: totalInvested,
           today_count: investmentsToday
         },
         

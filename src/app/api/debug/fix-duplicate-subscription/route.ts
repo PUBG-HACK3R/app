@@ -20,7 +20,7 @@ export async function POST() {
     const targetUserId = "f5f5728e-6a8d-46f3-9d25-5e1eea2a3e86";
     
     const { data: allSubs, error: subsError } = await admin
-      .from("subscriptions")
+      .from("user_investments")
       .select("*")
       .eq("user_id", targetUserId)
       .order("created_at", { ascending: true });
@@ -46,7 +46,7 @@ export async function POST() {
 
     // Delete the duplicate subscription
     const { error: deleteError } = await admin
-      .from("subscriptions")
+      .from("user_investments")
       .delete()
       .eq("id", duplicateSub.id);
 
@@ -59,7 +59,7 @@ export async function POST() {
 
     // Get updated subscription list
     const { data: updatedSubs } = await admin
-      .from("subscriptions")
+      .from("user_investments")
       .select("*")
       .eq("user_id", targetUserId)
       .order("created_at", { ascending: true });

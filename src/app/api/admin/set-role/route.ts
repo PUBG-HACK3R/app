@@ -36,7 +36,7 @@ export async function POST(request: Request) {
 
     // Also update the profiles table
     await admin
-      .from("profiles")
+      .from("user_profiles")
       .upsert({ user_id: userId, role }, { onConflict: "user_id" });
 
     return NextResponse.json({ 

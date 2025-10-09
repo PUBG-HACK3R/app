@@ -22,7 +22,7 @@ export async function POST(request: Request) {
     // Check admin role directly using admin client (same method as admin page)
     const adminClient = getSupabaseAdminClient();
     const { data: profile, error: adminCheckError } = await adminClient
-      .from("profiles")
+      .from("user_profiles")
       .select("role")
       .eq("user_id", user.id)
       .single();
@@ -48,8 +48,8 @@ export async function POST(request: Request) {
 
     // Get current user balance
     const { data: balanceData } = await admin
-      .from("balances")
-      .select("available_usdt")
+      .from("user_balances")
+      .select("available_balance")
       .eq("user_id", wd.user_id)
       .single();
 
@@ -67,12 +67,12 @@ export async function POST(request: Request) {
     if (updErr) return NextResponse.json({ error: updErr.message }, { status: 400 });
 
     // Reverse the balance deduction (add the amount back)
-    const currentBalance = Number(balanceData.available_usdt || 0);
+    const currentBalance = Number(balanceData.available_balance || 0);
     const newBalance = currentBalance + wd.amount_usdt;
     
     const { error: balanceErr } = await admin
-      .from("balances")
-      .update({ available_usdt: newBalance })
+      .from("user_balances")
+      .update({ available_balance: newBalance })
       .eq("user_id", wd.user_id);
 
     if (balanceErr) {
@@ -82,7 +82,7 @@ export async function POST(request: Request) {
 
     // Update the existing transaction record to rejected status
     await admin
-      .from("transactions")
+      .from("transaction_logs")
       .update({ 
         status: "rejected",
         description: `Withdrawal rejected: ${reason}`
@@ -90,7 +90,7 @@ export async function POST(request: Request) {
       .eq("withdrawal_id", wd.id);
 
     // Log the rejection for audit trail with the reason
-    await admin.from("transactions").insert({
+    await admin.from("transaction_logs").insert({
       user_id: wd.user_id,
       type: "balance_adjustment",
       amount_usdt: wd.amount_usdt,

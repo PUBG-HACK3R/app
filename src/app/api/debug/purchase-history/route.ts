@@ -18,14 +18,14 @@ export async function GET() {
 
     // Get ALL transactions for this user
     const { data: allTransactions, error: txError } = await admin
-      .from("transactions")
+      .from("transaction_logs")
       .select("*")
       .eq("user_id", user.id)
       .order("created_at", { ascending: false });
 
     // Get current balance
     const { data: balance, error: balanceError } = await admin
-      .from("balances")
+      .from("user_balances")
       .select("*")
       .eq("user_id", user.id)
       .maybeSingle();

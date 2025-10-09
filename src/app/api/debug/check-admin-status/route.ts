@@ -21,14 +21,14 @@ export async function GET() {
     // Check profile using admin client
     const adminClient = getSupabaseAdminClient();
     const { data: profile, error: profileError } = await adminClient
-      .from("profiles")
+      .from("user_profiles")
       .select("*")
       .eq("user_id", user.id)
       .single();
 
     // Also check if profile exists at all
     const { data: allProfiles, error: allProfilesError } = await adminClient
-      .from("profiles")
+      .from("user_profiles")
       .select("user_id, email, role")
       .limit(5);
 

@@ -10,11 +10,12 @@ export async function POST() {
 
     // Find completed subscriptions that haven't had their principal returned
     const { data: completedSubs, error: subError } = await admin
-      .from("subscriptions")
+      .from("user_investments")
       .select(`
         id,
         user_id,
-        principal_usdt,
+        daily_roi_percentage,
+        amount_invested,
         end_date,
         active,
         plan_id,
@@ -46,7 +47,7 @@ export async function POST() {
         
         // Check if investment return already exists for this subscription
         const { data: existingReturn } = await admin
-          .from("transactions")
+          .from("transaction_logs")
           .select("id")
           .eq("user_id", sub.user_id)
           .eq("type", "investment_return")
@@ -56,7 +57,7 @@ export async function POST() {
         if (existingReturn) {
           // Already processed, just deactivate subscription
           await admin
-            .from("subscriptions")
+            .from("user_investments")
             .update({ active: false })
             .eq("id", sub.id);
           continue;
@@ -64,11 +65,11 @@ export async function POST() {
 
         // Create investment return transaction
         const { error: txError } = await admin
-          .from("transactions")
+          .from("transaction_logs")
           .insert({
             user_id: sub.user_id,
             type: "investment_return",
-            amount_usdt: sub.principal_usdt,
+            amount_usdt: sub.amount_invested,
             status: "completed",
             description: `Investment return from ${planName} mining plan (Subscription: ${sub.id})`,
           });
@@ -85,7 +86,7 @@ export async function POST() {
 
         // Deactivate the subscription
         const { error: updateError } = await admin
-          .from("subscriptions")
+          .from("user_investments")
           .update({ active: false })
           .eq("id", sub.id);
 
@@ -98,7 +99,7 @@ export async function POST() {
           subscription_id: sub.id,
           user_id: sub.user_id,
           plan_name: planName,
-          returned_amount: sub.principal_usdt,
+          returned_amount: sub.amount_invested,
           success: true
         });
 

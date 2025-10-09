@@ -22,7 +22,7 @@ export async function GET() {
 
     // Get all subscriptions (same query as cron job)
     const { data: subs, error: subsErr } = await admin
-      .from("subscriptions")
+      .from("user_investments")
       .select("id,user_id,amount_invested,daily_earning,start_date,end_date,active,total_earned,created_at")
       .eq("active", true);
 
@@ -66,7 +66,7 @@ export async function GET() {
       let alreadyCredited = false;
       if (shouldProcess) {
         const { data: todayEarning } = await admin
-          .from("transactions")
+          .from("transaction_logs")
           .select("id,created_at,amount_usdt")
           .eq("user_id", sub.user_id)
           .eq("type", "earning")
@@ -108,7 +108,7 @@ export async function GET() {
 
     // Get user's recent earning transactions
     const { data: recentEarnings } = await admin
-      .from("transactions")
+      .from("transaction_logs")
       .select("*")
       .eq("user_id", user.id)
       .eq("type", "earning")

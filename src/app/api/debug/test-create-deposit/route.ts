@@ -22,7 +22,7 @@ export async function POST() {
 
     // First, ensure profile exists (like create-invoice does)
     const { error: profileError } = await supabase
-      .from("profiles")
+      .from("user_profiles")
       .upsert({ 
         user_id: user.id, 
         email: user.email || "", 

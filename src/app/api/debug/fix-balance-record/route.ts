@@ -21,7 +21,7 @@ export async function POST() {
 
     // Calculate correct balance from transactions
     const { data: transactions, error: txError } = await admin
-      .from("transactions")
+      .from("transaction_logs")
       .select("type, amount_usdt, created_at, description")
       .eq("user_id", user.id)
       .order("created_at", { ascending: true });
@@ -50,7 +50,7 @@ export async function POST() {
 
     // Check if balance record exists
     const { data: existingBalance } = await admin
-      .from("balances")
+      .from("user_balances")
       .select("*")
       .eq("user_id", user.id)
       .maybeSingle();
@@ -59,9 +59,9 @@ export async function POST() {
     if (existingBalance) {
       // Update existing record
       const { data: updatedBalance, error: updateError } = await admin
-        .from("balances")
+        .from("user_balances")
         .update({ 
-          available_usdt: calculatedBalance,
+          available_balance: calculatedBalance,
           updated_at: new Date().toISOString()
         })
         .eq("user_id", user.id)
@@ -77,17 +77,17 @@ export async function POST() {
 
       balanceResult = {
         action: "updated",
-        old_balance: existingBalance.available_usdt,
+        old_balance: existingBalance.available_balance,
         new_balance: calculatedBalance,
         record: updatedBalance
       };
     } else {
       // Create new balance record
       const { data: newBalance, error: insertError } = await admin
-        .from("balances")
+        .from("user_balances")
         .insert({
           user_id: user.id,
-          available_usdt: calculatedBalance,
+          available_balance: calculatedBalance,
           created_at: new Date().toISOString(),
           updated_at: new Date().toISOString()
         })

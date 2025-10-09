@@ -55,8 +55,8 @@ export async function POST(request: NextRequest) {
 
     // Check user balance from balances table (consistent with balance API)
     const { data: balanceData } = await admin
-      .from("balances")
-      .select("available_usdt")
+      .from("user_balances")
+      .select("available_balance")
       .eq("user_id", user.id)
       .single();
 
@@ -67,7 +67,7 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const availableBalance = Number(balanceData.available_usdt || 0);
+    const availableBalance = Number(balanceData.available_balance || 0);
 
     if (numericAmount > availableBalance) {
       return NextResponse.json(
@@ -131,8 +131,8 @@ export async function POST(request: NextRequest) {
     // Immediately deduct the full amount from user's balance
     const newBalance = availableBalance - numericAmount;
     const { error: balanceError } = await admin
-      .from("balances")
-      .update({ available_usdt: newBalance })
+      .from("user_balances")
+      .update({ available_balance: newBalance })
       .eq("user_id", user.id);
 
     if (balanceError) {
@@ -146,7 +146,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Create transaction record for the withdrawal
-    await admin.from("transactions").insert({
+    await admin.from("transaction_logs").insert({
       user_id: user.id,
       type: "withdrawal",
       amount_usdt: numericAmount,

@@ -27,7 +27,7 @@ export async function GET() {
     // If RPC doesn't exist, use direct update
     if (updateError && updateError.message.includes('function')) {
       const { error: directUpdateError } = await admin
-        .from("profiles")
+        .from("user_profiles")
         .update({ role: "admin" })
         .eq("user_id", user.id);
 
@@ -46,14 +46,14 @@ export async function GET() {
 
     // Verify the update
     const { data: verifyProfile } = await admin
-      .from("profiles")
+      .from("user_profiles")
       .select("role, email")
       .eq("user_id", user.id)
       .single();
 
     // Also check with user client
     const { data: userProfile } = await supabase
-      .from("profiles")
+      .from("user_profiles")
       .select("role, email")
       .eq("user_id", user.id)
       .single();

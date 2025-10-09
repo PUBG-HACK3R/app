@@ -13,7 +13,7 @@ export async function GET(request: Request) {
 
     // Test the exact same query that the validation API uses
     const { data: referrer, error: referrerError } = await supabase
-      .from("profiles")
+      .from("user_profiles")
       .select("user_id, email, referral_code")
       .eq("referral_code", code.toUpperCase())
       .single();

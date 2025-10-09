@@ -20,7 +20,7 @@ export async function GET() {
     
     // Get all subscriptions for this user
     const { data: subscriptions, error } = await admin
-      .from("subscriptions")
+      .from("user_investments")
       .select("*")
       .eq("user_id", user.id)
       .order("created_at", { ascending: false });
@@ -32,15 +32,15 @@ export async function GET() {
 
     // Also get user's balance
     const { data: balanceData } = await admin
-      .from("balances")
-      .select("available_usdt")
+      .from("user_balances")
+      .select("available_balance")
       .eq("user_id", user.id)
       .maybeSingle();
 
     return NextResponse.json({
       success: true,
       user_id: user.id,
-      balance: balanceData?.available_usdt || 0,
+      balance: balanceData?.available_balance || 0,
       subscription_count: subscriptions?.length || 0,
       subscriptions: subscriptions || []
     });

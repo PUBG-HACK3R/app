@@ -27,7 +27,7 @@ export async function PATCH(
     
     // Update the user's profile
     const { data: profile, error } = await admin
-      .from("profiles")
+      .from("user_profiles")
       .update({ is_suspended })
       .eq("id", id)
       .select()

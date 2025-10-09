@@ -10,7 +10,7 @@ export async function GET(request: Request) {
     
     // Get all transactions
     const { data: allTransactions, error: txError } = await admin
-      .from("transactions")
+      .from("transaction_logs")
       .select("*")
       .order("created_at", { ascending: false })
       .limit(20);
@@ -30,7 +30,7 @@ export async function GET(request: Request) {
 
     // Get all balances
     const { data: allBalances, error: balanceError } = await admin
-      .from("balances")
+      .from("user_balances")
       .select("*")
       .limit(10);
 

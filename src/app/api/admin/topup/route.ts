@@ -23,7 +23,7 @@ export async function POST(request: Request) {
     // Check admin role directly using admin client (same method as admin page)
     const adminClient = getSupabaseAdminClient();
     const { data: profile, error: adminCheckError } = await adminClient
-      .from("profiles")
+      .from("user_profiles")
       .select("role")
       .eq("user_id", user.id)
       .single();
@@ -46,7 +46,7 @@ export async function POST(request: Request) {
 
     // Ensure target user profile exists
     const { error: profileError } = await admin
-      .from("profiles")
+      .from("user_profiles")
       .upsert({ 
         user_id: userId, 
         email: targetUser.user.email || "", 
@@ -59,17 +59,17 @@ export async function POST(request: Request) {
 
     // Get current balance from balances table
     const { data: currentBalance } = await admin
-      .from("balances")
-      .select("available_usdt")
+      .from("user_balances")
+      .select("available_balance")
       .eq("user_id", userId)
       .maybeSingle();
 
-    const currentAmount = Number(currentBalance?.available_usdt || 0);
+    const currentAmount = Number(currentBalance?.available_balance || 0);
     const newAmount = currentAmount + amount;
 
     // Create a deposit transaction for the top-up
     const description = `Admin top-up: ${reason || "Manual balance adjustment"} (by admin: ${user.id})`;
-    const { data: txData, error: txError } = await admin.from("transactions").insert({
+    const { data: txData, error: txError } = await admin.from("transaction_logs").insert({
       user_id: userId,
       type: "deposit",
       amount_usdt: amount,
@@ -88,10 +88,10 @@ export async function POST(request: Request) {
 
     // Update or insert balance record
     const { error: balanceError } = await admin
-      .from("balances")
+      .from("user_balances")
       .upsert({ 
         user_id: userId, 
-        available_usdt: newAmount 
+        available_balance: newAmount 
       }, { onConflict: "user_id" });
 
     if (balanceError) {

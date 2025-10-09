@@ -11,7 +11,7 @@ export async function GET() {
 
     // Get all profiles with referrer info
     const { data: profiles, error: profilesError } = await admin
-      .from("profiles")
+      .from("user_profiles")
       .select("user_id, email, referral_code, referred_by")
       .order("created_at", { ascending: false });
 
@@ -21,23 +21,21 @@ export async function GET() {
 
     // Get all referral records
     const { data: referrals, error: referralsError } = await admin
-      .from("referrals")
+      .from("referral_commissions")
       .select(`
         id,
-        referrer_id,
-        referred_id,
-        commission_rate,
-        total_earned,
-        created_at,
-        referrer:profiles!referrals_referrer_id_fkey(email),
-        referred:profiles!referrals_referred_id_fkey(email)
+        referrer_user_id,
+        referred_user_id,
+        commission_percentage,
+        commission_amount,
+        created_at
       `)
       .order("created_at", { ascending: false });
 
     // Count referrals per user
     const referralCounts: { [key: string]: number } = {};
     referrals?.forEach(ref => {
-      const referrerId = ref.referrer_id;
+      const referrerId = ref.referrer_user_id;
       referralCounts[referrerId] = (referralCounts[referrerId] || 0) + 1;
     });
 
@@ -47,8 +45,8 @@ export async function GET() {
       
       // Check if referral record exists
       const hasReferralRecord = referrals?.some(ref => 
-        ref.referrer_id === profile.referred_by && 
-        ref.referred_id === profile.user_id
+        ref.referrer_user_id === profile.referred_by && 
+        ref.referred_user_id === profile.user_id
       );
       
       return !hasReferralRecord;
@@ -69,10 +67,10 @@ export async function GET() {
         referralCount: referralCounts[p.user_id] || 0
       })),
       referralRecords: referrals?.map(r => ({
-        referrerEmail: (r.referrer as any)?.email,
-        referredEmail: (r.referred as any)?.email,
-        commissionRate: r.commission_rate,
-        totalEarned: r.total_earned,
+        referrerUserId: r.referrer_user_id,
+        referredUserId: r.referred_user_id,
+        commissionPercentage: r.commission_percentage,
+        commissionAmount: r.commission_amount,
         createdAt: r.created_at
       })),
       missingReferrals: missingReferrals.map(p => ({
@@ -102,14 +100,14 @@ export async function POST() {
 
     // Get all profiles with referrer info
     const { data: profiles } = await admin
-      .from("profiles")
+      .from("user_profiles")
       .select("user_id, email, referred_by")
       .not("referred_by", "is", null);
 
     // Get existing referral records
     const { data: existingReferrals } = await admin
-      .from("referrals")
-      .select("referrer_id, referred_id");
+      .from("referral_commissions")
+      .select("referrer_user_id, referred_user_id");
 
     let fixed = 0;
     let errors = [];
@@ -117,19 +115,22 @@ export async function POST() {
     for (const profile of profiles || []) {
       // Check if referral record already exists
       const exists = existingReferrals?.some(ref => 
-        ref.referrer_id === profile.referred_by && 
-        ref.referred_id === profile.user_id
+        ref.referrer_user_id === profile.referred_by && 
+        ref.referred_user_id === profile.user_id
       );
 
       if (!exists) {
         // Create missing referral record
         const { error } = await admin
-          .from("referrals")
+          .from("referral_commissions")
           .insert({
-            referrer_id: profile.referred_by,
-            referred_id: profile.user_id,
-            commission_rate: 5.00,
-            total_earned: 0.00
+            referrer_user_id: profile.referred_by,
+            referred_user_id: profile.user_id,
+            source_type: 'deposit',
+            source_amount: 0,
+            commission_percentage: 5.00,
+            commission_amount: 0.00,
+            status: 'pending'
           });
 
         if (error) {

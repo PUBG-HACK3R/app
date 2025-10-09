@@ -153,8 +153,8 @@ export default function AuthStatusPage() {
                         {authStatus.profile.role}
                       </span>
                     </p>
-                    <p><strong>Balance:</strong> ${authStatus.profile.balance_usdt || '0.00'} USDT</p>
-                    <p><strong>Total Invested:</strong> ${authStatus.profile.total_invested || '0.00'}</p>
+                    <p><strong>Balance:</strong> ${authStatus.profile.available_balance || '0.00'} USDT</p>
+                    <p><strong>Total Invested:</strong> ${authStatus.profile.locked_balance || '0.00'}</p>
                     <p><strong>Total Earned:</strong> ${authStatus.profile.total_earned || '0.00'}</p>
                   </div>
                 </div>

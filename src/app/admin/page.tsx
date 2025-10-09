@@ -18,17 +18,17 @@ export default async function AdminPage() {
   
   // Get real-time data directly from tables
   const { data: deposits } = await admin
-    .from("transactions")
+    .from("transaction_logs")
     .select("amount_usdt")
     .eq("type", "deposit");
     
   const { data: withdrawals } = await admin
-    .from("transactions")
+    .from("transaction_logs")
     .select("amount_usdt")
     .eq("type", "withdrawal");
     
   const { data: earnings } = await admin
-    .from("transactions")
+    .from("transaction_logs")
     .select("amount_usdt")
     .eq("type", "earning");
 

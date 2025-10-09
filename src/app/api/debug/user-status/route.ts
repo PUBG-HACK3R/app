@@ -20,7 +20,7 @@ export async function GET() {
     // Check profile in database
     const adminClient = getSupabaseAdminClient();
     const { data: profile, error: profileError } = await adminClient
-      .from("profiles")
+      .from("user_profiles")
       .select("*")
       .eq("user_id", user.id)
       .single();

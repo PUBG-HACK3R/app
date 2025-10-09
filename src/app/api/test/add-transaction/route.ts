@@ -23,7 +23,7 @@ export async function POST(request: NextRequest) {
 
     // Add a test transaction
     const { data: transaction, error: txError } = await admin
-      .from("transactions")
+      .from("transaction_logs")
       .insert({
         user_id: user.id,
         type: "deposit",
@@ -41,23 +41,23 @@ export async function POST(request: NextRequest) {
 
     // Also ensure user has a balance record
     const { data: existingBalance } = await admin
-      .from("balances")
+      .from("user_balances")
       .select("*")
       .eq("user_id", user.id)
       .single();
 
     if (!existingBalance) {
       await admin
-        .from("balances")
+        .from("user_balances")
         .insert({
           user_id: user.id,
-          available_usdt: 100
+          available_balance: 100
         });
     } else {
       await admin
-        .from("balances")
+        .from("user_balances")
         .update({
-          available_usdt: (existingBalance.available_usdt || 0) + 100
+          available_balance: (existingBalance.available_balance || 0) + 100
         })
         .eq("user_id", user.id);
     }

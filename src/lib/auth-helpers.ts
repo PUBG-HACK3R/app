@@ -28,7 +28,7 @@ export async function getAuthenticatedUser(): Promise<AuthUser | null> {
     const adminClient = getSupabaseAdminClient();
     let { data: profile } = await adminClient
       .from("user_profiles")
-      .select("role, email, full_name, balance_usdt, total_invested, total_earned")
+      .select("role, email, full_name, available_balance, locked_balance, total_earned")
       .eq("user_id", user.id)
       .single();
 
@@ -48,7 +48,7 @@ export async function getAuthenticatedUser(): Promise<AuthUser | null> {
         // Fetch the newly created profile
         const { data: newProfile } = await adminClient
           .from("user_profiles")
-          .select("role, email, full_name, balance_usdt, total_invested, total_earned")
+          .select("role, email, full_name, available_balance, locked_balance, total_earned")
           .eq("user_id", user.id)
           .single();
 
@@ -165,7 +165,7 @@ export async function getUserProfile(userId: string) {
   
   const adminClient = getSupabaseAdminClient();
   const { data: profile, error } = await adminClient
-    .from("profiles")
+    .from("user_profiles")
     .select("*")
     .eq("user_id", userId)
     .single();

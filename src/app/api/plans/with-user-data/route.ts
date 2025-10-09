@@ -27,7 +27,7 @@ export async function GET() {
     
     // Fetch plans directly from database using admin client
     const { data: dbPlans, error } = await admin
-      .from("plans")
+      .from("investment_plans")
       .select("*")
       .eq("is_active", true)
       .order("min_amount", { ascending: true });
@@ -48,7 +48,7 @@ export async function GET() {
     let userSubscriptions: any[] = [];
     if (user) {
       const { data: subscriptions } = await admin
-        .from("subscriptions")
+        .from("user_investments")
         .select(`
           id,
           plan_id,
@@ -65,7 +65,7 @@ export async function GET() {
       if (userSubscriptions.length > 0) {
         const subscriptionIds = userSubscriptions.map(s => s.id);
         const { data: earnings } = await admin
-          .from("transactions")
+          .from("transaction_logs")
           .select("description, amount_usdt")
           .in("description", subscriptionIds.map(id => `Daily earning for subscription ${id}`));
         

@@ -21,7 +21,7 @@ export async function POST() {
     
     // First, ensure profile exists
     const { error: upsertError } = await adminClient
-      .from("profiles")
+      .from("user_profiles")
       .upsert({
         user_id: user.id,
         email: user.email || '',
@@ -40,7 +40,7 @@ export async function POST() {
 
     // Verify the change
     const { data: profile } = await adminClient
-      .from("profiles")
+      .from("user_profiles")
       .select("*")
       .eq("user_id", user.id)
       .single();

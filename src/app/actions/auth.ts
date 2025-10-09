@@ -85,7 +85,7 @@ export async function signupAction(formData: FormData) {
     // Create profile
     if (data.user) {
       try {
-        await admin.from("profiles").upsert({
+        await admin.from("user_profiles").upsert({
           user_id: data.user.id,
           email: data.user.email,
           role: "user",

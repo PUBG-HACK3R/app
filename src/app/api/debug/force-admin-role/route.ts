@@ -23,7 +23,7 @@ export async function POST() {
     
     // First, try to update existing profile
     const { data: updateResult, error: updateError } = await adminClient
-      .from("profiles")
+      .from("user_profiles")
       .update({ role: 'admin' })
       .eq("user_id", user.id)
       .select();
@@ -31,12 +31,12 @@ export async function POST() {
     // If no rows updated, create the profile
     if (!updateResult || updateResult.length === 0) {
       const { data: insertResult, error: insertError } = await adminClient
-        .from("profiles")
+        .from("user_profiles")
         .insert({
           user_id: user.id,
           email: user.email,
           role: 'admin',
-          balance_usdt: 0
+          available_balance: 0
         })
         .select();
 

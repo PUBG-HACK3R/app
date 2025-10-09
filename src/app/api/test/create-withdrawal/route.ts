@@ -48,7 +48,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Create transaction record
-    await admin.from("transactions").insert({
+    await admin.from("transaction_logs").insert({
       user_id: user.id,
       type: "withdrawal",
       amount_usdt: 50,

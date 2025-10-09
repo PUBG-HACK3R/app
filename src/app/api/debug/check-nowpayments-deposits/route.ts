@@ -22,7 +22,7 @@ export async function GET() {
     // Get related transactions for these deposits
     const depositIds = deposits?.map(d => d.id) || [];
     const { data: transactions, error: transactionsError } = await admin
-      .from("transactions")
+      .from("transaction_logs")
       .select("*")
       .eq("type", "deposit")
       .in("reference_id", depositIds);

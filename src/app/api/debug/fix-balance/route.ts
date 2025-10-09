@@ -20,7 +20,7 @@ export async function POST() {
 
     // Check if balance record exists
     const { data: existingBalance } = await admin
-      .from("balances")
+      .from("user_balances")
       .select("*")
       .eq("user_id", user.id)
       .maybeSingle();
@@ -34,10 +34,10 @@ export async function POST() {
 
     // Create balance record
     const { data: newBalance, error } = await admin
-      .from("balances")
+      .from("user_balances")
       .insert({
         user_id: user.id,
-        available_usdt: 0
+        available_balance: 0
       })
       .select()
       .single();

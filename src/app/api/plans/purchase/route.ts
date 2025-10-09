@@ -38,7 +38,7 @@ export async function POST(request: Request) {
     // Get plan details
     console.log("Purchase API - Querying plan with ID:", planId);
     const { data: plan, error: planError } = await admin
-      .from("plans")
+      .from("investment_plans")
       .select("*")
       .eq("id", planId)
       .eq("is_active", true)
@@ -52,17 +52,17 @@ export async function POST(request: Request) {
 
     // Allow multiple active subscriptions - removed restriction
 
-    // Get current balance from balances table
+    // Get current balance from("user_balances") table
     console.log("Purchase API - Checking balance for user:", user.id);
     const { data: balanceData, error: balanceError } = await admin
-      .from("balances")
-      .select("available_usdt")
+      .from("user_balances")
+      .select("available_balance")
       .eq("user_id", user.id)
       .maybeSingle();
 
     console.log("Purchase API - Balance query result:", { balanceData, balanceError });
 
-    const currentBalance = Number(balanceData?.available_usdt || 0);
+    const currentBalance = Number(balanceData?.available_balance || 0);
     const planPrice = Number(plan.min_amount);
     
     console.log("Purchase API - Balance check:", { currentBalance, planPrice, hasEnough: currentBalance >= planPrice });
@@ -78,7 +78,7 @@ export async function POST(request: Request) {
 
     // Ensure profile exists
     await admin
-      .from("profiles")
+      .from("user_profiles")
       .upsert({ 
         user_id: user.id, 
         email: user.email || "", 
@@ -92,7 +92,7 @@ export async function POST(request: Request) {
     endDate.setUTCDate(endDate.getUTCDate() + plan.duration_days);
 
     // Calculate daily earning based on plan
-    const dailyEarning = (planPrice * plan.roi_daily_percent) / 100;
+    const dailyEarning = (planPrice * plan.daily_roi_percentage) / 100;
 
     console.log("Purchase API - Creating subscription with data:", {
       id: crypto.randomUUID(),
@@ -107,7 +107,7 @@ export async function POST(request: Request) {
     });
 
     const { data: subscription, error: subError } = await admin
-      .from("subscriptions")
+      .from("user_investments")
       .insert({
         id: crypto.randomUUID(),
         user_id: user.id,
@@ -139,13 +139,13 @@ export async function POST(request: Request) {
 
     // Create investment transaction for the plan purchase
     const { error: txError } = await admin
-      .from("transactions")
+      .from("transaction_logs")
       .insert({
         user_id: user.id,
         type: "investment",
         amount_usdt: planPrice,
         status: "completed",
-        description: `Purchased ${plan.name} mining plan - ${plan.duration_days} days at ${plan.roi_daily_percent}% daily ROI`,
+        description: `Purchased ${plan.name} mining plan - ${plan.duration_days} days at ${plan.daily_roi_percentage}% daily ROI`,
       });
 
     if (txError) {
@@ -156,10 +156,10 @@ export async function POST(request: Request) {
     // Update balance in balances table after successful purchase
     const newBalance = currentBalance - planPrice;
     const { error: balanceUpdateError } = await admin
-      .from("balances")
+      .from("user_balances")
       .upsert({
         user_id: user.id,
-        available_usdt: newBalance
+        available_balance: newBalance
       }, { onConflict: "user_id" });
 
     if (balanceUpdateError) {

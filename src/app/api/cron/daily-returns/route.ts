@@ -27,7 +27,7 @@ export async function GET(request: Request) {
     // Find subscriptions that are active and due for earning credit
     // Individual 24-hour timing using created_at and transaction history
     let query = admin
-      .from("subscriptions")
+      .from("user_investments")
       .select(
         "id,user_id,amount_invested,daily_earning,start_date,end_date,active,created_at"
       )
@@ -46,7 +46,7 @@ export async function GET(request: Request) {
       // Use the daily_earning directly from the subscription
       const amount = Number(sub.daily_earning || 0);
       if (!amount) {
-        console.log(`Subscription ${sub.id} has no daily_earning amount - skipping`);
+        console.log(`Subscription ${sub.id} has no daily_roi_percentage amount - skipping`);
         continue;
       }
       
@@ -57,7 +57,7 @@ export async function GET(request: Request) {
       
       // Get the last earning transaction for this subscription
       const { data: lastEarning } = await admin
-        .from("transactions")
+        .from("transaction_logs")
         .select("created_at")
         .eq("user_id", sub.user_id)
         .eq("type", "earning")
@@ -91,7 +91,7 @@ export async function GET(request: Request) {
         const endDate = new Date(sub.end_date as string);
         if (now > endDate) {
           await admin
-            .from("subscriptions")
+            .from("user_investments")
             .update({ active: false })
             .eq("id", sub.id);
           console.log(`Subscription ${sub.id} expired, deactivated`);
@@ -106,7 +106,7 @@ export async function GET(request: Request) {
 
       // Insert earning transaction
       console.log(`Creating earning transaction for ${sub.id}: $${amount}`);
-      const { data: txData, error: txErr } = await admin.from("transactions").insert({
+      const { data: txData, error: txErr } = await admin.from("transaction_logs").insert({
         user_id: sub.user_id,
         type: "earning",
         amount_usdt: amount,
@@ -122,28 +122,28 @@ export async function GET(request: Request) {
       console.log(`Transaction created successfully for ${sub.id}:`, txData);
       credited += 1;
 
-      // Update balances cache: increment available_usdt
+      // Update balances cache: increment available_balance
       const { data: balRow } = await admin
-        .from("balances")
-        .select("available_usdt")
+        .from("user_balances")
+        .select("available_balance")
         .eq("user_id", sub.user_id)
         .maybeSingle();
       if (!balRow) {
-        await admin.from("balances").insert({
+        await admin.from("user_balances").insert({
           user_id: sub.user_id,
-          available_usdt: amount,
+          available_balance: amount,
         });
       } else {
-        const newBal = Number(balRow.available_usdt || 0) + amount;
+        const newBal = Number(balRow.available_balance || 0) + amount;
         await admin
-          .from("balances")
-          .update({ available_usdt: newBal })
+          .from("user_balances")
+          .update({ available_balance: newBal })
           .eq("user_id", sub.user_id);
       }
 
       // Update subscription total_earned
       const { data: currentSub } = await admin
-        .from("subscriptions")
+        .from("user_investments")
         .select("total_earned")
         .eq("id", sub.id)
         .single();
@@ -151,7 +151,7 @@ export async function GET(request: Request) {
       const newTotalEarned = Number(currentSub?.total_earned || 0) + amount;
       
       await admin
-        .from("subscriptions")
+        .from("user_investments")
         .update({ total_earned: newTotalEarned })
         .eq("id", sub.id);
         

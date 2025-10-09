@@ -16,7 +16,7 @@ export async function POST() {
     // Verify admin role via profiles
     const admin = getSupabaseAdminClient();
     const { data: profile } = await admin
-      .from("profiles")
+      .from("user_profiles")
       .select("role")
       .eq("user_id", user.id)
       .single();
@@ -45,8 +45,8 @@ export async function POST() {
 
     // Get balances for these users
     const { data: balRows } = await admin
-      .from("balances")
-      .select("user_id, available_usdt")
+      .from("user_balances")
+      .select("user_id, available_balance")
       .in("user_id", userIds);
 
     const existingIds = new Set((balRows || []).map(r => r.user_id));
@@ -57,8 +57,8 @@ export async function POST() {
       // Insert in batches to avoid payload limits
       const batchSize = 1000;
       for (let i = 0; i < missing.length; i += batchSize) {
-        const batch = missing.slice(i, i + batchSize).map(id => ({ user_id: id, available_usdt: 0 }));
-        const { error: insErr } = await admin.from("balances").insert(batch);
+        const batch = missing.slice(i, i + batchSize).map(id => ({ user_id: id, available_balance: 0 }));
+        const { error: insErr } = await admin.from("user_balances").insert(batch);
         if (insErr) throw insErr;
         created += batch.length;
       }

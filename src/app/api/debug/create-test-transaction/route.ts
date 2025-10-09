@@ -19,7 +19,7 @@ export async function POST(request: Request) {
 
     // Create a test transaction
     const { data: transaction, error: txError } = await admin
-      .from("transactions")
+      .from("transaction_logs")
       .insert({
         user_id: userId,
         type: type,
@@ -44,19 +44,19 @@ export async function POST(request: Request) {
     // Also update user balance if it's a deposit
     if (type === "deposit") {
       const { data: balanceData, error: balanceError } = await admin
-        .from("balances")
-        .select("available_usdt")
+        .from("user_balances")
+        .select("available_balance")
         .eq("user_id", userId)
         .maybeSingle();
 
-      const currentBalance = Number(balanceData?.available_usdt || 0);
+      const currentBalance = Number(balanceData?.available_balance || 0);
       const newBalance = currentBalance + Number(amount);
 
       await admin
-        .from("balances")
+        .from("user_balances")
         .upsert({
           user_id: userId,
-          available_usdt: newBalance
+          available_balance: newBalance
         }, { onConflict: "user_id" });
     }
 

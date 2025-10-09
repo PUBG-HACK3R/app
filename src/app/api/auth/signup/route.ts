@@ -32,19 +32,51 @@ export async function POST(request: NextRequest) {
         // Generate referral code for new user
         const newUserReferralCode = `REF${data.user.id.substring(0, 8).toUpperCase()}`;
         
-        await admin.from("profiles").upsert({
-          user_id: data.user.id,
-          email: data.user.email,
-          role: "user",
-          referral_code: newUserReferralCode,
-        });
+        // Check if profile already exists (might be created by trigger)
+        const { data: existingProfile } = await admin
+          .from("user_profiles")
+          .select("id")
+          .eq("user_id", data.user.id)
+          .single();
+
+        if (!existingProfile) {
+          await admin.from("user_profiles").insert({
+            user_id: data.user.id,
+            email: data.user.email,
+            role: "user",
+            referral_code: newUserReferralCode,
+          });
+        } else {
+          // Update existing profile with referral code
+          await admin.from("user_profiles").update({
+            referral_code: newUserReferralCode,
+          }).eq("user_id", data.user.id);
+        }
+
+        // Ensure user_balances record exists
+        const { data: existingBalance } = await admin
+          .from("user_balances")
+          .select("id")
+          .eq("user_id", data.user.id)
+          .single();
+
+        if (!existingBalance) {
+          await admin.from("user_balances").insert({
+            user_id: data.user.id,
+            available_balance: 0,
+            locked_balance: 0,
+            total_deposited: 0,
+            total_withdrawn: 0,
+            total_earned: 0
+          });
+        }
 
         // Handle referral code if provided
         if (referralCode && referralCode.trim()) {
           try {
             // Find the referrer by referral code
             const { data: referrer, error: referrerError } = await admin
-              .from("profiles")
+              .from("user_profiles")
               .select("user_id, email, referral_code")
               .eq("referral_code", referralCode.trim().toUpperCase())
               .single();
@@ -52,18 +84,21 @@ export async function POST(request: NextRequest) {
             if (referrer && !referrerError) {
               // Update the new user's profile with referrer info
               await admin
-                .from("profiles")
-                .update({ referred_by: referrer.user_id })
+                .from("user_profiles")
+                .update({ referred_by: referrer.referral_code })
                 .eq("user_id", data.user.id);
 
               // Create referral record
               await admin
-                .from("referrals")
+                .from("referral_commissions")
                 .insert({
-                  referrer_id: referrer.user_id,
-                  referred_id: data.user.id,
-                  commission_rate: 5.00,
-                  total_earned: 0.00
+                  referrer_user_id: referrer.user_id,
+                  referred_user_id: data.user.id,
+                  source_type: 'deposit',
+                  source_amount: 0,
+                  commission_percentage: 5.00,
+                  commission_amount: 0,
+                  status: 'pending'
                 });
 
               console.log(`Referral created: ${referrer.email} referred ${data.user.email}`);

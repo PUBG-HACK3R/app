@@ -21,14 +21,14 @@ export async function GET() {
 
     // Test 1: Check transactions table structure
     const { data: tableInfo, error: tableError } = await admin
-      .from("transactions")
+      .from("transaction_logs")
       .select("*")
       .limit(1);
 
     // Test 2: Try to insert a test transaction (we'll delete it immediately)
     const testUserId = user.id; // Use current admin user for test
     const { data: testTx, error: insertError } = await admin
-      .from("transactions")
+      .from("transaction_logs")
       .insert({
         user_id: testUserId,
         type: "deposit",
@@ -42,7 +42,7 @@ export async function GET() {
     if (testTx && testTx.length > 0) {
       // Delete the test transaction immediately
       const { error: delError } = await admin
-        .from("transactions")
+        .from("transaction_logs")
         .delete()
         .eq("id", testTx[0].id);
       deleteError = delError;
@@ -50,7 +50,7 @@ export async function GET() {
 
     // Test 3: Check profiles table
     const { data: profileData, error: profileError } = await admin
-      .from("profiles")
+      .from("user_profiles")
       .select("*")
       .eq("user_id", user.id)
       .single();

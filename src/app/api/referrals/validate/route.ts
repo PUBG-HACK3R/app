@@ -17,7 +17,7 @@ export async function POST(request: Request) {
 
     // Find the referrer by referral code
     const { data: referrer, error: referrerError } = await admin
-      .from("profiles")
+      .from("user_profiles")
       .select("user_id, email, referral_code")
       .eq("referral_code", referralCode.toUpperCase())
       .single();

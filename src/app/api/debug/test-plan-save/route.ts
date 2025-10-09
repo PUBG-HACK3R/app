@@ -34,7 +34,7 @@ export async function POST() {
     let tableStructure = null;
     try {
       const { data, error } = await admin
-        .from("plans")
+        .from("investment_plans")
         .select("*")
         .limit(1);
       tableStructure = { 
@@ -51,7 +51,7 @@ export async function POST() {
       name: "Test Plan " + Date.now(),
       description: "Test plan for debugging",
       min_amount: 50,
-      roi_daily_percent: 2,
+      daily_roi_percentage: 2,
       duration_days: 7,
       mining_type: "ASIC Mining",
       hash_rate: "100 TH/s",
@@ -64,12 +64,12 @@ export async function POST() {
     let planCreateResult = null;
     try {
       const { data: plan, error } = await admin
-        .from("plans")
+        .from("investment_plans")
         .insert({
           name: testPlanData.name,
           description: testPlanData.description,
           min_amount: testPlanData.min_amount,
-          roi_daily_percent: testPlanData.roi_daily_percent,
+          daily_roi_percentage: testPlanData.daily_roi_percentage,
           duration_days: testPlanData.duration_days,
           mining_type: testPlanData.mining_type,
           hash_rate: testPlanData.hash_rate,
@@ -87,7 +87,7 @@ export async function POST() {
         planCreateResult = { success: true, plan_id: plan.id };
         
         // Clean up - delete the test plan
-        await admin.from("plans").delete().eq("id", plan.id);
+        await admin.from("investment_plans").delete().eq("id", plan.id);
       }
     } catch (error: any) {
       planCreateResult = { success: false, error: error.message };

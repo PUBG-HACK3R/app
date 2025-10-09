@@ -23,7 +23,7 @@ export async function GET() {
     const targetSubId = "9e5a69cb-1155-4f08-b717-ac9cb4d92ea3";
     
     const { data: subscription, error: subError } = await admin
-      .from("subscriptions")
+      .from("user_investments")
       .select("*")
       .eq("id", targetSubId)
       .single();
@@ -37,7 +37,7 @@ export async function GET() {
 
     // Check for last earning transaction for this subscription
     const { data: lastEarning, error: earningError } = await admin
-      .from("transactions")
+      .from("transaction_logs")
       .select("*")
       .eq("user_id", subscription.user_id)
       .eq("type", "earning")

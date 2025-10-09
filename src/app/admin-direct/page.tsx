@@ -17,7 +17,7 @@ export default async function AdminDirectPage() {
     // Direct profile check using admin client
     const admin = getSupabaseAdminClient();
     const { data: profile, error: profileError } = await admin
-      .from("profiles")
+      .from("user_profiles")
       .select("role, email")
       .eq("user_id", user.id)
       .single();
@@ -37,11 +37,11 @@ export default async function AdminDirectPage() {
 
     // Get basic admin stats
     const { count: totalUsers } = await admin
-      .from("profiles")
+      .from("user_profiles")
       .select("user_id", { count: "exact", head: true });
 
     const { count: totalPlans } = await admin
-      .from("plans")
+      .from("investment_plans")
       .select("id", { count: "exact", head: true })
       .eq("is_active", true);
 

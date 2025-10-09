@@ -11,7 +11,7 @@ export async function POST() {
 
     // Get all users without referral codes
     const { data: usersWithoutCodes, error: fetchError } = await admin
-      .from("profiles")
+      .from("user_profiles")
       .select("user_id, email, referral_code")
       .is("referral_code", null);
 
@@ -30,7 +30,7 @@ export async function POST() {
       const referralCode = `REF${user.user_id.substring(0, 8).toUpperCase()}`;
       
       const { error: updateError } = await admin
-        .from("profiles")
+        .from("user_profiles")
         .update({ referral_code: referralCode })
         .eq("user_id", user.user_id);
 
@@ -43,7 +43,7 @@ export async function POST() {
 
     // Get sample referral codes for testing
     const { data: sampleCodes } = await admin
-      .from("profiles")
+      .from("user_profiles")
       .select("email, referral_code")
       .not("referral_code", "is", null)
       .limit(3);

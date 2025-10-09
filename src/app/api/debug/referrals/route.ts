@@ -15,7 +15,7 @@ export async function GET() {
     
     try {
       const { data, error } = await supabase
-        .from("profiles")
+        .from("user_profiles")
         .select("user_id, email, referral_code")
         .limit(10);
       
@@ -36,14 +36,14 @@ export async function GET() {
     
     try {
       const { data, error } = await supabase
-        .rpc('get_table_columns', { table_name: 'profiles' });
+        .rpc('get_table_columns', { table_name: 'user_profiles' });
       
       if (error) {
         // Fallback: try direct query
         const { data: fallbackData, error: fallbackError } = await supabase
           .from("information_schema.columns")
           .select("column_name")
-          .eq("table_name", "profiles")
+          .eq("table_name", "user_profiles")
           .eq("table_schema", "public");
         
         if (fallbackError) {
@@ -64,7 +64,7 @@ export async function GET() {
     
     try {
       const { count, error } = await supabase
-        .from("profiles")
+        .from("user_profiles")
         .select("*", { count: "exact", head: true });
       
       if (error) {
@@ -82,7 +82,7 @@ export async function GET() {
       const testCode = profiles[0].referral_code;
       
       const { data: referrer, error: referrerError } = await supabase
-        .from("profiles")
+        .from("user_profiles")
         .select("user_id, email, referral_code")
         .eq("referral_code", testCode.toUpperCase())
         .single();
@@ -97,7 +97,7 @@ export async function GET() {
 
     // Test with fake code
     const { data: fakeReferrer, error: fakeError } = await supabase
-      .from("profiles")
+      .from("user_profiles")
       .select("user_id, email, referral_code")
       .eq("referral_code", "FAKE123")
       .single();

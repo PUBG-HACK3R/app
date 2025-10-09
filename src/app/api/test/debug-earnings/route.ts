@@ -25,7 +25,7 @@ export async function POST(request: NextRequest) {
 
     // Get subscriptions (same query as cron job)
     const { data: subs, error: subsErr } = await admin
-      .from("subscriptions")
+      .from("user_investments")
       .select("id,user_id,amount_invested,daily_earning,start_date,end_date,active")
       .eq("active", true);
 
@@ -44,7 +44,7 @@ export async function POST(request: NextRequest) {
       // Check daily_earning amount
       const amount = Number(sub.daily_earning || 0);
       if (!amount) {
-        logs.push(`❌ Subscription ${sub.id} has no daily_earning amount (${sub.daily_earning}) - skipping`);
+        logs.push(`❌ Subscription ${sub.id} has no daily_roi_percentage amount (${sub.daily_earning}) - skipping`);
         continue;
       }
       logs.push(`✅ Subscription ${sub.id} daily_earning: $${amount}`);
@@ -79,7 +79,7 @@ export async function POST(request: NextRequest) {
       // Check for existing earnings today (without reference_id since column doesn't exist)
       logs.push(`🔍 Checking for existing earnings for ${sub.id} on ${today}`);
       const { data: todayEarning, error: duplicateCheckError } = await admin
-        .from("transactions")
+        .from("transaction_logs")
         .select("id,created_at,amount_usdt,description")
         .eq("user_id", sub.user_id)
         .eq("type", "earning")
@@ -100,7 +100,7 @@ export async function POST(request: NextRequest) {
 
       // Try to create transaction (without reference_id since column doesn't exist)
       logs.push(`💰 Creating earning transaction for ${sub.id}: $${amount}`);
-      const { data: txData, error: txErr } = await admin.from("transactions").insert({
+      const { data: txData, error: txErr } = await admin.from("transaction_logs").insert({
         user_id: sub.user_id,
         type: "earning",
         amount_usdt: amount,
@@ -120,8 +120,8 @@ export async function POST(request: NextRequest) {
       // Update balance
       logs.push(`💳 Updating balance for user ${sub.user_id}`);
       const { data: balRow, error: balanceSelectError } = await admin
-        .from("balances")
-        .select("available_usdt")
+        .from("user_balances")
+        .select("available_balance")
         .eq("user_id", sub.user_id)
         .maybeSingle();
 
@@ -129,9 +129,9 @@ export async function POST(request: NextRequest) {
         logs.push(`❌ Error getting balance: ${balanceSelectError.message}`);
       } else if (!balRow) {
         logs.push(`📝 Creating new balance record for user ${sub.user_id}`);
-        const { error: insertError } = await admin.from("balances").insert({
+        const { error: insertError } = await admin.from("user_balances").insert({
           user_id: sub.user_id,
-          available_usdt: amount,
+          available_balance: amount,
         });
         if (insertError) {
           logs.push(`❌ Error creating balance: ${insertError.message}`);
@@ -139,11 +139,11 @@ export async function POST(request: NextRequest) {
           logs.push(`✅ Balance created with $${amount}`);
         }
       } else {
-        const newBal = Number(balRow.available_usdt || 0) + amount;
-        logs.push(`📊 Updating balance from $${balRow.available_usdt} to $${newBal}`);
+        const newBal = Number(balRow.available_balance || 0) + amount;
+        logs.push(`📊 Updating balance from $${balRow.available_balance} to $${newBal}`);
         const { error: updateError } = await admin
-          .from("balances")
-          .update({ available_usdt: newBal })
+          .from("user_balances")
+          .update({ available_balance: newBal })
           .eq("user_id", sub.user_id);
         
         if (updateError) {
@@ -156,7 +156,7 @@ export async function POST(request: NextRequest) {
       // Update subscription total_earned
       logs.push(`📈 Updating total_earned for subscription ${sub.id}`);
       const { data: currentSub } = await admin
-        .from("subscriptions")
+        .from("user_investments")
         .select("total_earned")
         .eq("id", sub.id)
         .single();
@@ -164,7 +164,7 @@ export async function POST(request: NextRequest) {
       const newTotalEarned = Number(currentSub?.total_earned || 0) + amount;
       
       const { error: subUpdateError } = await admin
-        .from("subscriptions")
+        .from("user_investments")
         .update({ total_earned: newTotalEarned })
         .eq("id", sub.id);
 

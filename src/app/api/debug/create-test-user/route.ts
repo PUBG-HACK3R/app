@@ -27,7 +27,7 @@ export async function POST() {
     const referralCode = "TEST" + Math.random().toString(36).substring(2, 6).toUpperCase();
     
     const { data: profileData, error: profileError } = await admin
-      .from("profiles")
+      .from("user_profiles")
       .insert({
         user_id: authData.user.id,
         email: testEmail,

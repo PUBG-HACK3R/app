@@ -59,8 +59,8 @@ export async function GET(request: Request) {
 
         // Refund the amount back to user's balance
         const { data: balanceData, error: balanceError } = await admin
-          .from("balances")
-          .select("available_usdt")
+          .from("user_balances")
+          .select("available_balance")
           .eq("user_id", withdrawal.user_id)
           .maybeSingle();
 
@@ -69,15 +69,15 @@ export async function GET(request: Request) {
           continue;
         }
 
-        const currentBalance = Number(balanceData?.available_usdt || 0);
+        const currentBalance = Number(balanceData?.available_balance || 0);
         const newBalance = currentBalance + Number(withdrawal.amount_usdt);
 
         // Update user balance
         const { error: balanceUpdateError } = await admin
-          .from("balances")
+          .from("user_balances")
           .upsert({
             user_id: withdrawal.user_id,
-            available_usdt: newBalance
+            available_balance: newBalance
           }, { onConflict: "user_id" });
 
         if (balanceUpdateError) {
@@ -87,7 +87,7 @@ export async function GET(request: Request) {
 
         // Create refund transaction
         const { error: txError } = await admin
-          .from("transactions")
+          .from("transaction_logs")
           .insert({
             user_id: withdrawal.user_id,
             type: "refund",

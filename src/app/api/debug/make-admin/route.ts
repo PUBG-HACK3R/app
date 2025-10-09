@@ -21,7 +21,7 @@ export async function POST() {
     
     // First check current profile
     const { data: currentProfile } = await admin
-      .from("profiles")
+      .from("user_profiles")
       .select("role")
       .eq("user_id", user.id)
       .single();
@@ -30,7 +30,7 @@ export async function POST() {
 
     // Update profile role with upsert to ensure it exists
     const { data: updatedProfile, error: profileError } = await admin
-      .from("profiles")
+      .from("user_profiles")
       .upsert({ 
         user_id: user.id,
         email: user.email,
@@ -69,7 +69,7 @@ export async function POST() {
 
     // Verify the update worked
     const { data: verifyProfile } = await admin
-      .from("profiles")
+      .from("user_profiles")
       .select("role")
       .eq("user_id", user.id)
       .single();

@@ -23,7 +23,7 @@ export async function GET(
     if (user.id !== userId) {
       // Check if user is admin
       const { data: profile } = await admin
-        .from('profiles')
+        .from('user_profiles')
         .select('role')
         .eq('user_id', user.id)
         .single();
@@ -35,8 +35,8 @@ export async function GET(
 
     // Get user balance
     const { data: balanceData, error: balanceError } = await admin
-      .from('balances')
-      .select('available_usdt, updated_at')
+      .from('user_balances')
+      .select('available_balance, updated_at')
       .eq('user_id', userId)
       .single();
 
@@ -44,11 +44,11 @@ export async function GET(
       throw balanceError;
     }
 
-    const currentBalance = Number(balanceData?.available_usdt || 0);
+    const currentBalance = Number(balanceData?.available_balance || 0);
 
     // Get recent transactions for balance breakdown
     const { data: transactions, error: txError } = await admin
-      .from('transactions')
+      .from('transaction_logs')
       .select('type, amount_usdt, created_at, status, description')
       .eq('user_id', userId)
       .order('created_at', { ascending: false })
@@ -73,8 +73,8 @@ export async function GET(
     // Calculate balance breakdown
     const breakdown = {
       total_deposits: 0,
-      total_earnings: 0,
-      total_withdrawals: 0,
+      total_earnedings: 0,
+      locked_balancerawals: 0,
       pending_deposits: 0
     };
 
@@ -86,10 +86,10 @@ export async function GET(
               breakdown.total_deposits += Number(tx.amount_usdt);
               break;
             case 'earning':
-              breakdown.total_earnings += Number(tx.amount_usdt);
+              breakdown.total_earnedings += Number(tx.amount_usdt);
               break;
             case 'withdrawal':
-              breakdown.total_withdrawals += Math.abs(Number(tx.amount_usdt));
+              breakdown.locked_balancerawals += Math.abs(Number(tx.amount_usdt));
               break;
           }
         }
@@ -119,7 +119,7 @@ export async function GET(
       success: true,
       data: {
         balance: {
-          available_usdt: currentBalance,
+          available_balance: currentBalance,
           updated_at: balanceData?.updated_at || null
         },
         breakdown,

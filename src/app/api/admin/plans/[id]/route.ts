@@ -20,7 +20,7 @@ export async function PUT(
       name, 
       description,
       min_amount,
-      roi_daily_percent, 
+      daily_roi_percentage, 
       duration_days,
       category_id,
       mining_type,
@@ -32,15 +32,15 @@ export async function PUT(
     } = body;
 
     // Validate required fields
-    if (!name || !min_amount || !roi_daily_percent || !duration_days) {
+    if (!name || !min_amount || !daily_roi_percentage || !duration_days) {
       return NextResponse.json(
-        { error: "Missing required fields: name, min_amount, roi_daily_percent, duration_days" },
+        { error: "Missing required fields: name, min_amount, daily_roi_percentage, duration_days" },
         { status: 400 }
       );
     }
 
     // Validate numeric values
-    if (min_amount <= 0 || roi_daily_percent <= 0 || duration_days <= 0) {
+    if (min_amount <= 0 || daily_roi_percentage <= 0 || duration_days <= 0) {
       return NextResponse.json(
         { error: "Amount, ROI, and duration must be positive numbers" },
         { status: 400 }
@@ -50,13 +50,13 @@ export async function PUT(
     // Use admin client to update plan
     const admin = getSupabaseAdminClient();
     const { data: plan, error } = await admin
-      .from("plans")
+      .from("investment_plans")
       .update({
         name,
         description: description || '',
         min_amount: parseFloat(min_amount),
         max_amount: parseFloat(min_amount) * 10, // Default to 10x min_amount
-        roi_daily_percent: parseFloat(roi_daily_percent),
+        daily_roi_percentage: parseFloat(daily_roi_percentage),
         duration_days: parseInt(duration_days),
         category_id: category_id || null,
         mining_type: mining_type || 'ASIC Mining',
@@ -103,7 +103,7 @@ export async function DELETE(
     // Use admin client to check if plan has active subscriptions
     const admin = getSupabaseAdminClient();
     const { count: activeSubscriptions } = await admin
-      .from("subscriptions")
+      .from("user_investments")
       .select("id", { count: "exact", head: true })
       .eq("plan_id", id)
       .eq("active", true);
@@ -117,7 +117,7 @@ export async function DELETE(
 
     // Delete the plan
     const { data: plan, error: fetchError } = await admin
-      .from("plans")
+      .from("investment_plans")
       .select("*")
       .eq("id", id)
       .single();
@@ -128,7 +128,7 @@ export async function DELETE(
     }
 
     const { error } = await admin
-      .from("plans")
+      .from("investment_plans")
       .delete()
       .eq("id", id);
 

@@ -18,7 +18,7 @@ export async function GET() {
 
     // Get fresh subscription data directly from database
     const { data: subscriptions, error: subError } = await admin
-      .from("subscriptions")
+      .from("user_investments")
       .select(`
         id,
         plan_id,
@@ -32,7 +32,7 @@ export async function GET() {
         plans!inner (
           name,
           min_amount,
-          roi_daily_percent,
+          daily_roi_percentage,
           duration_days
         )
       `)
@@ -46,7 +46,7 @@ export async function GET() {
 
     // Get recent earning transactions for this user
     const { data: earnings, error: earningsError } = await admin
-      .from("transactions")
+      .from("transaction_logs")
       .select("*")
       .eq("user_id", user.id)
       .eq("type", "earning")

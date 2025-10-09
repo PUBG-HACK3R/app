@@ -18,7 +18,7 @@ export async function GET() {
 
     // Get ALL subscriptions for this user (including inactive)
     const { data: allSubscriptions, error: subError } = await admin
-      .from("subscriptions")
+      .from("user_investments")
       .select(`
         id,
         plan_id,
@@ -33,7 +33,7 @@ export async function GET() {
           name,
           min_amount,
           duration_days,
-          roi_daily_percent
+          daily_roi_percentage
         )
       `)
       .eq("user_id", user.id)
@@ -45,7 +45,7 @@ export async function GET() {
 
     // Get ALL earning transactions for this user
     const { data: allEarnings, error: earningsError } = await admin
-      .from("transactions")
+      .from("transaction_logs")
       .select("*")
       .eq("user_id", user.id)
       .eq("type", "earning")

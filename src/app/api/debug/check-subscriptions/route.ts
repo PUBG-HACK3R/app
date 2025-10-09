@@ -18,7 +18,7 @@ export async function GET() {
 
     // Get user's subscriptions
     const { data: subscriptions, error: subError } = await admin
-      .from("subscriptions")
+      .from("user_investments")
       .select("*")
       .eq("user_id", user.id)
       .order("created_at", { ascending: false });
@@ -29,7 +29,7 @@ export async function GET() {
 
     // Get recent earning transactions
     const { data: earnings, error: earningsError } = await admin
-      .from("transactions")
+      .from("transaction_logs")
       .select("*")
       .eq("user_id", user.id)
       .eq("type", "earning")
@@ -42,7 +42,7 @@ export async function GET() {
 
     // Get user balance
     const { data: balance, error: balanceError } = await admin
-      .from("balances")
+      .from("user_balances")
       .select("*")
       .eq("user_id", user.id)
       .maybeSingle();

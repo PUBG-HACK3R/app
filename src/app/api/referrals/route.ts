@@ -19,7 +19,7 @@ export async function GET(request: Request) {
 
     // Get user's profile with referral info
     const { data: profile, error: profileError } = await admin
-      .from("profiles")
+      .from("user_profiles")
       .select("referral_code, referred_by, email")
       .eq("user_id", user.id)
       .single();
@@ -33,28 +33,27 @@ export async function GET(request: Request) {
     if (!referralCode) {
       referralCode = `REF${user.id.substring(0, 8).toUpperCase()}`;
       await admin
-        .from("profiles")
+        .from("user_profiles")
         .update({ referral_code: referralCode })
         .eq("user_id", user.id);
     }
 
     // Get referrals made by this user (people who used this user's referral code)
     const { data: referrals, error: referralsError } = await admin
-      .from("referrals")
+      .from("referral_commissions")
       .select(`
         id,
-        referred_id,
-        commission_rate,
-        total_earned,
-        created_at,
-        profiles!referrals_referred_id_fkey(email, created_at)
+        referred_user_id,
+        commission_percentage,
+        commission_amount,
+        created_at
       `)
-      .eq("referrer_id", user.id)
+      .eq("referrer_user_id", user.id)
       .order("created_at", { ascending: false });
 
     // Calculate totals
     const totalReferrals = referrals?.length || 0;
-    const totalEarnings = referrals?.reduce((sum, ref) => sum + Number(ref.total_earned || 0), 0) || 0;
+    const totalEarnings = referrals?.reduce((sum, ref) => sum + Number(ref.commission_amount || 0), 0) || 0;
 
     return NextResponse.json({
       referralCode: referralCode,
@@ -85,7 +84,7 @@ export async function POST(request: Request) {
 
     // Find the referrer by referral code
     const { data: referrer, error: referrerError } = await supabase
-      .from("profiles")
+      .from("user_profiles")
       .select("user_id, referral_code")
       .eq("referral_code", referralCode.toUpperCase())
       .single();
@@ -101,7 +100,7 @@ export async function POST(request: Request) {
 
     // Check if user is already referred
     const { data: existingReferral } = await supabase
-      .from("profiles")
+      .from("user_profiles")
       .select("referred_by")
       .eq("user_id", userId)
       .single();
@@ -112,7 +111,7 @@ export async function POST(request: Request) {
 
     // Update user's profile with referrer information
     const { error: updateError } = await supabase
-      .from("profiles")
+      .from("user_profiles")
       .update({ referred_by: referrer.user_id })
       .eq("user_id", userId);
 
@@ -122,12 +121,15 @@ export async function POST(request: Request) {
 
     // Create referral record
     const { error: referralError } = await supabase
-      .from("referrals")
+      .from("referral_commissions")
       .insert({
-        referrer_id: referrer.user_id,
-        referred_id: userId,
-        referral_code: referralCode.toUpperCase(),
-        status: 'active'
+        referrer_user_id: referrer.user_id,
+        referred_user_id: userId,
+        source_type: 'deposit',
+        source_amount: 0,
+        commission_percentage: 5.00,
+        commission_amount: 0,
+        status: 'pending'
       });
 
     if (referralError) {
@@ -137,7 +139,7 @@ export async function POST(request: Request) {
     // Update referrer's total referrals count
     // First get current count
     const { data: currentProfile } = await supabase
-      .from("profiles")
+      .from("user_profiles")
       .select("total_referrals")
       .eq("user_id", referrer.user_id)
       .single();
@@ -145,7 +147,7 @@ export async function POST(request: Request) {
     const currentCount = currentProfile?.total_referrals || 0;
     
     const { error: countError } = await supabase
-      .from("profiles")
+      .from("user_profiles")
       .update({ 
         total_referrals: currentCount + 1
       })

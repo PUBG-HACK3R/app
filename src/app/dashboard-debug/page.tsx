@@ -15,7 +15,7 @@ export default async function DashboardDebugPage() {
     
     if (user) {
       const { data: profileData, error: profError } = await admin
-        .from("profiles")
+        .from("user_profiles")
         .select("*")
         .eq("user_id", user.id)
         .single();
@@ -26,13 +26,13 @@ export default async function DashboardDebugPage() {
 
     // Get all profiles for debugging
     const { data: allProfiles } = await admin
-      .from("profiles")
+      .from("user_profiles")
       .select("user_id, email, role, created_at")
       .limit(10);
 
     // Get plans count
     const { count: plansCount } = await admin
-      .from("plans")
+      .from("investment_plans")
       .select("id", { count: "exact", head: true })
       .eq("is_active", true);
 
@@ -66,7 +66,7 @@ export default async function DashboardDebugPage() {
               <div>
                 <p><strong>Profile Role:</strong> {profile.role}</p>
                 <p><strong>Profile Email:</strong> {profile.email}</p>
-                <p><strong>Balance:</strong> ${profile.balance_usdt || 0}</p>
+                <p><strong>Balance:</strong> ${profile.available_balance || 0}</p>
                 <p><strong>Created:</strong> {profile.created_at}</p>
               </div>
             ) : (

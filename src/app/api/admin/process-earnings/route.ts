@@ -19,7 +19,7 @@ export async function POST(request: Request) {
     // Check if user is admin using profiles table
     const admin = getSupabaseAdminClient();
     const { data: profile } = await admin
-      .from("profiles")
+      .from("user_profiles")
       .select("role")
       .eq("user_id", user.id)
       .single();
@@ -34,9 +34,9 @@ export async function POST(request: Request) {
 
     // Find subscriptions that are active and due for earning credit
     let query = admin
-      .from("subscriptions")
+      .from("user_investments")
       .select(
-        "id,user_id,principal_usdt,roi_daily_percent,start_date,end_date,active,next_earning_at"
+        "id,user_id,amount_invested,daily_roi_percentage,start_date,end_date,active,next_earning_at"
       )
       .eq("active", true)
       .or(`next_earning_at.is.null,next_earning_at.lte.${nowIso}`);
@@ -54,8 +54,8 @@ export async function POST(request: Request) {
       processed++;
       
       // Compute daily earning amount
-      const principal = Number(sub.principal_usdt || 0);
-      const roiDaily = Number(sub.roi_daily_percent || 0);
+      const principal = Number(sub.amount_invested || 0);
+      const roiDaily = Number(sub.daily_roi_percentage || 0);
       if (!principal || !roiDaily) {
         errors.push(`Subscription ${sub.id}: Invalid principal or ROI`);
         continue;
@@ -67,7 +67,7 @@ export async function POST(request: Request) {
         const todayDate = new Date(`${today}T00:00:00.000Z`);
         if (todayDate > endDate) {
           await admin
-            .from("subscriptions")
+            .from("user_investments")
             .update({ active: false })
             .eq("id", sub.id);
           errors.push(`Subscription ${sub.id}: Ended, deactivated`);
@@ -78,7 +78,7 @@ export async function POST(request: Request) {
       const amount = Number((principal * (roiDaily / 100)).toFixed(2));
 
       // Insert earning transaction
-      const { error: txErr } = await admin.from("transactions").insert({
+      const { error: txErr } = await admin.from("transaction_logs").insert({
         user_id: sub.user_id,
         type: "earning",
         amount_usdt: amount,
@@ -93,23 +93,23 @@ export async function POST(request: Request) {
 
       credited += 1;
 
-      // Update balances cache: increment available_usdt
+      // Update balances cache: increment available_balance
       const { data: balRow } = await admin
-        .from("balances")
-        .select("available_usdt")
+        .from("user_balances")
+        .select("available_balance")
         .eq("user_id", sub.user_id)
         .maybeSingle();
         
       if (!balRow) {
-        await admin.from("balances").insert({
+        await admin.from("user_balances").insert({
           user_id: sub.user_id,
-          available_usdt: amount,
+          available_balance: amount,
         });
       } else {
-        const newBal = Number(balRow.available_usdt || 0) + amount;
+        const newBal = Number(balRow.available_balance || 0) + amount;
         await admin
-          .from("balances")
-          .update({ available_usdt: newBal })
+          .from("user_balances")
+          .update({ available_balance: newBal })
           .eq("user_id", sub.user_id);
       }
 
@@ -131,7 +131,7 @@ export async function POST(request: Request) {
       }
 
       await admin
-        .from("subscriptions")
+        .from("user_investments")
         .update({ next_earning_at: next.toISOString(), active: stillActive })
         .eq("id", sub.id);
     }

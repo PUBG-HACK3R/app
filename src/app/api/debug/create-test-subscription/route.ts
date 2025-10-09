@@ -38,12 +38,12 @@ export async function POST(request: Request) {
 
     // Create test subscription
     const { data: subscription, error: subError } = await admin
-      .from("subscriptions")
+      .from("user_investments")
       .insert({
         user_id: userId,
         plan_id: planId,
-        principal_usdt: principalUsdt,
-        roi_daily_percent: roiDailyPercent,
+        amount_invested: principalUsdt,
+        daily_roi_percentage: roiDailyPercent,
         start_date: startDate.toISOString(),
         end_date: endDate.toISOString(),
         next_earning_at: nextEarning.toISOString(),
@@ -61,17 +61,17 @@ export async function POST(request: Request) {
 
     // Create initial balance if it doesn't exist
     const { data: existingBalance } = await admin
-      .from("balances")
+      .from("user_balances")
       .select("*")
       .eq("user_id", userId)
       .maybeSingle();
 
     if (!existingBalance) {
       await admin
-        .from("balances")
+        .from("user_balances")
         .insert({
           user_id: userId,
-          available_usdt: 0
+          available_balance: 0
         });
     }
 
@@ -81,8 +81,8 @@ export async function POST(request: Request) {
       subscription: {
         id: subscription.id,
         userId: subscription.user_id,
-        principal: subscription.principal_usdt,
-        roiDaily: subscription.roi_daily_percent,
+        principal: subscription.amount_invested,
+        roiDaily: subscription.daily_roi_percentage,
         startDate: subscription.start_date,
         endDate: subscription.end_date,
         nextEarning: subscription.next_earning_at,
@@ -104,13 +104,13 @@ export async function GET() {
     const admin = getSupabaseAdminClient();
     
     const { data: subscriptions, error } = await admin
-      .from("subscriptions")
+      .from("user_investments")
       .select(`
         id,
         user_id,
         plan_id,
-        principal_usdt,
-        roi_daily_percent,
+        amount_invested,
+        daily_roi_percentage,
         start_date,
         end_date,
         next_earning_at,
@@ -134,8 +134,8 @@ export async function GET() {
         userId: sub.user_id,
         userEmail: (sub as any).profiles?.email || 'Unknown',
         planId: sub.plan_id,
-        principal: sub.principal_usdt,
-        roiDaily: sub.roi_daily_percent,
+        principal: sub.amount_invested,
+        roiDaily: sub.daily_roi_percentage,
         startDate: sub.start_date,
         endDate: sub.end_date,
         nextEarning: sub.next_earning_at,

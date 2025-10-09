@@ -25,7 +25,7 @@ export async function PATCH(
     // Use admin client to toggle plan status
     const admin = getSupabaseAdminClient();
     const { data: plan, error } = await admin
-      .from("plans")
+      .from("investment_plans")
       .update({ is_active })
       .eq("id", id)
       .select()

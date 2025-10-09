@@ -18,7 +18,7 @@ export async function GET() {
 
     // Get user profile with detailed debugging
     const { data: profile, error: profileError } = await supabase
-      .from("profiles")
+      .from("user_profiles")
       .select("*")
       .eq("user_id", user.id)
       .single();
@@ -27,7 +27,7 @@ export async function GET() {
     const { getSupabaseAdminClient } = await import("@/lib/supabase/admin");
     const admin = getSupabaseAdminClient();
     const { data: adminProfile } = await admin
-      .from("profiles")
+      .from("user_profiles")
       .select("*")
       .eq("user_id", user.id)
       .single();

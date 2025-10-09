@@ -21,7 +21,7 @@ export async function GET() {
 
     // Get user's subscriptions
     const { data: subscriptions, error: subError } = await admin
-      .from("subscriptions")
+      .from("user_investments")
       .select(`
         id,
         plan_id,
@@ -32,7 +32,7 @@ export async function GET() {
           id,
           name,
           min_amount,
-          roi_daily_percent
+          daily_roi_percentage
         )
       `)
       .eq("user_id", user.id)
@@ -48,7 +48,7 @@ export async function GET() {
     // Get user's transactions for these subscriptions
     const transactionPromises = (subscriptions || []).map(async (sub) => {
       const { data: transactions } = await admin
-        .from("transactions")
+        .from("transaction_logs")
         .select("*")
         .eq("user_id", user.id)
         .ilike("description", `%${sub.id}%`)

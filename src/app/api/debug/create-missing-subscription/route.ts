@@ -26,7 +26,7 @@ export async function POST() {
 
     // Get the $100 plan purchase transaction
     const { data: purchaseTransaction } = await admin
-      .from("transactions")
+      .from("transaction_logs")
       .select("*")
       .eq("user_id", user.id)
       .eq("type", "investment")
@@ -42,7 +42,7 @@ export async function POST() {
 
     // Get Basic Bitcoin Miner plan details (plan_id: 9 based on $100 investment)
     const { data: plan } = await admin
-      .from("plans")
+      .from("investment_plans")
       .select("*")
       .eq("name", "Basic Bitcoin Miner")
       .single();
@@ -60,7 +60,7 @@ export async function POST() {
     endDate.setUTCDate(endDate.getUTCDate() + plan.duration_days);
 
     // Calculate daily earning: $100 * 2% = $2
-    const dailyEarning = (100 * plan.roi_daily_percent) / 100;
+    const dailyEarning = (100 * plan.daily_roi_percentage) / 100;
 
     const subscriptionData = {
       id: crypto.randomUUID(),
@@ -77,7 +77,7 @@ export async function POST() {
 
     // Insert the missing subscription
     const { data: newSubscription, error: subError } = await admin
-      .from("subscriptions")
+      .from("user_investments")
       .insert(subscriptionData)
       .select()
       .single();

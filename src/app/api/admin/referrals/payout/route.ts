@@ -23,7 +23,7 @@ export async function POST(request: Request) {
 
     // Check if user is admin
     const { data: profile } = await supabase
-      .from("profiles")
+      .from("user_profiles")
       .select("role")
       .eq("user_id", user.id)
       .single();
@@ -56,16 +56,16 @@ export async function POST(request: Request) {
       try {
         // Create deposit transaction for the referrer
         const { data: transaction, error: txError } = await admin
-          .from("transactions")
+          .from("transaction_logs")
           .insert({
-            user_id: commission.referrer_id,
+            user_id: commission.referrer_user_id,
             type: "deposit",
             amount_usdt: commission.commission_amount,
             reference_id: commission.id,
             meta: {
               type: "referral_commission",
               commission_id: commission.id,
-              referred_user_id: commission.referred_id,
+              referred_user_id: commission.referred_user_id,
               source_type: commission.source_type,
               source_amount: commission.source_amount,
               admin_payout: true,
@@ -102,29 +102,29 @@ export async function POST(request: Request) {
 
         // Update referrer's balance
         const { data: balRow } = await admin
-          .from("balances")
-          .select("available_usdt")
-          .eq("user_id", commission.referrer_id)
+          .from("user_balances")
+          .select("available_balance")
+          .eq("user_id", commission.referrer_user_id)
           .maybeSingle();
 
         if (!balRow) {
-          await admin.from("balances").insert({
-            user_id: commission.referrer_id,
-            available_usdt: commission.commission_amount,
+          await admin.from("user_balances").insert({
+            user_id: commission.referrer_user_id,
+            available_balance: commission.commission_amount,
           });
         } else {
-          const newBal = Number(balRow.available_usdt || 0) + Number(commission.commission_amount);
+          const newBal = Number(balRow.available_balance || 0) + Number(commission.commission_amount);
           await admin
-            .from("balances")
-            .update({ available_usdt: newBal })
-            .eq("user_id", commission.referrer_id);
+            .from("user_balances")
+            .update({ available_balance: newBal })
+            .eq("user_id", commission.referrer_user_id);
         }
 
         results.push({
           commission_id: commission.id,
           success: true,
           amount: commission.commission_amount,
-          referrer_id: commission.referrer_id
+          referrer_user_id: commission.referrer_user_id
         });
       } catch (err: any) {
         results.push({

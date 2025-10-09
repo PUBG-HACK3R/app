@@ -26,7 +26,7 @@ export async function GET() {
     // Test 2: Check if we can access admin client
     try {
       const { data: testQuery, error: testError } = await admin
-        .from("transactions")
+        .from("transaction_logs")
         .select("count")
         .limit(1);
       
@@ -46,7 +46,7 @@ export async function GET() {
     if (user) {
       try {
         const { data: userTxs, error: txError } = await admin
-          .from("transactions")
+          .from("transaction_logs")
           .select("type, amount_usdt, created_at")
           .eq("user_id", user.id)
           .limit(5);
@@ -64,14 +64,14 @@ export async function GET() {
 
       try {
         const { data: userBalance, error: balanceError } = await admin
-          .from("balances")
+          .from("user_balances")
           .select("*")
           .eq("user_id", user.id)
           .single();
         
         result.userBalance = {
           hasBalance: !!userBalance,
-          balance: userBalance?.available_usdt,
+          balance: userBalance?.available_balance,
           error: balanceError?.message
         };
       } catch (e: any) {

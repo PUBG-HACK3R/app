@@ -24,7 +24,7 @@ export async function POST() {
     const targetUserId = "f5f5728e-6a8d-46f3-9d25-5e1eea2a3e86";
     
     const { data: subscription, error: subError } = await admin
-      .from("subscriptions")
+      .from("user_investments")
       .select("*")
       .eq("id", targetSubId)
       .single();
@@ -36,7 +36,7 @@ export async function POST() {
       }, { status: 404 });
     }
 
-    const amount = Number(subscription.daily_earning || 0);
+    const amount = Number(subscription.daily_roi_percentage || 0);
     if (!amount) {
       return NextResponse.json({ 
         error: "No daily earning amount configured" 
@@ -44,7 +44,7 @@ export async function POST() {
     }
 
     // Create earning transaction
-    const { data: txData, error: txErr } = await admin.from("transactions").insert({
+    const { data: txData, error: txErr } = await admin.from("transaction_logs").insert({
       user_id: targetUserId,
       type: "earning",
       amount_usdt: amount,
@@ -61,27 +61,27 @@ export async function POST() {
 
     // Update balance
     const { data: balRow } = await admin
-      .from("balances")
-      .select("available_usdt")
+      .from("user_balances")
+      .select("available_balance")
       .eq("user_id", targetUserId)
       .maybeSingle();
 
     if (!balRow) {
-      await admin.from("balances").insert({
+      await admin.from("user_balances").insert({
         user_id: targetUserId,
-        available_usdt: amount,
+        available_balance: amount,
       });
     } else {
-      const newBal = Number(balRow.available_usdt || 0) + amount;
+      const newBal = Number(balRow.available_balance || 0) + amount;
       await admin
-        .from("balances")
-        .update({ available_usdt: newBal })
+        .from("user_balances")
+        .update({ available_balance: newBal })
         .eq("user_id", targetUserId);
     }
 
     // Update subscription total_earned
     const { data: currentSub } = await admin
-      .from("subscriptions")
+      .from("user_investments")
       .select("total_earned")
       .eq("id", targetSubId)
       .single();
@@ -89,7 +89,7 @@ export async function POST() {
     const newTotalEarned = Number(currentSub?.total_earned || 0) + amount;
     
     await admin
-      .from("subscriptions")
+      .from("user_investments")
       .update({ total_earned: newTotalEarned })
       .eq("id", targetSubId);
 

@@ -78,7 +78,7 @@ export async function GET(request: Request) {
           total_investments: planInvestments.length,
           active_investments: planInvestments.filter(inv => inv.status === 'active').length,
           completed_investments: planInvestments.filter(inv => inv.status === 'completed').length,
-          total_invested: planInvestments.reduce((sum, inv) => sum + Number(inv.amount_invested || 0), 0),
+          locked_balance: planInvestments.reduce((sum, inv) => sum + Number(inv.amount_invested || 0), 0),
           total_earned: planInvestments.reduce((sum, inv) => sum + Number(inv.total_earned || 0), 0)
         }
       };

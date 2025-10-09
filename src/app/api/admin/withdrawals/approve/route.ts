@@ -21,7 +21,7 @@ export async function POST(request: Request) {
     // Check admin role directly using admin client (same method as admin page)
     const adminClient = getSupabaseAdminClient();
     const { data: profile, error: adminCheckError } = await adminClient
-      .from("profiles")
+      .from("user_profiles")
       .select("role")
       .eq("user_id", user.id)
       .single();
@@ -47,7 +47,7 @@ export async function POST(request: Request) {
 
     // Check balance using transactions
     const { data: transactions } = await admin
-      .from("transactions")
+      .from("transaction_logs")
       .select("type, amount_usdt")
       .eq("user_id", wd.user_id);
 
@@ -74,7 +74,7 @@ export async function POST(request: Request) {
 
     // Create withdrawal transaction record
     const description = `Withdrawal approved by admin: ${user.id}`;
-    const { error: txErr } = await admin.from("transactions").insert({
+    const { error: txErr } = await admin.from("transaction_logs").insert({
       user_id: wd.user_id,
       type: "withdrawal",
       amount_usdt: amount,
@@ -90,17 +90,17 @@ export async function POST(request: Request) {
     // CRITICAL FIX: Also deduct from balances table to keep systems in sync
     // First get current balance, then update it
     const { data: currentBalance } = await admin
-      .from("balances")
-      .select("available_usdt")
+      .from("user_balances")
+      .select("available_balance")
       .eq("user_id", wd.user_id)
       .single();
 
-    const newAvailableBalance = Number(currentBalance?.available_usdt || 0) - amount;
+    const newAvailableBalance = Number(currentBalance?.available_balance || 0) - amount;
 
     const { error: balanceErr } = await admin
-      .from("balances")
+      .from("user_balances")
       .update({ 
-        available_usdt: newAvailableBalance 
+        available_balance: newAvailableBalance 
       })
       .eq("user_id", wd.user_id);
 

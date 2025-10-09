@@ -29,7 +29,7 @@ export async function POST() {
 
     // Get updated profile
     const { data: profile } = await supabase
-      .from("profiles")
+      .from("user_profiles")
       .select("role")
       .eq("user_id", user.id)
       .single();

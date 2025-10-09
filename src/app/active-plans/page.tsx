@@ -33,7 +33,7 @@ export default async function ActivePlansPage() {
 
   // Get active subscriptions with plan details using admin client to bypass RLS
   let { data: subscriptions, error: subscriptionsError } = await admin
-    .from("subscriptions")
+    .from("user_investments")
     .select(`
       id,
       plan_id,

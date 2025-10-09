@@ -18,7 +18,7 @@ export async function GET() {
 
     // Get data using regular client (what active plans page was using)
     const { data: userClientData, error: userError } = await supabase
-      .from("subscriptions")
+      .from("user_investments")
       .select(`
         id,
         plan_id,
@@ -31,7 +31,7 @@ export async function GET() {
         plans!inner (
           name,
           min_amount,
-          roi_daily_percent,
+          daily_roi_percentage,
           duration_days
         )
       `)
@@ -41,7 +41,7 @@ export async function GET() {
 
     // Get data using admin client (what should work)
     const { data: adminClientData, error: adminError } = await admin
-      .from("subscriptions")
+      .from("user_investments")
       .select(`
         id,
         plan_id,
@@ -54,7 +54,7 @@ export async function GET() {
         plans!inner (
           name,
           min_amount,
-          roi_daily_percent,
+          daily_roi_percentage,
           duration_days
         )
       `)

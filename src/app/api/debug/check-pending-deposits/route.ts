@@ -50,7 +50,7 @@ export async function GET() {
 
     // Check regular transactions for deposits
     const { data: regularDeposits } = await admin
-      .from("transactions")
+      .from("transaction_logs")
       .select("*")
       .eq("user_id", user.id)
       .eq("type", "deposit")

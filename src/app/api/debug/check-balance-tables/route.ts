@@ -21,19 +21,19 @@ export async function GET() {
 
     // Check balances table
     const { data: balanceData, error: balanceError } = await admin
-      .from("balances")
+      .from("user_balances")
       .select("*")
       .eq("user_id", user.id);
 
     // Check profiles table (old balance location)
     const { data: profileData, error: profileError } = await admin
-      .from("profiles")
-      .select("balance_usdt")
+      .from("user_profiles")
+      .select("available_balance")
       .eq("id", user.id);
 
     // Check transactions for this user
     const { data: transactions, error: txError } = await admin
-      .from("transactions")
+      .from("transaction_logs")
       .select("type, amount_usdt, created_at, description")
       .eq("user_id", user.id)
       .order("created_at", { ascending: false })

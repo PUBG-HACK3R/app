@@ -10,7 +10,7 @@ export async function GET() {
     
     // Get all plans
     const { data: plans, error } = await admin
-      .from("plans")
+      .from("investment_plans")
       .select("*")
       .order("id", { ascending: true });
 
