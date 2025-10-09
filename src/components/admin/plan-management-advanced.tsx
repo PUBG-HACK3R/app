@@ -336,7 +336,7 @@ export function AdvancedPlanManagement() {
                       type="number"
                       step="0.01"
                       value={formData.daily_roi_percentage}
-                      onChange={(e) => setFormData({...formData, daily_roi_percentage: e.target.value}))
+                      onChange={(e) => setFormData({...formData, daily_roi_percentage: e.target.value})}
                       className="bg-gray-700 border-gray-600 text-white"
                       required
                     />
