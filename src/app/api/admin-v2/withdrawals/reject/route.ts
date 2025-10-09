@@ -58,11 +58,18 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: "Failed to reject withdrawal" }, { status: 500 });
     }
 
+    // Get current balance and refund the amount
+    const { data: currentBalance } = await admin
+      .from("user_balances")
+      .select("available_balance")
+      .eq("user_id", withdrawal.user_id)
+      .single();
+
     // Refund the amount to user's available balance
     const { error: refundError } = await admin
       .from("user_balances")
       .update({
-        available_balance: admin.raw(`available_balance + ${withdrawal.amount_usdt}`)
+        available_balance: (currentBalance?.available_balance || 0) + withdrawal.amount_usdt
       })
       .eq("user_id", withdrawal.user_id);
 

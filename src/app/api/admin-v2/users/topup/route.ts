@@ -32,13 +32,20 @@ export async function POST(request: Request) {
 
     const admin = getSupabaseAdminClient();
 
+    // First, get current balance or create if doesn't exist
+    const { data: currentBalance } = await admin
+      .from("user_balances")
+      .select("available_balance, total_deposited")
+      .eq("user_id", userId)
+      .single();
+
     // Update user balance
     const { error: balanceError } = await admin
       .from("user_balances")
       .upsert({
         user_id: userId,
-        available_balance: admin.raw(`available_balance + ${amount}`),
-        total_deposited: admin.raw(`total_deposited + ${amount}`)
+        available_balance: (currentBalance?.available_balance || 0) + amount,
+        total_deposited: (currentBalance?.total_deposited || 0) + amount
       }, {
         onConflict: 'user_id'
       });
