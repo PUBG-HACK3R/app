@@ -53,8 +53,12 @@ export function AdminTools() {
       });
 
       if (response.ok) {
+        const result = await response.json();
         setBulkTopupData({ userEmails: "", amount: "", reason: "" });
-        alert('Bulk topup completed successfully!');
+        alert(`Bulk topup completed!\nSuccessful: ${result.stats?.successCount || 0}\nFailed: ${result.stats?.errorCount || 0}\nTotal Amount: $${result.stats?.totalAmount || 0}`);
+      } else {
+        const error = await response.json();
+        alert(`Bulk topup failed: ${error.error || 'Unknown error'}`);
       }
     } catch (error) {
       console.error('Error processing bulk topup:', error);

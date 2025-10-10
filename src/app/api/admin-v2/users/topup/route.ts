@@ -35,17 +35,21 @@ export async function POST(request: Request) {
     // First, get current balance or create if doesn't exist
     const { data: currentBalance } = await admin
       .from("user_balances")
-      .select("available_balance, total_deposited")
+      .select("available_balance, total_deposited, locked_balance, total_withdrawn, total_earned")
       .eq("user_id", userId)
       .single();
 
-    // Update user balance
+    // Update user balance in user_balances table
     const { error: balanceError } = await admin
       .from("user_balances")
       .upsert({
         user_id: userId,
         available_balance: (currentBalance?.available_balance || 0) + amount,
-        total_deposited: (currentBalance?.total_deposited || 0) + amount
+        total_deposited: (currentBalance?.total_deposited || 0) + amount,
+        locked_balance: currentBalance?.locked_balance || 0,
+        total_withdrawn: currentBalance?.total_withdrawn || 0,
+        total_earned: currentBalance?.total_earned || 0,
+        updated_at: new Date().toISOString()
       }, {
         onConflict: 'user_id'
       });
@@ -63,7 +67,8 @@ export async function POST(request: Request) {
         type: "deposit",
         amount_usdt: amount,
         description: reason || "Admin topup",
-        status: "completed"
+        balance_before: currentBalance?.available_balance || 0,
+        balance_after: (currentBalance?.available_balance || 0) + amount
       });
 
     if (logError) {
