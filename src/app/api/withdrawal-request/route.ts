@@ -106,24 +106,38 @@ export async function POST(request: NextRequest) {
     }
 
     // Start transaction: Create withdrawal request AND deduct balance immediately
+    const withdrawalData = {
+      user_id: user.id,
+      amount_usdt: numericAmount,
+      fee_usdt: totalFees,
+      net_amount_usdt: netAmount,
+      wallet_address: address,
+      status: "pending",
+      expires_at: new Date(Date.now() + 15 * 60 * 1000).toISOString() // 15 minutes from now
+    };
+    
+    console.log("Creating withdrawal with data:", withdrawalData);
+    
     const { data: withdrawal, error: withdrawalError } = await admin
       .from("withdrawals")
-      .insert({
-        user_id: user.id,
-        amount_usdt: numericAmount,
-        fee_usdt: totalFees,
-        net_amount_usdt: netAmount,
-        address: address,
-        network: network,
-        status: "pending"
-      })
+      .insert(withdrawalData)
       .select()
       .single();
 
     if (withdrawalError) {
       console.error("Error creating withdrawal:", withdrawalError);
+      console.error("Withdrawal error details:", {
+        message: withdrawalError.message,
+        details: withdrawalError.details,
+        hint: withdrawalError.hint,
+        code: withdrawalError.code
+      });
       return NextResponse.json(
-        { error: "Failed to create withdrawal request" },
+        { 
+          error: "Failed to create withdrawal request",
+          details: withdrawalError.message,
+          code: withdrawalError.code
+        },
         { status: 500 }
       );
     }
@@ -163,8 +177,7 @@ export async function POST(request: NextRequest) {
         amount: withdrawal.amount_usdt,
         fee: withdrawal.fee_usdt,
         net_amount: withdrawal.net_amount_usdt,
-        address: withdrawal.address,
-        network: withdrawal.network,
+        address: withdrawal.wallet_address,
         status: withdrawal.status,
         created_at: withdrawal.created_at
       }
