@@ -25,7 +25,7 @@ export async function GET() {
     // Get user's investments that are due for earnings
     const { data: investments, error } = await adminClient
       .from('user_investments')
-      .select('*, investment_plans!inner(payout_type)')
+      .select('*')
       .eq('user_id', user.id)
       .eq('status', 'active')
       .lte('next_earning_time', now.toISOString());
@@ -64,20 +64,27 @@ export async function GET() {
           continue;
         }
 
-        // Calculate earning based on payout type
+        // Calculate earning based on plan duration (determine payout type)
         let dailyEarning = 0;
-        const payoutType = investment.payout_type || investment.investment_plans?.payout_type || 'daily';
+        const isEndPayoutPlan = investment.duration_days >= 30; // Monthly and Bi-Monthly plans
         
-        if (payoutType === 'daily') {
-          // Standard daily earnings
+        if (!isEndPayoutPlan) {
+          // Daily payout plans (1, 3, 10 days) - pay daily ROI
           dailyEarning = (investment.amount_invested * investment.daily_roi_percentage) / 100;
-        } else if (payoutType === 'end') {
-          // Only pay at the end of the investment period
+        } else {
+          // End payout plans (30, 60 days) - only pay at the end
           if (today >= investment.end_date) {
-            // Calculate total return percentage
+            // Calculate total return: investment * (percentage / 100)
+            // For monthly: 120% means user gets 120% of their investment as profit
+            // For bi-monthly: 150% means user gets 150% of their investment as profit
             dailyEarning = (investment.amount_invested * investment.daily_roi_percentage) / 100;
           } else {
-            // Skip earning for 'end' type plans until completion
+            // Skip earning for end-payout plans until completion
+            const nextEarning = new Date(investment.end_date);
+            await adminClient
+              .from('user_investments')
+              .update({ next_earning_time: nextEarning.toISOString() })
+              .eq('id', investment.id);
             continue;
           }
         }

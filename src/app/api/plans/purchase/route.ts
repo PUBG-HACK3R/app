@@ -11,6 +11,7 @@ const PurchaseSchema = z.object({
     z.string().regex(/^\d+$/, "Plan ID must be a valid integer string"),
     z.number().int().positive("Plan ID must be a positive integer")
   ]).transform(val => String(val)),
+  customAmount: z.number().positive("Custom amount must be positive").optional(),
 });
 
 export async function POST(request: Request) {
@@ -30,7 +31,7 @@ export async function POST(request: Request) {
     console.log("Purchase API - planId:", body.planId);
     console.log("Purchase API - planId type:", typeof body.planId);
     
-    const { planId } = PurchaseSchema.parse(body);
+    const { planId, customAmount } = PurchaseSchema.parse(body);
     console.log("Purchase API - Parsed planId:", planId);
 
     const admin = getSupabaseAdminClient();
@@ -63,7 +64,19 @@ export async function POST(request: Request) {
     console.log("Purchase API - Balance query result:", { balanceData, balanceError });
 
     const currentBalance = Number(balanceData?.available_balance || 0);
-    const planPrice = Number(plan.min_amount);
+    const planPrice = customAmount ? Number(customAmount) : Number(plan.min_amount);
+    
+    // Validate custom amount is within plan limits
+    if (customAmount) {
+      if (customAmount < plan.min_amount || customAmount > plan.max_amount) {
+        return NextResponse.json({ 
+          error: "Invalid investment amount", 
+          message: `Amount must be between $${plan.min_amount} and $${plan.max_amount}`,
+          min_amount: plan.min_amount,
+          max_amount: plan.max_amount
+        }, { status: 400 });
+      }
+    }
     
     console.log("Purchase API - Balance check:", { currentBalance, planPrice, hasEnough: currentBalance >= planPrice });
 
@@ -106,11 +119,15 @@ export async function POST(request: Request) {
       active: true,
     });
 
-    // Set next earning time (24 hours from now for daily plans, end date for end-payout plans)
+    // Set next earning time based on plan duration
     const nextEarningTime = new Date();
-    if (plan.payout_type === 'end') {
+    const isEndPayoutPlan = plan.duration_days >= 30; // Monthly and Bi-Monthly plans
+    
+    if (isEndPayoutPlan) {
+      // End payout plans: set next earning to the end date
       nextEarningTime.setTime(endDate.getTime());
     } else {
+      // Daily payout plans: set next earning to 24 hours from now
       nextEarningTime.setDate(nextEarningTime.getDate() + 1);
     }
 
@@ -122,7 +139,6 @@ export async function POST(request: Request) {
         amount_invested: planPrice,
         daily_roi_percentage: plan.daily_roi_percentage,
         duration_days: plan.duration_days,
-        payout_type: plan.payout_type || 'daily',
         start_date: startDate.toISOString().split('T')[0],
         end_date: endDate.toISOString().split('T')[0],
         status: 'active',

@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
 import { PlanPurchaseButton } from "@/components/plan-purchase-button";
+import { PlanPurchaseModal } from "@/components/plan-purchase-modal";
 import { 
   TrendingUp, 
   Shield, 
@@ -28,9 +29,12 @@ import {
 interface DatabasePlan {
   id: string;
   name: string;
+  description?: string;
   min_amount: number;
+  max_amount: number;
   daily_roi_percentage: number;
   duration_days: number;
+  payout_type?: 'daily' | 'end';
   is_active: boolean;
   mining_type?: string;
   hash_rate?: string;
@@ -204,10 +208,12 @@ export default function ClientPlansPage() {
                 <CardContent className="space-y-6">
                   {/* Pricing */}
                   <div className="text-center space-y-2">
-                    <div className="text-3xl sm:text-4xl font-bold text-white">${plan.min_amount}</div>
+                    <div className="text-3xl sm:text-4xl font-bold text-white">
+                      ${plan.min_amount} - ${plan.max_amount.toLocaleString()}
+                    </div>
                     <div className="text-sm text-gray-400 flex items-center justify-center gap-1">
                       <Coins className="h-4 w-4" />
-                      Minimum USDT Investment
+                      Custom USDT Investment
                     </div>
                   </div>
                   
@@ -215,7 +221,9 @@ export default function ClientPlansPage() {
                   <div className="grid grid-cols-2 gap-3 sm:gap-4 p-4 bg-gray-700/30 rounded-lg border border-gray-600/30">
                     <div className="text-center">
                       <div className="text-lg font-bold text-green-400">{plan.daily_roi_percentage}%</div>
-                      <div className="text-xs text-gray-400">Daily Mining</div>
+                      <div className="text-xs text-gray-400">
+                        {plan.duration_days >= 30 ? 'Total Return' : 'Daily Mining'}
+                      </div>
                     </div>
                     <div className="text-center">
                       <div className="text-lg font-bold text-blue-400">
@@ -310,13 +318,25 @@ export default function ClientPlansPage() {
                       </Link>
                     </div>
                   ) : (
-                    <PlanPurchaseButton
+                    <PlanPurchaseModal
                       planId={plan.id}
                       planName={plan.name}
-                      planPrice={plan.min_amount}
+                      minAmount={plan.min_amount}
+                      maxAmount={plan.max_amount}
+                      dailyRoi={plan.daily_roi_percentage}
+                      duration={plan.duration_days}
                       gradient={plan.gradient}
                       onPurchaseSuccess={refreshPlans}
-                    />
+                    >
+                      <Button 
+                        size="lg" 
+                        className={`w-full bg-gradient-to-r ${plan.gradient} hover:opacity-90 text-white font-semibold`}
+                      >
+                        <DollarSign className="mr-2 h-4 w-4" />
+                        Invest Now
+                        <ArrowRight className="ml-2 h-4 w-4" />
+                      </Button>
+                    </PlanPurchaseModal>
                   )}
                   
                   {/* Mining Disclaimer */}
