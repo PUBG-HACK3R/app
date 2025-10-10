@@ -38,12 +38,13 @@ export default async function ActivePlansPage() {
       id,
       plan_id,
       amount_invested,
-      daily_earning,
+      daily_roi_percentage,
+      duration_days,
       total_earned,
       start_date,
       end_date,
-      active,
-      plans!inner (
+      status,
+      investment_plans (
         name,
         min_amount,
         daily_roi_percentage,
@@ -51,7 +52,7 @@ export default async function ActivePlansPage() {
       )
     `)
     .eq("user_id", user.id)
-    .eq("active", true)
+    .eq("status", "active")
     .order("created_at", { ascending: false });
 
   // Debug logging - check what data we actually got
@@ -59,9 +60,10 @@ export default async function ActivePlansPage() {
     subscriptionsCount: subscriptions?.length || 0,
     subscriptions: subscriptions?.map(sub => ({
       id: sub.id,
-      plan_name: sub.plans?.[0]?.name,
+      plan_name: (sub as any).investment_plans?.name,
       total_earned: sub.total_earned,
-      amount_invested: sub.amount_invested
+      amount_invested: sub.amount_invested,
+      daily_roi: sub.daily_roi_percentage
     }))
   });
   if (subscriptionsError) {
@@ -73,7 +75,7 @@ export default async function ActivePlansPage() {
   const subscriptionsWithEarnings = (subscriptions || []).map((sub) => {
     return {
       ...sub,
-      plan: Array.isArray(sub.plans) ? sub.plans[0] : sub.plans
+      plan: (sub as any).investment_plans
     };
   });
 
@@ -153,7 +155,7 @@ export default async function ActivePlansPage() {
             {subscriptionsWithEarnings.map((subscription) => {
               const progress = calculateProgress(subscription.start_date, subscription.end_date);
               const daysRemaining = calculateDaysRemaining(subscription.end_date);
-              const dailyEarning = Number(subscription.daily_earning) || 0;
+              const dailyEarning = (Number(subscription.amount_invested) * Number(subscription.daily_roi_percentage)) / 100;
 
               return (
                 <div key={subscription.id} className="bg-gradient-to-br from-gray-800/50 to-gray-900/50 rounded-3xl border border-gray-700/30 p-6">
@@ -201,7 +203,7 @@ export default async function ActivePlansPage() {
                     </div>
                     <div>
                       <div className="text-sm text-gray-400">Daily Rate</div>
-                      <div className="text-lg font-semibold text-blue-400">{Number(subscription.plan?.daily_roi_percentage || 0).toFixed(1)}%</div>
+                      <div className="text-lg font-semibold text-blue-400">{Number(subscription.daily_roi_percentage || 0).toFixed(1)}%</div>
                     </div>
                   </div>
                 </div>
