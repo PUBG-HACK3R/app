@@ -165,10 +165,26 @@ export default function ClientPlansPage() {
           <div className="grid gap-6 sm:gap-8 sm:grid-cols-2 lg:grid-cols-3">
             {plans.map((plan: PlanDisplay) => {
             const Icon = plan.icon;
-            const dailyEarning = plan.min_amount * (plan.daily_roi_percentage / 100);
-            const totalReturn = dailyEarning * plan.duration_days;
-            const totalProfit = Math.max(0, totalReturn - plan.min_amount); // Ensure positive
-            const totalROI = Math.max(0, ((totalProfit / plan.min_amount) * 100)); // Ensure positive
+            const isEndPayoutPlan = plan.duration_days >= 30;
+            
+            // Handle different ROI display for monthly plans
+            let displayROI = plan.daily_roi_percentage;
+            let dailyEarning, totalReturn, totalProfit, totalROI;
+            
+            if (isEndPayoutPlan) {
+              // Monthly plans: show 120% or 150% total return
+              displayROI = plan.duration_days === 30 ? 120 : 150;
+              totalReturn = (plan.min_amount * displayROI) / 100;
+              totalProfit = totalReturn - plan.min_amount;
+              totalROI = displayROI;
+              dailyEarning = 0; // No daily earnings
+            } else {
+              // Daily plans: traditional calculation
+              dailyEarning = plan.min_amount * (plan.daily_roi_percentage / 100);
+              totalReturn = dailyEarning * plan.duration_days;
+              totalProfit = Math.max(0, totalReturn - plan.min_amount);
+              totalROI = Math.max(0, ((totalProfit / plan.min_amount) * 100));
+            }
             
             return (
               <Card 
@@ -220,9 +236,9 @@ export default function ClientPlansPage() {
                   {/* Key Metrics */}
                   <div className="grid grid-cols-2 gap-3 sm:gap-4 p-4 bg-gray-700/30 rounded-lg border border-gray-600/30">
                     <div className="text-center">
-                      <div className="text-lg font-bold text-green-400">{plan.daily_roi_percentage}%</div>
+                      <div className="text-lg font-bold text-green-400">{displayROI}%</div>
                       <div className="text-xs text-gray-400">
-                        {plan.duration_days >= 30 ? 'Total Return' : 'Daily Mining'}
+                        {isEndPayoutPlan ? 'Total Return' : 'Daily Mining'}
                       </div>
                     </div>
                     <div className="text-center">
@@ -323,7 +339,7 @@ export default function ClientPlansPage() {
                       planName={plan.name}
                       minAmount={plan.min_amount}
                       maxAmount={plan.max_amount}
-                      dailyRoi={plan.daily_roi_percentage}
+                      dailyRoi={displayROI}
                       duration={plan.duration_days}
                       gradient={plan.gradient}
                       onPurchaseSuccess={refreshPlans}

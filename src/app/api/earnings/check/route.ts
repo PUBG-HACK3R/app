@@ -74,10 +74,11 @@ export async function GET() {
         } else {
           // End payout plans (30, 60 days) - only pay at the end
           if (today >= investment.end_date) {
-            // Calculate total return: investment * (percentage / 100)
-            // For monthly: 120% means user gets 120% of their investment as profit
-            // For bi-monthly: 150% means user gets 150% of their investment as profit
-            dailyEarning = (investment.amount_invested * investment.daily_roi_percentage) / 100;
+            // Calculate total return based on duration
+            // Monthly (30 days): 120% total return
+            // Bi-Monthly (60 days): 150% total return
+            const totalReturnPercentage = investment.duration_days === 30 ? 120 : 150;
+            dailyEarning = (investment.amount_invested * totalReturnPercentage) / 100;
           } else {
             // Skip earning for end-payout plans until completion
             const nextEarning = new Date(investment.end_date);
