@@ -53,7 +53,7 @@ export default async function DashboardPage() {
       .from("investment_plans")
       .select("*")
       .eq("is_active", true)
-      .order("min_amount", { ascending: true });
+      .order("duration_days", { ascending: true });
 
     // Get all active investments for this user
     const { data: userInvestments, error: investError } = await admin
@@ -79,8 +79,8 @@ export default async function DashboardPage() {
         {/* Balance Section */}
         <BalanceSection walletBalance={walletBalance} />
 
-        {/* Earnings Auto-Check */}
-        <EarningsChecker />
+        {/* Earnings Auto-Check - Temporarily disabled for debugging */}
+        {/* <EarningsChecker /> */}
 
         {/* Action Buttons */}
         <div className="grid grid-cols-4 gap-4">
@@ -119,12 +119,18 @@ export default async function DashboardPage() {
             <h2 className="text-xl font-bold text-gray-900 dark:text-white">Mining Plans</h2>
           </div>
           
-          <HorizontalPlans 
-            plans={(plans || []).map(plan => ({
-              ...plan,
-              user_has_subscription: userPlanIds.has(plan.id)
-            }))} 
-          />
+          {plans && plans.length > 0 ? (
+            <HorizontalPlans 
+              plans={plans.map(plan => ({
+                ...plan,
+                user_has_subscription: userPlanIds.has(plan.id)
+              }))} 
+            />
+          ) : (
+            <div className="text-center py-8 text-gray-500">
+              No plans available
+            </div>
+          )}
         </div>
 
         {/* Stats Cards */}
