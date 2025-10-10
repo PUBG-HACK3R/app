@@ -4,7 +4,7 @@ import { useEffect, useRef } from "react";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { PlanPurchaseButton } from "@/components/plan-purchase-button";
+import { PlanPurchaseModal } from "@/components/plan-purchase-modal";
 
 interface Plan {
   id: string;
@@ -85,15 +85,6 @@ export function HorizontalPlans({ plans }: HorizontalPlansProps) {
                 <div className="text-sm text-gray-600 dark:text-gray-400">
                   {plan.duration_days} days • {totalROI.toFixed(1)}% total ROI
                 </div>
-                {!isEndPayoutPlan ? (
-                  <div className="text-xs text-green-600 dark:text-green-400 font-medium">
-                    Daily profit: ${dailyProfit.toFixed(2)}+ per ${plan.min_amount}
-                  </div>
-                ) : (
-                  <div className="text-xs text-amber-600 dark:text-amber-400 font-medium">
-                    💰 All earnings paid at completion
-                  </div>
-                )}
               </div>
               
               {plan.user_has_subscription ? (
@@ -104,13 +95,23 @@ export function HorizontalPlans({ plans }: HorizontalPlansProps) {
                   ✓ Active Plan
                 </Button>
               ) : (
-                <PlanPurchaseButton
+                <PlanPurchaseModal
                   planId={plan.id}
                   planName={plan.name}
-                  planPrice={plan.min_amount}
+                  minAmount={plan.min_amount}
+                  maxAmount={plan.max_amount}
+                  dailyRoi={plan.daily_roi_percentage}
+                  duration={plan.duration_days}
                   gradient="from-blue-500 to-purple-600"
                   className="w-full shadow-lg transform hover:scale-105 transition-all duration-200"
-                />
+                >
+                  <Button 
+                    size="lg" 
+                    className="w-full bg-gradient-to-r from-blue-500 to-purple-600 hover:opacity-90 text-white font-semibold shadow-lg transform hover:scale-105 transition-all duration-200"
+                  >
+                    Purchase Now
+                  </Button>
+                </PlanPurchaseModal>
               )}
             </div>
           </div>

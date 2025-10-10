@@ -58,7 +58,7 @@ export function PlanPurchaseModal({
       if (response.ok) {
         const data = await response.json();
         setIsAuthenticated(true);
-        setUserBalance(data.balance || 0);
+        setUserBalance(data.balance?.available || 0);
       } else {
         setIsAuthenticated(false);
       }
@@ -248,13 +248,6 @@ export function PlanPurchaseModal({
                 <div className="text-gray-400">Total Profit</div>
                 <div className="text-yellow-400 font-semibold">+${returns.totalProfit.toFixed(2)} ({returns.totalROI.toFixed(1)}%)</div>
               </div>
-              {returns.isEndPayoutPlan && (
-                <div className="col-span-2 text-center">
-                  <div className="text-amber-400 text-xs">
-                    💰 All earnings paid at completion ({duration} days)
-                  </div>
-                </div>
-              )}
             </div>
           </div>
 

@@ -25,16 +25,13 @@ export default function WithdrawPage() {
         const uid = userRes.user?.id;
         if (!uid) return;
         
-        // Fetch user balance directly from user_balances table
-        const { data: balanceData } = await supabase
-          .from("user_balances")
-          .select("available_balance")
-          .eq("user_id", uid)
-          .single();
-
-        const walletBalance = Number(balanceData?.available_balance || 0);
-        
-        setBalance(walletBalance);
+        // Fetch user balance using the balance API
+        const response = await fetch('/api/user/balance');
+        if (response.ok) {
+          const data = await response.json();
+          const walletBalance = data.balance?.available || 0;
+          setBalance(walletBalance);
+        }
       } catch {}
     })();
   }, []);

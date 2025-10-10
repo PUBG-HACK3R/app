@@ -7,10 +7,7 @@ export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
 const PurchaseSchema = z.object({
-  planId: z.union([
-    z.string().regex(/^\d+$/, "Plan ID must be a valid integer string"),
-    z.number().int().positive("Plan ID must be a positive integer")
-  ]).transform(val => String(val)),
+  planId: z.string().min(1, "Plan ID is required"),
   customAmount: z.number().positive("Custom amount must be positive").optional(),
 });
 
