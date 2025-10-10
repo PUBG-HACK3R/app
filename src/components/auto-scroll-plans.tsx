@@ -5,7 +5,6 @@ import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { PlanPurchaseButton } from "@/components/plan-purchase-button";
-import { PlanPurchaseModal } from "@/components/plan-purchase-modal";
 
 interface Plan {
   id: string;
@@ -105,19 +104,13 @@ export function HorizontalPlans({ plans }: HorizontalPlansProps) {
                   ✓ Active Plan
                 </Button>
               ) : (
-                <PlanPurchaseModal
+                <PlanPurchaseButton
                   planId={plan.id}
                   planName={plan.name}
-                  minAmount={plan.min_amount}
-                  maxAmount={plan.max_amount || 100000}
-                  dailyRoi={displayROI}
-                  duration={plan.duration_days}
+                  planPrice={plan.min_amount}
                   gradient="from-blue-500 to-purple-600"
-                >
-                  <Button className="w-full bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700 text-white font-semibold shadow-lg transform hover:scale-105 transition-all duration-200">
-                    Invest Now
-                  </Button>
-                </PlanPurchaseModal>
+                  className="w-full shadow-lg transform hover:scale-105 transition-all duration-200"
+                />
               )}
             </div>
           </div>
