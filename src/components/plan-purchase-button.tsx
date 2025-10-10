@@ -45,7 +45,7 @@ export function PlanPurchaseButton({
       if (response.ok) {
         const data = await response.json();
         setIsAuthenticated(true);
-        setUserBalance(data.balance || 0);
+        setUserBalance(data.balance?.available || 0);
       } else {
         setIsAuthenticated(false);
       }
