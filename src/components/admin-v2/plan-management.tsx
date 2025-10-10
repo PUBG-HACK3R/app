@@ -189,11 +189,28 @@ export function PlanManagement() {
   };
 
   const calculateTotalReturn = (minAmount: number, dailyRoi: number, duration: number) => {
-    return (minAmount * (dailyRoi / 100) * duration + minAmount).toFixed(2);
+    const isEndPayoutPlan = duration >= 30;
+    
+    if (isEndPayoutPlan) {
+      // Monthly plans: dailyRoi is actually total percentage (e.g., 120%)
+      return (minAmount * (dailyRoi / 100)).toFixed(2);
+    } else {
+      // Daily plans: traditional calculation
+      return (minAmount * (dailyRoi / 100) * duration + minAmount).toFixed(2);
+    }
   };
 
   const calculateProfit = (minAmount: number, dailyRoi: number, duration: number) => {
-    return (minAmount * (dailyRoi / 100) * duration).toFixed(2);
+    const isEndPayoutPlan = duration >= 30;
+    
+    if (isEndPayoutPlan) {
+      // Monthly plans: profit is total return minus investment
+      const totalReturn = minAmount * (dailyRoi / 100);
+      return (totalReturn - minAmount).toFixed(2);
+    } else {
+      // Daily plans: traditional calculation
+      return (minAmount * (dailyRoi / 100) * duration).toFixed(2);
+    }
   };
 
   const formatCurrency = (amount: number) => {
@@ -312,18 +329,26 @@ export function PlanManagement() {
                 </div>
 
                 <div>
-                  <Label htmlFor="roi" className="text-white">Daily ROI (%)</Label>
+                  <Label htmlFor="roi" className="text-white">
+                    ROI (%) - {parseInt(formData.duration_days) >= 30 ? 'Total Return' : 'Daily Return'}
+                  </Label>
                   <Input
                     id="roi"
                     type="number"
                     step="0.01"
                     min="0.01"
-                    max="100"
+                    max={parseInt(formData.duration_days) >= 30 ? "200" : "100"}
                     value={formData.daily_roi_percentage}
                     onChange={(e) => setFormData({ ...formData, daily_roi_percentage: e.target.value })}
                     className="bg-slate-700 border-slate-600 text-white"
                     required
+                    placeholder={parseInt(formData.duration_days) >= 30 ? 'e.g., 120 for 120% total' : 'e.g., 2 for 2% daily'}
                   />
+                  {parseInt(formData.duration_days) >= 30 && (
+                    <p className="text-xs text-amber-400 mt-1">
+                      💡 For monthly plans: Enter total return percentage (e.g., 120 for 120% total return)
+                    </p>
+                  )}
                 </div>
 
                 <div className="flex items-center space-x-2">
