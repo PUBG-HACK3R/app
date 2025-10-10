@@ -27,7 +27,16 @@ export default async function ModernWalletPage() {
     redirect("/login?next=/wallet/modern");
   }
 
-  // Fetch all user transactions to compute balance
+  // Get wallet balance from user_balances table (CORRECT METHOD)
+  const { data: balanceData } = await admin
+    .from("user_balances")
+    .select("available_balance, locked_balance, total_deposited, total_withdrawn, total_earned")
+    .eq("user_id", user.id)
+    .maybeSingle();
+
+  const walletBalance = Number(balanceData?.available_balance || 0);
+
+  // Fetch all user transactions for display
   const { data: allTx } = await supabase
     .from("transaction_logs")
     .select("type, amount_usdt, created_at, description, status")
@@ -60,24 +69,11 @@ export default async function ModernWalletPage() {
     .sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())
     .slice(0, 10);
 
-  const totalEarnings = (allTx || [])
-    .filter((t) => t.type === "earning")
-    .reduce((acc, t) => acc + Number(t.amount_usdt || 0), 0);
-  const totalDeposits = (allTx || [])
-    .filter((t) => t.type === "deposit")
-    .reduce((acc, t) => acc + Number(t.amount_usdt || 0), 0);
-  const totalInvestments = (allTx || [])
-    .filter((t) => t.type === "investment")
-    .reduce((acc, t) => acc + Number(t.amount_usdt || 0), 0);
-  const totalReturns = (allTx || [])
-    .filter((t) => t.type === "investment_return")
-    .reduce((acc, t) => acc + Number(t.amount_usdt || 0), 0);
-  const totalWithdrawals = (allTx || [])
-    .filter((t) => t.type === "withdrawal")
-    .reduce((acc, t) => acc + Number(t.amount_usdt || 0), 0);
-  
-  // New balance calculation: deposits + earnings + returns - investments - withdrawals
-  const walletBalance = totalDeposits + totalEarnings + totalReturns - totalInvestments - totalWithdrawals;
+  // Use data from user_balances table for accurate stats
+  const totalEarnings = Number(balanceData?.total_earned || 0);
+  const totalDeposits = Number(balanceData?.total_deposited || 0);
+  const totalWithdrawals = Number(balanceData?.total_withdrawn || 0);
+  const lockedBalance = Number(balanceData?.locked_balance || 0);
 
   // Recent transactions for display (now includes NOWPayments deposits)
   const recentTx = allTransactions.slice(0, 5);
@@ -119,7 +115,7 @@ export default async function ModernWalletPage() {
         {/* Stats Grid */}
         <div className="grid grid-cols-3 gap-4">
           <div className="bg-gradient-to-br from-orange-900/50 to-orange-800/50 rounded-2xl border border-orange-700/50 p-4 text-center">
-            <div className="text-2xl font-bold text-white">${totalInvestments.toFixed(0)}</div>
+            <div className="text-2xl font-bold text-white">${lockedBalance.toFixed(0)}</div>
             <div className="text-sm text-orange-200">Active Investments</div>
           </div>
           <div className="bg-gradient-to-br from-green-900/50 to-green-800/50 rounded-2xl border border-green-700/50 p-4 text-center">
