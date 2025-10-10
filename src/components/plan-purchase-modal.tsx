@@ -169,7 +169,7 @@ export function PlanPurchaseModal({
       // Daily payout plans: traditional daily ROI calculation
       dailyEarning = (amount * dailyRoi) / 100;
       totalReturn = dailyEarning * duration;
-      totalProfit = totalReturn - amount;
+      totalProfit = totalReturn; // Daily earnings are pure profit (investment returned at end)
       totalROI = (totalProfit / amount) * 100;
     }
     
@@ -240,7 +240,7 @@ export function PlanPurchaseModal({
               </div>
               <div>
                 <div className="text-gray-400">
-                  {returns.isEndPayoutPlan ? 'Total Payout' : 'Total Return'}
+                  {returns.isEndPayoutPlan ? 'Total Payout' : 'Total Earnings'}
                 </div>
                 <div className="text-orange-400 font-semibold">${returns.totalReturn.toFixed(2)}</div>
               </div>
