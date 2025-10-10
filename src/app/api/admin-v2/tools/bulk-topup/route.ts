@@ -54,7 +54,7 @@ export async function POST(request: Request) {
         // Get current balance or create if doesn't exist
         const { data: currentBalance } = await admin
           .from("user_balances")
-          .select("available_balance, total_deposited")
+          .select("available_balance, total_deposited, locked_balance, total_withdrawn, total_earned")
           .eq("user_id", userProfile.user_id)
           .single();
 
