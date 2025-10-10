@@ -25,7 +25,7 @@ export async function GET() {
     }
 
     const admin = getSupabaseAdminClient();
-    const results = {};
+    const results: any = {};
 
     // Test 1: Check user profiles count
     try {
@@ -33,7 +33,7 @@ export async function GET() {
         .from("user_profiles")
         .select("*", { count: "exact", head: true });
       results.userProfilesCount = userCount || 0;
-    } catch (error) {
+    } catch (error: any) {
       results.userProfilesError = error.message;
     }
 
@@ -43,7 +43,7 @@ export async function GET() {
         .from("user_balances")
         .select("*", { count: "exact", head: true });
       results.userBalancesCount = balanceCount || 0;
-    } catch (error) {
+    } catch (error: any) {
       results.userBalancesError = error.message;
     }
 
@@ -67,7 +67,7 @@ export async function GET() {
         hasBalance: !!u.user_balances?.[0],
         balance: u.user_balances?.[0] || null
       }));
-    } catch (error) {
+    } catch (error: any) {
       results.usersWithBalancesError = error.message;
     }
 
@@ -77,7 +77,7 @@ export async function GET() {
         .from("investment_plans")
         .select("*", { count: "exact", head: true });
       results.investmentPlansCount = planCount || 0;
-    } catch (error) {
+    } catch (error: any) {
       results.investmentPlansError = error.message;
     }
 
@@ -87,7 +87,7 @@ export async function GET() {
         .from("user_investments")
         .select("*", { count: "exact", head: true });
       results.userInvestmentsCount = investmentCount || 0;
-    } catch (error) {
+    } catch (error: any) {
       results.userInvestmentsError = error.message;
     }
 
@@ -97,7 +97,7 @@ export async function GET() {
         .from("transaction_logs")
         .select("*", { count: "exact", head: true });
       results.transactionLogsCount = transactionCount || 0;
-    } catch (error) {
+    } catch (error: any) {
       results.transactionLogsError = error.message;
     }
 
@@ -107,7 +107,7 @@ export async function GET() {
         .from("withdrawals")
         .select("*", { count: "exact", head: true });
       results.withdrawalsCount = withdrawalCount || 0;
-    } catch (error) {
+    } catch (error: any) {
       results.withdrawalsError = error.message;
     }
 
@@ -118,7 +118,7 @@ export async function GET() {
         .select("id")
         .limit(1);
       results.databaseConnection = "OK";
-    } catch (error) {
+    } catch (error: any) {
       results.databaseConnectionError = error.message;
     }
 
