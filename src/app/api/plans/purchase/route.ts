@@ -95,11 +95,11 @@ export async function POST(request: Request) {
         role: "user" 
       }, { onConflict: "user_id" });
 
-    // Create subscription with individual 24-hour timing
+    // Create subscription with actual timestamp (not just date)
     const now = new Date();
-    const startDate = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate()));
+    const startDate = new Date(now); // Use actual current time
     const endDate = new Date(startDate);
-    endDate.setUTCDate(endDate.getUTCDate() + plan.duration_days);
+    endDate.setDate(endDate.getDate() + plan.duration_days);
 
     // Calculate daily earning based on plan
     const dailyEarning = (planPrice * plan.daily_roi_percentage) / 100;
@@ -136,8 +136,8 @@ export async function POST(request: Request) {
         amount_invested: planPrice,
         daily_roi_percentage: plan.daily_roi_percentage,
         duration_days: plan.duration_days,
-        start_date: startDate.toISOString().split('T')[0],
-        end_date: endDate.toISOString().split('T')[0],
+        start_date: startDate.toISOString(),
+        end_date: endDate.toISOString(),
         status: 'active',
         total_earned: 0,
         next_earning_time: nextEarningTime.toISOString(),
