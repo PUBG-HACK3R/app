@@ -64,7 +64,11 @@ export default async function ActivePlansPage() {
       plan_name: (sub as any).investment_plans?.name,
       total_earned: sub.total_earned,
       amount_invested: sub.amount_invested,
-      daily_roi: sub.daily_roi_percentage
+      daily_roi: sub.daily_roi_percentage,
+      start_date: sub.start_date,
+      end_date: sub.end_date,
+      start_date_type: typeof sub.start_date,
+      end_date_type: typeof sub.end_date
     }))
   });
   if (subscriptionsError) {
@@ -81,17 +85,24 @@ export default async function ActivePlansPage() {
   });
 
   const formatDateTime = (dateString: string) => {
+    console.log('Formatting date:', dateString);
     const date = new Date(dateString);
-    // Format for Pakistan Standard Time (UTC+5)
-    return date.toLocaleString('en-US', {
+    console.log('Parsed date:', date);
+    console.log('Date UTC string:', date.toUTCString());
+    
+    // Try different approaches
+    const formatted = date.toLocaleString('en-US', {
       year: 'numeric',
       month: '2-digit',
       day: '2-digit',
       hour: '2-digit',
       minute: '2-digit',
-      hour12: false, // 24-hour format
-      timeZone: 'Asia/Karachi' // Pakistan Standard Time
+      hour12: false,
+      timeZone: 'Asia/Karachi'
     });
+    
+    console.log('Formatted result:', formatted);
+    return formatted;
   };
 
   const getInvestmentStatus = (startDate: string, endDate: string) => {
@@ -197,6 +208,7 @@ export default async function ActivePlansPage() {
                       <div>
                         <span className="text-xs text-gray-500">Start:</span>
                         <div className="text-green-400 font-mono">
+                          <div className="text-xs text-gray-400">Raw: {subscription.start_date}</div>
                           <div className="text-xs text-gray-400">{formatDateTime(subscription.start_date).split(', ')[0]}</div>
                           <div className="text-sm font-mono">{formatDateTime(subscription.start_date).split(', ')[1]}</div>
                         </div>
@@ -204,6 +216,7 @@ export default async function ActivePlansPage() {
                       <div>
                         <span className="text-xs text-gray-500">End:</span>
                         <div className="text-red-400 font-mono">
+                          <div className="text-xs text-gray-400">Raw: {subscription.end_date}</div>
                           <div className="text-xs text-gray-400">{formatDateTime(subscription.end_date).split(', ')[0]}</div>
                           <div className="text-sm font-mono">{formatDateTime(subscription.end_date).split(', ')[1]}</div>
                         </div>
