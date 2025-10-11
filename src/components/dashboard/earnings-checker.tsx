@@ -19,9 +19,10 @@ export function EarningsChecker({ onEarningsProcessed }: EarningsCheckerProps) {
     setIsChecking(true);
     
     try {
-      const response = await fetch('/api/earnings/check', {
-        method: 'GET',
+      const response = await fetch('/api/user/check-earnings', {
+        method: 'POST',
         headers: {
+          'Content-Type': 'application/json',
           'Cache-Control': 'no-cache',
         },
       });
@@ -30,13 +31,25 @@ export function EarningsChecker({ onEarningsProcessed }: EarningsCheckerProps) {
       
       if (data.success) {
         setLastCheck(new Date());
+        const results = data.results;
         
-        if (data.processed > 0) {
+        if (results.earningsProcessed > 0 || results.investmentsCompleted > 0) {
           if (showToast) {
+            let message = "";
+            
+            if (results.earningsProcessed > 0) {
+              message += `💰 Earned $${results.totalEarningsAdded} from ${results.earningsProcessed} investment${results.earningsProcessed > 1 ? 's' : ''}`;
+            }
+            
+            if (results.investmentsCompleted > 0) {
+              if (message) message += "\n";
+              message += `🎉 ${results.investmentsCompleted} investment${results.investmentsCompleted > 1 ? 's' : ''} completed! $${results.totalPrincipalReturned} returned`;
+            }
+            
             toast.success(
-              `🎉 Earnings Processed!`,
+              "Earnings Updated!",
               {
-                description: `You earned $${data.total_earned.toFixed(2)} from ${data.processed} investment${data.processed > 1 ? 's' : ''}`,
+                description: message,
                 duration: 5000,
               }
             );
@@ -50,7 +63,9 @@ export function EarningsChecker({ onEarningsProcessed }: EarningsCheckerProps) {
             window.location.reload();
           }, 1000);
         } else if (showToast) {
-          toast.info("No earnings due at this time");
+          toast.info("All up to date!", {
+            description: "No new earnings to process at this time."
+          });
         }
       } else {
         console.error('Earnings check failed:', data.error);

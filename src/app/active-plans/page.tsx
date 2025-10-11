@@ -7,6 +7,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
 import { Separator } from "@/components/ui/separator";
+import { EarningsChecker } from "@/components/earnings-checker";
 import { 
   TrendingUp, 
   DollarSign, 
@@ -79,23 +80,26 @@ export default async function ActivePlansPage() {
     };
   });
 
-  const calculateProgress = (startDate: string, endDate: string) => {
+  const formatDateTime = (dateString: string) => {
+    const date = new Date(dateString);
+    return date.toLocaleString('en-US', {
+      year: 'numeric',
+      month: '2-digit',
+      day: '2-digit',
+      hour: '2-digit',
+      minute: '2-digit',
+      hour12: false // 24-hour format
+    });
+  };
+
+  const getInvestmentStatus = (startDate: string, endDate: string) => {
     const start = new Date(startDate).getTime();
     const end = new Date(endDate).getTime();
     const now = Date.now();
     
-    if (now <= start) return 0;
-    if (now >= end) return 100;
-    
-    return Math.round(((now - start) / (end - start)) * 100);
-  };
-
-  const calculateDaysRemaining = (endDate: string) => {
-    const end = new Date(endDate).getTime();
-    const now = Date.now();
-    const diffTime = end - now;
-    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-    return Math.max(0, diffDays);
+    if (now < start) return { status: 'pending', color: 'yellow' };
+    if (now >= end) return { status: 'completed', color: 'green' };
+    return { status: 'active', color: 'blue' };
   };
 
   const calculateTotalReturn = (principal: number, totalEarned: number) => {
@@ -110,6 +114,11 @@ export default async function ActivePlansPage() {
         <div className="text-center mb-6">
           <h1 className="text-2xl font-bold text-white mb-2">My Investments</h1>
           <p className="text-gray-400">Track your active investment plans</p>
+          
+          {/* Earnings Checker - Auto-check on page load */}
+          <div className="mt-4 flex justify-center">
+            <EarningsChecker autoCheck={true} showButton={true} />
+          </div>
         </div>
 
         {subscriptionsWithEarnings.length === 0 ? (
@@ -153,9 +162,10 @@ export default async function ActivePlansPage() {
           {/* Active Plans - Simplified */}
           <div className="space-y-4">
             {subscriptionsWithEarnings.map((subscription) => {
-              const progress = calculateProgress(subscription.start_date, subscription.end_date);
-              const daysRemaining = calculateDaysRemaining(subscription.end_date);
+              const investmentStatus = getInvestmentStatus(subscription.start_date, subscription.end_date);
               const dailyEarning = (Number(subscription.amount_invested) * Number(subscription.daily_roi_percentage)) / 100;
+              const startTime = formatDateTime(subscription.start_date);
+              const endTime = formatDateTime(subscription.end_date);
 
               return (
                 <div key={subscription.id} className="bg-gradient-to-br from-gray-800/50 to-gray-900/50 rounded-3xl border border-gray-700/30 p-6">
@@ -163,10 +173,14 @@ export default async function ActivePlansPage() {
                   <div className="flex items-center justify-between mb-4">
                     <div>
                       <h3 className="text-lg font-bold text-white flex items-center gap-2">
-                        <div className="w-2 h-2 bg-green-400 rounded-full animate-pulse"></div>
+                        <div className={`w-2 h-2 rounded-full animate-pulse ${
+                          investmentStatus.color === 'blue' ? 'bg-blue-400' :
+                          investmentStatus.color === 'green' ? 'bg-green-400' :
+                          'bg-yellow-400'
+                        }`}></div>
                         {subscription.plan?.name}
                       </h3>
-                      <p className="text-gray-400 text-sm">Active Investment</p>
+                      <p className="text-gray-400 text-sm capitalize">{investmentStatus.status} Investment</p>
                     </div>
                     <div className="text-right">
                       <div className="text-lg font-bold text-green-400">
@@ -176,14 +190,18 @@ export default async function ActivePlansPage() {
                     </div>
                   </div>
 
-                  {/* Progress Bar */}
-                  <div className="mb-4">
-                    <div className="flex justify-between text-sm text-gray-400 mb-2">
-                      <span>Progress</span>
-                      <span>{progress}%</span>
-                    </div>
-                    <div className="w-full bg-gray-700 rounded-full h-2">
-                      <div className="bg-gradient-to-r from-blue-500 to-purple-600 h-2 rounded-full" style={{width: `${progress}%`}}></div>
+                  {/* Investment Timeline */}
+                  <div className="mb-4 p-4 bg-gray-800/30 rounded-2xl border border-gray-700/20">
+                    <div className="text-sm text-gray-400 mb-2">Investment Timeline</div>
+                    <div className="grid grid-cols-1 gap-2">
+                      <div className="flex justify-between items-center">
+                        <span className="text-xs text-gray-500">Start:</span>
+                        <span className="text-sm text-green-400 font-mono">{startTime}</span>
+                      </div>
+                      <div className="flex justify-between items-center">
+                        <span className="text-xs text-gray-500">End:</span>
+                        <span className="text-sm text-red-400 font-mono">{endTime}</span>
+                      </div>
                     </div>
                   </div>
 
@@ -198,8 +216,12 @@ export default async function ActivePlansPage() {
                       <div className="text-lg font-semibold text-green-400">${dailyEarning.toFixed(2)}</div>
                     </div>
                     <div>
-                      <div className="text-sm text-gray-400">Days Left</div>
-                      <div className="text-lg font-semibold text-white">{daysRemaining}</div>
+                      <div className="text-sm text-gray-400">Status</div>
+                      <div className={`text-lg font-semibold capitalize ${
+                        investmentStatus.color === 'blue' ? 'text-blue-400' :
+                        investmentStatus.color === 'green' ? 'text-green-400' :
+                        'text-yellow-400'
+                      }`}>{investmentStatus.status}</div>
                     </div>
                     <div>
                       <div className="text-sm text-gray-400">Daily Rate</div>

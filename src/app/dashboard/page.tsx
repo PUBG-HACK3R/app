@@ -79,8 +79,8 @@ export default async function DashboardPage() {
         {/* Balance Section */}
         <BalanceSection walletBalance={walletBalance} />
 
-        {/* Earnings Auto-Check - Temporarily disabled for debugging */}
-        {/* <EarningsChecker /> */}
+        {/* Earnings Auto-Check */}
+        <EarningsChecker />
 
         {/* Action Buttons */}
         <div className="grid grid-cols-4 gap-4">
