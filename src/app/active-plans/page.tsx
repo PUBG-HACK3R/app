@@ -8,7 +8,6 @@ import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
 import { Separator } from "@/components/ui/separator";
 import { EarningsChecker } from "@/components/earnings-checker";
-import { TimezoneDateTime } from "@/components/timezone-date";
 import { 
   TrendingUp, 
   DollarSign, 
@@ -84,7 +83,7 @@ export default async function ActivePlansPage() {
   const formatDateTime = (dateString: string) => {
     const date = new Date(dateString);
     // Format for Pakistan Standard Time (UTC+5)
-    return date.toLocaleString('en-PK', {
+    return date.toLocaleString('en-US', {
       year: 'numeric',
       month: '2-digit',
       day: '2-digit',
@@ -197,17 +196,17 @@ export default async function ActivePlansPage() {
                     <div className="grid grid-cols-2 gap-4">
                       <div>
                         <span className="text-xs text-gray-500">Start:</span>
-                        <TimezoneDateTime 
-                          dateString={subscription.start_date} 
-                          className="text-green-400 font-mono"
-                        />
+                        <div className="text-green-400 font-mono">
+                          <div className="text-xs text-gray-400">{formatDateTime(subscription.start_date).split(', ')[0]}</div>
+                          <div className="text-sm font-mono">{formatDateTime(subscription.start_date).split(', ')[1]}</div>
+                        </div>
                       </div>
                       <div>
                         <span className="text-xs text-gray-500">End:</span>
-                        <TimezoneDateTime 
-                          dateString={subscription.end_date} 
-                          className="text-red-400 font-mono"
-                        />
+                        <div className="text-red-400 font-mono">
+                          <div className="text-xs text-gray-400">{formatDateTime(subscription.end_date).split(', ')[0]}</div>
+                          <div className="text-sm font-mono">{formatDateTime(subscription.end_date).split(', ')[1]}</div>
+                        </div>
                       </div>
                     </div>
                   </div>
