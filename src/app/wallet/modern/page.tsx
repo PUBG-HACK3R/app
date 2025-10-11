@@ -4,6 +4,7 @@ import { getSupabaseServerClient } from "@/lib/supabase/server";
 import { getSupabaseAdminClient } from "@/lib/supabase/admin";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { TransactionList } from "@/components/wallet/transaction-list";
 import { 
   Wallet, 
   ArrowUpRight, 
@@ -137,65 +138,7 @@ export default async function ModernWalletPage() {
             </Link>
           </div>
           
-          <div className="space-y-3">
-            {recentTx.length > 0 ? (
-              recentTx.map((tx, index) => (
-                <div key={index} className="bg-gradient-to-r from-gray-800/50 to-gray-900/50 rounded-2xl border border-gray-700/50 p-4">
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-3">
-                      <div className={`w-10 h-10 rounded-xl flex items-center justify-center ${
-                        tx.type === 'deposit' ? 'bg-green-500/20' :
-                        tx.type === 'pending_deposit' ? 'bg-yellow-500/20' :
-                        tx.type === 'earning' ? 'bg-blue-500/20' :
-                        tx.type === 'investment' ? 'bg-red-500/20' :
-                        tx.type === 'investment_return' ? 'bg-purple-500/20' :
-                        'bg-orange-500/20'
-                      }`}>
-                        {tx.type === 'deposit' ? (
-                          <ArrowDownRight className="w-5 h-5 text-green-400" />
-                        ) : tx.type === 'pending_deposit' ? (
-                          <Clock className="w-5 h-5 text-yellow-400" />
-                        ) : tx.type === 'earning' ? (
-                          <TrendingUp className="w-5 h-5 text-blue-400" />
-                        ) : tx.type === 'investment' ? (
-                          <ArrowUpRight className="w-5 h-5 text-red-400" />
-                        ) : tx.type === 'investment_return' ? (
-                          <ArrowDownRight className="w-5 h-5 text-purple-400" />
-                        ) : (
-                          <ArrowUpRight className="w-5 h-5 text-orange-400" />
-                        )}
-                      </div>
-                      <div>
-                        <div className="font-medium text-white capitalize">
-                          {tx.type === 'earning' ? 'Daily Earning' : 
-                           tx.type === 'investment' ? 'Miner Purchase' :
-                           tx.type === 'investment_return' ? 'Investment Return' :
-                           tx.type === 'pending_deposit' ? 'Pending Deposit' :
-                           tx.type === 'deposit' ? 'Deposit' :
-                           tx.type}
-                        </div>
-                        <div className="text-sm text-gray-400">
-                          {new Date(tx.created_at).toLocaleDateString()}
-                        </div>
-                      </div>
-                    </div>
-                    <div className={`font-bold ${
-                      (tx.type === 'withdrawal' || tx.type === 'investment') ? 'text-red-400' : 
-                      tx.type === 'pending_deposit' ? 'text-yellow-400' : 'text-green-400'
-                    }`}>
-                      {(tx.type === 'withdrawal' || tx.type === 'investment') ? '-' : '+'}${Number(tx.amount_usdt).toFixed(2)}
-                    </div>
-                  </div>
-                </div>
-              ))
-            ) : (
-              <div className="bg-gradient-to-r from-gray-800/50 to-gray-900/50 rounded-2xl border border-gray-700/50 p-8 text-center">
-                <History className="w-12 h-12 text-gray-500 mx-auto mb-3" />
-                <div className="text-gray-400">No transactions yet</div>
-                <div className="text-sm text-gray-500 mt-1">Start by making your first deposit</div>
-              </div>
-            )}
-          </div>
+          <TransactionList limit={5} showTitle={false} />
         </div>
 
         {/* Quick Actions */}
