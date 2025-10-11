@@ -44,6 +44,8 @@ export default async function ActivePlansPage() {
       total_earned,
       start_date,
       end_date,
+      investment_time,
+      created_at,
       status,
       investment_plans (
         name,
@@ -76,11 +78,19 @@ export default async function ActivePlansPage() {
   }
   console.log("Subscriptions data:", subscriptions);
 
-  // Use the total_earned from database directly (no need to recalculate)
+  // Use the total_earned from database directly and calculate proper dates
   const subscriptionsWithEarnings = (subscriptions || []).map((sub) => {
+    // Use investment_time as the actual start time, calculate end time
+    const actualStartDate = sub.investment_time || sub.created_at || sub.start_date;
+    const startDate = new Date(actualStartDate);
+    const endDate = new Date(startDate);
+    endDate.setDate(endDate.getDate() + (sub.duration_days || 1));
+    
     return {
       ...sub,
-      plan: (sub as any).investment_plans
+      plan: (sub as any).investment_plans,
+      actual_start_date: startDate.toISOString(),
+      actual_end_date: endDate.toISOString()
     };
   });
 
@@ -175,7 +185,7 @@ export default async function ActivePlansPage() {
           {/* Active Plans - Simplified */}
           <div className="space-y-4">
             {subscriptionsWithEarnings.map((subscription) => {
-              const investmentStatus = getInvestmentStatus(subscription.start_date, subscription.end_date);
+              const investmentStatus = getInvestmentStatus(subscription.actual_start_date, subscription.actual_end_date);
               const dailyEarning = (Number(subscription.amount_invested) * Number(subscription.daily_roi_percentage)) / 100;
 
               return (
@@ -208,17 +218,17 @@ export default async function ActivePlansPage() {
                       <div>
                         <span className="text-xs text-gray-500">Start:</span>
                         <div className="text-green-400 font-mono">
-                          <div className="text-xs text-gray-400">Raw: {subscription.start_date}</div>
-                          <div className="text-xs text-gray-400">{formatDateTime(subscription.start_date).split(', ')[0]}</div>
-                          <div className="text-sm font-mono">{formatDateTime(subscription.start_date).split(', ')[1]}</div>
+                          <div className="text-xs text-gray-400">Investment Time: {subscription.investment_time}</div>
+                          <div className="text-xs text-gray-400">{formatDateTime(subscription.actual_start_date).split(', ')[0]}</div>
+                          <div className="text-sm font-mono">{formatDateTime(subscription.actual_start_date).split(', ')[1]}</div>
                         </div>
                       </div>
                       <div>
                         <span className="text-xs text-gray-500">End:</span>
                         <div className="text-red-400 font-mono">
-                          <div className="text-xs text-gray-400">Raw: {subscription.end_date}</div>
-                          <div className="text-xs text-gray-400">{formatDateTime(subscription.end_date).split(', ')[0]}</div>
-                          <div className="text-sm font-mono">{formatDateTime(subscription.end_date).split(', ')[1]}</div>
+                          <div className="text-xs text-gray-400">Calculated End: {subscription.actual_end_date}</div>
+                          <div className="text-xs text-gray-400">{formatDateTime(subscription.actual_end_date).split(', ')[0]}</div>
+                          <div className="text-sm font-mono">{formatDateTime(subscription.actual_end_date).split(', ')[1]}</div>
                         </div>
                       </div>
                     </div>
