@@ -45,13 +45,33 @@ export async function POST() {
       }, { status: 500 });
     }
 
+    // Filter out withdrawals that already have refund transactions
+    let withdrawalsToRefund = [];
+    if (expiredWithdrawals && expiredWithdrawals.length > 0) {
+      for (const withdrawal of expiredWithdrawals) {
+        // Check if this withdrawal already has a refund transaction
+        const { data: existingRefund } = await admin
+          .from("transaction_logs")
+          .select("id")
+          .eq("reference_id", withdrawal.id)
+          .eq("type", "refund")
+          .limit(1);
+
+        if (!existingRefund || existingRefund.length === 0) {
+          withdrawalsToRefund.push(withdrawal);
+        }
+      }
+    }
+
     let processedCount = 0;
     let totalRefunded = 0;
     const errors = [];
     const processedWithdrawals = [];
 
-    // Process each expired withdrawal
-    for (const withdrawal of expiredWithdrawals || []) {
+    console.log(`Found ${expiredWithdrawals?.length || 0} expired withdrawals, ${withdrawalsToRefund.length} need refunding`);
+
+    // Process each withdrawal that needs refunding
+    for (const withdrawal of withdrawalsToRefund) {
       try {
         console.log(`💸 Processing refund for withdrawal ${withdrawal.id} - ${withdrawal.amount_usdt} USDT`);
 

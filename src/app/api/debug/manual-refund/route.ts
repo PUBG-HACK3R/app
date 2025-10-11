@@ -8,12 +8,11 @@ export async function POST() {
     console.log('🔧 Manual refund of expired withdrawals initiated');
     
     // Find withdrawals that are expired and haven't been refunded yet
-    // Also check for withdrawals that should be expired based on expires_at time
-    const now = new Date();
+    // Only get withdrawals with status 'expired' that haven't been processed as refunded
     const { data: expiredWithdrawals, error: fetchError } = await admin
       .from("withdrawals")
       .select("*")
-      .or(`status.eq.expired,and(status.eq.pending,expires_at.lt.${now.toISOString()})`);
+      .eq("status", "expired");
 
     if (fetchError) {
       console.error('Error fetching expired withdrawals:', fetchError);
@@ -23,15 +22,38 @@ export async function POST() {
       }, { status: 500 });
     }
 
-    console.log(`Found ${expiredWithdrawals?.length || 0} expired withdrawals to refund`);
+    console.log(`Found ${expiredWithdrawals?.length || 0} expired withdrawals to check for refund`);
+
+    // Filter out withdrawals that already have refund transactions
+    let withdrawalsToRefund = [];
+    if (expiredWithdrawals && expiredWithdrawals.length > 0) {
+      for (const withdrawal of expiredWithdrawals) {
+        // Check if this withdrawal already has a refund transaction
+        const { data: existingRefund } = await admin
+          .from("transaction_logs")
+          .select("id")
+          .eq("reference_id", withdrawal.id)
+          .eq("type", "refund")
+          .limit(1);
+
+        if (!existingRefund || existingRefund.length === 0) {
+          withdrawalsToRefund.push(withdrawal);
+          console.log(`✅ Withdrawal ${withdrawal.id} needs refund`);
+        } else {
+          console.log(`⚠️ Withdrawal ${withdrawal.id} already has refund transaction, skipping`);
+        }
+      }
+    }
+
+    console.log(`${withdrawalsToRefund.length} withdrawals actually need refunding`);
 
     let processedCount = 0;
     let totalRefunded = 0;
     const errors = [];
     const processedWithdrawals = [];
 
-    // Process each expired withdrawal
-    for (const withdrawal of expiredWithdrawals || []) {
+    // Process each withdrawal that needs refunding
+    for (const withdrawal of withdrawalsToRefund) {
       try {
         console.log(`💸 Processing refund for withdrawal ${withdrawal.id} - ${withdrawal.amount_usdt} USDT`);
 
@@ -134,6 +156,7 @@ export async function POST() {
       results: {
         refunded_withdrawals: processedCount,
         total_expired_found: expiredWithdrawals?.length || 0,
+        withdrawals_needing_refund: withdrawalsToRefund.length,
         total_amount_refunded: Number(totalRefunded.toFixed(2)),
         processed_withdrawals: processedWithdrawals,
         errors: errors.length > 0 ? errors.slice(0, 5) : undefined

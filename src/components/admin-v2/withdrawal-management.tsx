@@ -185,10 +185,17 @@ export function WithdrawalManagement() {
     }
   };
 
+  // Calculate stats
   const pendingWithdrawals = withdrawals.filter(w => w.status === 'pending');
+  const completedWithdrawals = withdrawals.filter(w => w.status === 'completed');
   const expiredWithdrawals = withdrawals.filter(w => w.status === 'expired');
+  const refundedWithdrawals = withdrawals.filter(w => w.status === 'refunded');
+  
   const totalPendingAmount = pendingWithdrawals.reduce((sum, w) => sum + w.amount_usdt, 0);
   const totalExpiredAmount = expiredWithdrawals.reduce((sum, w) => sum + w.amount_usdt, 0);
+  
+  // Only show refund button if there are actually expired withdrawals that need refunding
+  const hasExpiredNeedingRefund = expiredWithdrawals.length > 0;
 
   if (loading) {
     return (
