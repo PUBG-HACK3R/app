@@ -26,17 +26,77 @@ export async function GET(request: Request) {
       completedInvestments: 0
     };
 
-    // 1. Mark expired withdrawals
+    // 1. Mark expired withdrawals AND refund them immediately
     const { data: expiredWithdrawals, error: withdrawalError } = await admin
       .from('withdrawals')
       .update({ status: 'expired' })
       .eq('status', 'pending')
       .lt('expires_at', now.toISOString())
-      .select('id');
+      .select('*'); // Select all fields so we can process refunds
 
     if (!withdrawalError && expiredWithdrawals) {
       cleanupResults.expiredWithdrawals = expiredWithdrawals.length;
       console.log(`✅ Marked ${expiredWithdrawals.length} withdrawals as expired`);
+      
+      // Immediately refund expired withdrawals
+      for (const withdrawal of expiredWithdrawals) {
+        try {
+          // Get current user balance
+          const { data: balanceData } = await admin
+            .from("user_balances")
+            .select("available_balance")
+            .eq("user_id", withdrawal.user_id)
+            .single();
+
+          if (balanceData) {
+            const currentBalance = Number(balanceData.available_balance || 0);
+            const refundAmount = Number(withdrawal.amount_usdt);
+            const newBalance = currentBalance + refundAmount;
+
+            // Update user balance
+            await admin
+              .from("user_balances")
+              .update({
+                available_balance: newBalance,
+                updated_at: now.toISOString()
+              })
+              .eq("user_id", withdrawal.user_id);
+
+            // Mark withdrawal as refunded
+            await admin
+              .from("withdrawals")
+              .update({
+                status: "refunded",
+                refunded_at: now.toISOString(),
+                admin_notes: "Automatically refunded due to expiration"
+              })
+              .eq("id", withdrawal.id);
+
+            // Create refund transaction log
+            await admin
+              .from("transaction_logs")
+              .insert({
+                user_id: withdrawal.user_id,
+                type: "refund",
+                amount_usdt: refundAmount,
+                description: `Refund for expired withdrawal`,
+                reference_id: withdrawal.id,
+                status: "completed",
+                balance_before: currentBalance,
+                balance_after: newBalance,
+                meta: { 
+                  reason: "withdrawal_expired_auto", 
+                  original_withdrawal_id: withdrawal.id,
+                  refunded_at: now.toISOString()
+                }
+              });
+
+            console.log(`💰 Auto-refunded ${refundAmount} USDT to user ${withdrawal.user_id}`);
+          }
+        } catch (refundError) {
+          console.error(`Error auto-refunding withdrawal ${withdrawal.id}:`, refundError);
+        }
+      }
     }
 
     // 2. Mark expired deposits (older than 24 hours and still pending)

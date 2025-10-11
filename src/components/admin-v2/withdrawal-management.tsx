@@ -28,16 +28,19 @@ interface Withdrawal {
   user_email: string;
   amount_usdt: number;
   wallet_address: string;
-  status: 'pending' | 'approved' | 'rejected' | 'completed';
+  status: 'pending' | 'approved' | 'rejected' | 'completed' | 'expired' | 'refunded' | 'failed';
   created_at: string;
   processed_at?: string;
   admin_notes?: string;
+  refunded_at?: string;
+  expires_at?: string;
 }
 
 export function WithdrawalManagement() {
   const [withdrawals, setWithdrawals] = useState<Withdrawal[]>([]);
   const [loading, setLoading] = useState(true);
   const [processing, setProcessing] = useState<string | null>(null);
+  const [refunding, setRefunding] = useState(false);
 
   useEffect(() => {
     fetchWithdrawals();
@@ -98,6 +101,34 @@ export function WithdrawalManagement() {
     }
   };
 
+  const handleRefundExpired = async () => {
+    if (!confirm('Are you sure you want to refund all expired withdrawals? This will return the funds to users\' balances.')) {
+      return;
+    }
+
+    setRefunding(true);
+    try {
+      const response = await fetch('/api/admin/refund-expired', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' }
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        alert(`Successfully refunded ${data.results.refunded_withdrawals} expired withdrawals totaling $${data.results.total_amount_refunded}`);
+        await fetchWithdrawals();
+      } else {
+        const error = await response.json();
+        alert(`Error: ${error.error}`);
+      }
+    } catch (error) {
+      console.error('Error refunding expired withdrawals:', error);
+      alert('Failed to refund expired withdrawals');
+    } finally {
+      setRefunding(false);
+    }
+  };
+
   const formatCurrency = (amount: number) => {
     return new Intl.NumberFormat('en-US', {
       style: 'currency',
@@ -129,19 +160,36 @@ export function WithdrawalManagement() {
           </Badge>
         );
       case 'rejected':
+      case 'failed':
         return (
           <Badge className="bg-red-500/20 text-red-400 border-red-500/30">
             <XCircle className="h-3 w-3 mr-1" />
-            Rejected
+            {status === 'failed' ? 'Failed' : 'Rejected'}
+          </Badge>
+        );
+      case 'expired':
+        return (
+          <Badge className="bg-orange-500/20 text-orange-400 border-orange-500/30">
+            <AlertTriangle className="h-3 w-3 mr-1" />
+            Expired
+          </Badge>
+        );
+      case 'refunded':
+        return (
+          <Badge className="bg-purple-500/20 text-purple-400 border-purple-500/30">
+            <RefreshCw className="h-3 w-3 mr-1" />
+            Refunded
           </Badge>
         );
       default:
-        return <Badge>{status}</Badge>;
+        return <Badge className="bg-gray-500/20 text-gray-400 border-gray-500/30">{status}</Badge>;
     }
   };
 
   const pendingWithdrawals = withdrawals.filter(w => w.status === 'pending');
+  const expiredWithdrawals = withdrawals.filter(w => w.status === 'expired');
   const totalPendingAmount = pendingWithdrawals.reduce((sum, w) => sum + w.amount_usdt, 0);
+  const totalExpiredAmount = expiredWithdrawals.reduce((sum, w) => sum + w.amount_usdt, 0);
 
   if (loading) {
     return (
@@ -159,33 +207,37 @@ export function WithdrawalManagement() {
           <h2 className="text-3xl font-bold text-white">Withdrawal Management</h2>
           <p className="text-gray-400 mt-1">Review and process user withdrawal requests</p>
         </div>
-        <Button onClick={fetchWithdrawals} variant="outline" className="border-slate-600 text-white hover:bg-slate-700">
-          <RefreshCw className="h-4 w-4 mr-2" />
-          Refresh
-        </Button>
+        <div className="flex items-center gap-2">
+          {expiredWithdrawals.length > 0 && (
+            <Button 
+              onClick={handleRefundExpired} 
+              disabled={refunding}
+              className="bg-purple-600 hover:bg-purple-700 text-white"
+            >
+              {refunding ? (
+                <RefreshCw className="h-4 w-4 mr-2 animate-spin" />
+              ) : (
+                <RefreshCw className="h-4 w-4 mr-2" />
+              )}
+              Refund Expired ({expiredWithdrawals.length})
+            </Button>
+          )}
+          <Button onClick={fetchWithdrawals} variant="outline" className="border-slate-600 text-white hover:bg-slate-700">
+            <RefreshCw className="h-4 w-4 mr-2" />
+            Refresh
+          </Button>
+        </div>
       </div>
 
       {/* Stats Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+      <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
         <Card className="bg-slate-800/50 border-slate-700">
           <CardContent className="p-4">
             <div className="flex items-center space-x-2">
               <Clock className="h-8 w-8 text-yellow-500" />
               <div>
                 <p className="text-2xl font-bold text-white">{pendingWithdrawals.length}</p>
-                <p className="text-sm text-gray-400">Pending Requests</p>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-
-        <Card className="bg-slate-800/50 border-slate-700">
-          <CardContent className="p-4">
-            <div className="flex items-center space-x-2">
-              <DollarSign className="h-8 w-8 text-red-500" />
-              <div>
-                <p className="text-2xl font-bold text-white">{formatCurrency(totalPendingAmount)}</p>
-                <p className="text-sm text-gray-400">Pending Amount</p>
+                <p className="text-sm text-gray-400">Pending</p>
               </div>
             </div>
           </CardContent>
@@ -208,10 +260,38 @@ export function WithdrawalManagement() {
         <Card className="bg-slate-800/50 border-slate-700">
           <CardContent className="p-4">
             <div className="flex items-center space-x-2">
+              <AlertTriangle className="h-8 w-8 text-orange-500" />
+              <div>
+                <p className="text-2xl font-bold text-white">
+                  {withdrawals.filter(w => w.status === 'expired').length}
+                </p>
+                <p className="text-sm text-gray-400">Expired</p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card className="bg-slate-800/50 border-slate-700">
+          <CardContent className="p-4">
+            <div className="flex items-center space-x-2">
+              <RefreshCw className="h-8 w-8 text-purple-500" />
+              <div>
+                <p className="text-2xl font-bold text-white">
+                  {withdrawals.filter(w => w.status === 'refunded').length}
+                </p>
+                <p className="text-sm text-gray-400">Refunded</p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card className="bg-slate-800/50 border-slate-700">
+          <CardContent className="p-4">
+            <div className="flex items-center space-x-2">
               <ArrowDownRight className="h-8 w-8 text-blue-500" />
               <div>
                 <p className="text-2xl font-bold text-white">{withdrawals.length}</p>
-                <p className="text-sm text-gray-400">Total Requests</p>
+                <p className="text-sm text-gray-400">Total</p>
               </div>
             </div>
           </CardContent>
@@ -232,6 +312,40 @@ export function WithdrawalManagement() {
                   Total amount: {formatCurrency(totalPendingAmount)}
                 </p>
               </div>
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
+      {/* Expired Withdrawals Alert */}
+      {expiredWithdrawals.length > 0 && (
+        <Card className="bg-orange-500/10 border-orange-500/30">
+          <CardContent className="p-4">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center space-x-2">
+                <AlertTriangle className="h-5 w-5 text-orange-500" />
+                <div>
+                  <p className="text-orange-400 font-medium">
+                    {expiredWithdrawals.length} expired withdrawal{expiredWithdrawals.length > 1 ? 's' : ''} need{expiredWithdrawals.length === 1 ? 's' : ''} refunding
+                  </p>
+                  <p className="text-orange-300 text-sm">
+                    Total amount to refund: {formatCurrency(totalExpiredAmount)}
+                  </p>
+                </div>
+              </div>
+              <Button 
+                onClick={handleRefundExpired} 
+                disabled={refunding}
+                size="sm"
+                className="bg-purple-600 hover:bg-purple-700 text-white"
+              >
+                {refunding ? (
+                  <RefreshCw className="h-4 w-4 mr-1 animate-spin" />
+                ) : (
+                  <RefreshCw className="h-4 w-4 mr-1" />
+                )}
+                Refund All
+              </Button>
             </div>
           </CardContent>
         </Card>
