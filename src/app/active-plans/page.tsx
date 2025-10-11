@@ -8,6 +8,7 @@ import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
 import { Separator } from "@/components/ui/separator";
 import { EarningsChecker } from "@/components/earnings-checker";
+import { TimezoneDateTime } from "@/components/timezone-date";
 import { 
   TrendingUp, 
   DollarSign, 
@@ -82,13 +83,15 @@ export default async function ActivePlansPage() {
 
   const formatDateTime = (dateString: string) => {
     const date = new Date(dateString);
-    return date.toLocaleString('en-US', {
+    // Format for Pakistan Standard Time (UTC+5)
+    return date.toLocaleString('en-PK', {
       year: 'numeric',
       month: '2-digit',
       day: '2-digit',
       hour: '2-digit',
       minute: '2-digit',
-      hour12: false // 24-hour format
+      hour12: false, // 24-hour format
+      timeZone: 'Asia/Karachi' // Pakistan Standard Time
     });
   };
 
@@ -164,8 +167,6 @@ export default async function ActivePlansPage() {
             {subscriptionsWithEarnings.map((subscription) => {
               const investmentStatus = getInvestmentStatus(subscription.start_date, subscription.end_date);
               const dailyEarning = (Number(subscription.amount_invested) * Number(subscription.daily_roi_percentage)) / 100;
-              const startTime = formatDateTime(subscription.start_date);
-              const endTime = formatDateTime(subscription.end_date);
 
               return (
                 <div key={subscription.id} className="bg-gradient-to-br from-gray-800/50 to-gray-900/50 rounded-3xl border border-gray-700/30 p-6">
@@ -193,14 +194,20 @@ export default async function ActivePlansPage() {
                   {/* Investment Timeline */}
                   <div className="mb-4 p-4 bg-gray-800/30 rounded-2xl border border-gray-700/20">
                     <div className="text-sm text-gray-400 mb-2">Investment Timeline</div>
-                    <div className="grid grid-cols-1 gap-2">
-                      <div className="flex justify-between items-center">
+                    <div className="grid grid-cols-2 gap-4">
+                      <div>
                         <span className="text-xs text-gray-500">Start:</span>
-                        <span className="text-sm text-green-400 font-mono">{startTime}</span>
+                        <TimezoneDateTime 
+                          dateString={subscription.start_date} 
+                          className="text-green-400 font-mono"
+                        />
                       </div>
-                      <div className="flex justify-between items-center">
+                      <div>
                         <span className="text-xs text-gray-500">End:</span>
-                        <span className="text-sm text-red-400 font-mono">{endTime}</span>
+                        <TimezoneDateTime 
+                          dateString={subscription.end_date} 
+                          className="text-red-400 font-mono"
+                        />
                       </div>
                     </div>
                   </div>
