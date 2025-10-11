@@ -13,8 +13,7 @@ export async function POST() {
     const { data: expiredWithdrawals, error: fetchError } = await admin
       .from("withdrawals")
       .select("*")
-      .or(`status.eq.expired,and(status.eq.pending,expires_at.lt.${now.toISOString()})`)
-      .is("refunded_at", null);
+      .or(`status.eq.expired,and(status.eq.pending,expires_at.lt.${now.toISOString()})`);
 
     if (fetchError) {
       console.error('Error fetching expired withdrawals:', fetchError);
@@ -73,7 +72,7 @@ export async function POST() {
           .from("withdrawals")
           .update({
             status: "refunded",
-            refunded_at: new Date().toISOString(),
+            processed_at: new Date().toISOString(),
             admin_notes: `Manually refunded via debug endpoint due to expiration`
           })
           .eq("id", withdrawal.id);
@@ -99,7 +98,7 @@ export async function POST() {
             meta: { 
               reason: "manual_debug_refund", 
               original_withdrawal_id: withdrawal.id,
-              refunded_at: new Date().toISOString()
+              processed_at: new Date().toISOString()
             }
           });
 

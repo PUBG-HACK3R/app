@@ -21,8 +21,7 @@ export async function GET(request: Request) {
     const { data: expiredWithdrawals, error: fetchError } = await admin
       .from("withdrawals")
       .select("*")
-      .eq("status", "expired")
-      .is("refunded_at", null); // Only get withdrawals that haven't been refunded yet
+      .eq("status", "expired"); // Get expired withdrawals
 
     if (fetchError) {
       console.error('Error fetching expired withdrawals:', fetchError);
@@ -77,7 +76,7 @@ export async function GET(request: Request) {
           .from("withdrawals")
           .update({
             status: "refunded",
-            refunded_at: new Date().toISOString(),
+            processed_at: new Date().toISOString(),
             admin_notes: "Automatically refunded due to expiration"
           })
           .eq("id", withdrawal.id);
@@ -103,7 +102,7 @@ export async function GET(request: Request) {
             meta: { 
               reason: "withdrawal_expired", 
               original_withdrawal_id: withdrawal.id,
-              refunded_at: new Date().toISOString()
+              processed_at: new Date().toISOString()
             }
           });
 

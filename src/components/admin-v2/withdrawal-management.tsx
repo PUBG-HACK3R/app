@@ -32,7 +32,6 @@ interface Withdrawal {
   created_at: string;
   processed_at?: string;
   admin_notes?: string;
-  refunded_at?: string;
   expires_at?: string;
 }
 

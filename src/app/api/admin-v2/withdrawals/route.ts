@@ -62,7 +62,6 @@ export async function GET() {
       created_at: withdrawal.created_at,
       processed_at: withdrawal.processed_at,
       admin_notes: withdrawal.admin_notes,
-      refunded_at: withdrawal.refunded_at,
       expires_at: withdrawal.expires_at
     }));
 

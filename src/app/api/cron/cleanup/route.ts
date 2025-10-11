@@ -67,7 +67,7 @@ export async function GET(request: Request) {
               .from("withdrawals")
               .update({
                 status: "refunded",
-                refunded_at: now.toISOString(),
+                processed_at: now.toISOString(),
                 admin_notes: "Automatically refunded due to expiration"
               })
               .eq("id", withdrawal.id);
@@ -87,7 +87,7 @@ export async function GET(request: Request) {
                 meta: { 
                   reason: "withdrawal_expired_auto", 
                   original_withdrawal_id: withdrawal.id,
-                  refunded_at: now.toISOString()
+                  processed_at: now.toISOString()
                 }
               });
 
