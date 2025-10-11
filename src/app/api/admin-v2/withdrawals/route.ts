@@ -27,14 +27,10 @@ export async function GET() {
     // Get all withdrawals
     const admin = getSupabaseAdminClient();
 
+    // First, let's try without the join to see if that's the issue
     const { data: withdrawals, error: withdrawalsError } = await admin
       .from("withdrawals")
-      .select(`
-        *,
-        user_profiles (
-          email
-        )
-      `)
+      .select("*")
       .order("created_at", { ascending: false });
 
     if (withdrawalsError) {
@@ -47,10 +43,19 @@ export async function GET() {
 
     console.log(`Found ${withdrawals?.length || 0} withdrawals in database`);
     
+    // Get user emails separately
+    const userIds = [...new Set(withdrawals?.map(w => w.user_id) || [])];
+    const { data: userProfiles } = await admin
+      .from("user_profiles")
+      .select("user_id, email")
+      .in("user_id", userIds);
+    
+    const emailMap = new Map(userProfiles?.map(p => [p.user_id, p.email]) || []);
+    
     const formattedWithdrawals = (withdrawals || []).map((withdrawal: any) => ({
       id: withdrawal.id,
       user_id: withdrawal.user_id,
-      user_email: withdrawal.user_profiles?.email || 'Unknown',
+      user_email: emailMap.get(withdrawal.user_id) || 'Unknown',
       amount_usdt: withdrawal.amount_usdt || 0,
       wallet_address: withdrawal.wallet_address || withdrawal.address || '',
       status: withdrawal.status,
@@ -61,7 +66,7 @@ export async function GET() {
       expires_at: withdrawal.expires_at
     }));
 
-    console.log(`Returning ${formattedWithdrawals.length} formatted withdrawals`);
+    console.log(`Returning ${formattedWithdrawals.length} formatted withdrawals with emails`);
 
     return NextResponse.json({
       withdrawals: formattedWithdrawals

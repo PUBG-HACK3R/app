@@ -8,10 +8,12 @@ export async function POST() {
     console.log('🔧 Manual refund of expired withdrawals initiated');
     
     // Find withdrawals that are expired and haven't been refunded yet
+    // Also check for withdrawals that should be expired based on expires_at time
+    const now = new Date();
     const { data: expiredWithdrawals, error: fetchError } = await admin
       .from("withdrawals")
       .select("*")
-      .eq("status", "expired")
+      .or(`status.eq.expired,and(status.eq.pending,expires_at.lt.${now.toISOString()})`)
       .is("refunded_at", null);
 
     if (fetchError) {
