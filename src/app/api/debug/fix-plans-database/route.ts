@@ -36,7 +36,7 @@ export async function POST() {
       {
         name: "Monthly Plan",
         duration_days: 30,
-        daily_roi_percentage: 2.6, // 2.6% daily = 78% total (END PAYOUT)
+        daily_roi_percentage: 4.0, // 4.0% daily = 120% total (END PAYOUT)
         min_amount: 100,
         max_amount: 10000,
         payout_type: 'end'
@@ -44,7 +44,7 @@ export async function POST() {
       {
         name: "Bi-Monthly Plan",
         duration_days: 60,
-        daily_roi_percentage: 2.0, // 2.0% daily = 120% total (END PAYOUT)
+        daily_roi_percentage: 2.5, // 2.5% daily = 150% total (END PAYOUT)
         min_amount: 500,
         max_amount: 50000,
         payout_type: 'end'
