@@ -141,9 +141,9 @@ export async function POST() {
 
         console.log(`✅ Refunded ${refundAmount} USDT to user ${withdrawal.user_id} (Balance: ${currentBalance} → ${newBalance})`);
 
-      } catch (error) {
+      } catch (error: any) {
         console.error(`Error processing withdrawal refund ${withdrawal.id}:`, error);
-        errors.push(`Error processing withdrawal ${withdrawal.id}: ${error.message}`);
+        errors.push(`Error processing withdrawal ${withdrawal.id}: ${error.message || 'Unknown error'}`);
         continue;
       }
     }
