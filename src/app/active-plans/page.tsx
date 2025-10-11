@@ -58,25 +58,9 @@ export default async function ActivePlansPage() {
     .eq("status", "active")
     .order("created_at", { ascending: false });
 
-  // Debug logging - check what data we actually got
-  console.log("Active Plans Debug:", {
-    subscriptionsCount: subscriptions?.length || 0,
-    subscriptions: subscriptions?.map(sub => ({
-      id: sub.id,
-      plan_name: (sub as any).investment_plans?.name,
-      total_earned: sub.total_earned,
-      amount_invested: sub.amount_invested,
-      daily_roi: sub.daily_roi_percentage,
-      start_date: sub.start_date,
-      end_date: sub.end_date,
-      start_date_type: typeof sub.start_date,
-      end_date_type: typeof sub.end_date
-    }))
-  });
   if (subscriptionsError) {
     console.error("Subscriptions query error:", subscriptionsError);
   }
-  console.log("Subscriptions data:", subscriptions);
 
   // Use the total_earned from database directly and calculate proper dates
   const subscriptionsWithEarnings = (subscriptions || []).map((sub) => {
@@ -95,13 +79,8 @@ export default async function ActivePlansPage() {
   });
 
   const formatDateTime = (dateString: string) => {
-    console.log('Formatting date:', dateString);
     const date = new Date(dateString);
-    console.log('Parsed date:', date);
-    console.log('Date UTC string:', date.toUTCString());
-    
-    // Try different approaches
-    const formatted = date.toLocaleString('en-US', {
+    return date.toLocaleString('en-US', {
       year: 'numeric',
       month: '2-digit',
       day: '2-digit',
@@ -110,9 +89,6 @@ export default async function ActivePlansPage() {
       hour12: false,
       timeZone: 'Asia/Karachi'
     });
-    
-    console.log('Formatted result:', formatted);
-    return formatted;
   };
 
   const getInvestmentStatus = (startDate: string, endDate: string) => {
@@ -218,7 +194,6 @@ export default async function ActivePlansPage() {
                       <div>
                         <span className="text-xs text-gray-500">Start:</span>
                         <div className="text-green-400 font-mono">
-                          <div className="text-xs text-gray-400">Investment Time: {subscription.investment_time}</div>
                           <div className="text-xs text-gray-400">{formatDateTime(subscription.actual_start_date).split(', ')[0]}</div>
                           <div className="text-sm font-mono">{formatDateTime(subscription.actual_start_date).split(', ')[1]}</div>
                         </div>
@@ -226,7 +201,6 @@ export default async function ActivePlansPage() {
                       <div>
                         <span className="text-xs text-gray-500">End:</span>
                         <div className="text-red-400 font-mono">
-                          <div className="text-xs text-gray-400">Calculated End: {subscription.actual_end_date}</div>
                           <div className="text-xs text-gray-400">{formatDateTime(subscription.actual_end_date).split(', ')[0]}</div>
                           <div className="text-sm font-mono">{formatDateTime(subscription.actual_end_date).split(', ')[1]}</div>
                         </div>
