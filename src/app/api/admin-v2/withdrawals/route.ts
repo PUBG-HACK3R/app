@@ -27,16 +27,26 @@ export async function GET() {
     // Get all withdrawals
     const admin = getSupabaseAdminClient();
 
-    const { data: withdrawals } = await admin
+    const { data: withdrawals, error: withdrawalsError } = await admin
       .from("withdrawals")
       .select(`
         *,
-        user_profiles!inner (
+        user_profiles (
           email
         )
       `)
       .order("created_at", { ascending: false });
 
+    if (withdrawalsError) {
+      console.error("Error fetching withdrawals:", withdrawalsError);
+      return NextResponse.json({ 
+        error: "Failed to fetch withdrawals", 
+        details: withdrawalsError.message 
+      }, { status: 500 });
+    }
+
+    console.log(`Found ${withdrawals?.length || 0} withdrawals in database`);
+    
     const formattedWithdrawals = (withdrawals || []).map((withdrawal: any) => ({
       id: withdrawal.id,
       user_id: withdrawal.user_id,
@@ -46,8 +56,12 @@ export async function GET() {
       status: withdrawal.status,
       created_at: withdrawal.created_at,
       processed_at: withdrawal.processed_at,
-      admin_notes: withdrawal.admin_notes
+      admin_notes: withdrawal.admin_notes,
+      refunded_at: withdrawal.refunded_at,
+      expires_at: withdrawal.expires_at
     }));
+
+    console.log(`Returning ${formattedWithdrawals.length} formatted withdrawals`);
 
     return NextResponse.json({
       withdrawals: formattedWithdrawals
