@@ -35,7 +35,7 @@ export async function POST(request: Request) {
     // Get withdrawal details first
     const { data: withdrawal } = await admin
       .from("withdrawals")
-      .select("user_id, amount_usdt")
+      .select("*")
       .eq("id", withdrawalId)
       .single();
 
@@ -65,17 +65,41 @@ export async function POST(request: Request) {
       .eq("user_id", withdrawal.user_id)
       .single();
 
+    const oldBalance = currentBalance?.available_balance || 0;
+    const newBalance = oldBalance + withdrawal.amount_usdt;
+
     // Refund the amount to user's available balance
     const { error: refundError } = await admin
       .from("user_balances")
       .update({
-        available_balance: (currentBalance?.available_balance || 0) + withdrawal.amount_usdt
+        available_balance: newBalance,
+        updated_at: new Date().toISOString()
       })
       .eq("user_id", withdrawal.user_id);
 
     if (refundError) {
       console.error("Refund error:", refundError);
+      return NextResponse.json({ error: "Failed to refund amount" }, { status: 500 });
     }
+
+    // Log the rejection and refund transaction
+    await admin.from("transaction_logs").insert({
+      user_id: withdrawal.user_id,
+      type: "refund",
+      amount_usdt: withdrawal.amount_usdt,
+      description: `Withdrawal rejected and refunded - ${withdrawal.wallet_address.substring(0, 8)}...${withdrawal.wallet_address.substring(withdrawal.wallet_address.length - 6)}`,
+      status: "completed",
+      reference_id: withdrawalId,
+      balance_before: oldBalance,
+      balance_after: newBalance,
+      meta: {
+        reason: reason || "Rejected by admin",
+        rejected_by: profile.email,
+        admin_id: user.id,
+        original_amount: withdrawal.amount_usdt,
+        fee: withdrawal.fee_usdt
+      }
+    });
 
     return NextResponse.json({ success: true });
 
