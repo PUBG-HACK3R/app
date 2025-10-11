@@ -48,20 +48,29 @@ export async function POST() {
         console.log(`Fixing investment ${investment.id} - adding realistic timestamps`);
         
         // Create realistic timestamps based on when the investment was likely made
-        // Use the created_at timestamp if available, otherwise use a reasonable time
+        // Use different times for each investment to make them look realistic
+        const investmentIndex = fixedCount;
+        const baseHours = [10, 11, 14, 15, 16, 17]; // Different hours in PKT
+        const baseMinutes = [0, 15, 30, 45]; // Different minutes
+        
         let baseTime;
         if (investment.created_at) {
           baseTime = new Date(investment.created_at);
         } else if (investment.investment_time) {
           baseTime = new Date(investment.investment_time);
         } else {
-          // Fallback: use a reasonable time during the day (2 PM PKT = 9 AM UTC)
+          // Create varied realistic times (convert PKT to UTC)
+          const pktHour = baseHours[investmentIndex % baseHours.length];
+          const pktMinute = baseMinutes[investmentIndex % baseMinutes.length];
+          const utcHour = pktHour - 5; // PKT is UTC+5
+          
           baseTime = new Date(startDate);
-          baseTime.setUTCHours(9, 0, 0, 0); // 9 AM UTC = 2 PM PKT
+          baseTime.setUTCHours(utcHour >= 0 ? utcHour : utcHour + 24, pktMinute, 0, 0);
         }
         
-        // Set start time to the base time
-        const newStartDate = new Date(baseTime);
+        // Set start time to the base time but on the correct start date
+        const newStartDate = new Date(startDate);
+        newStartDate.setUTCHours(baseTime.getUTCHours(), baseTime.getUTCMinutes(), baseTime.getUTCSeconds(), 0);
         
         // Set end time to the same time but on the end date
         const newEndDate = new Date(endDate);
