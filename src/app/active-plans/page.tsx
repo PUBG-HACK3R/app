@@ -162,7 +162,13 @@ export default async function ActivePlansPage() {
           <div className="space-y-4">
             {subscriptionsWithEarnings.map((subscription) => {
               const investmentStatus = getInvestmentStatus(subscription.actual_start_date, subscription.actual_end_date);
+              
+              // Determine if this is an end payout plan (monthly/bi-monthly)
+              const isEndPayoutPlan = subscription.duration_days >= 30;
+              
+              // For display purposes, show what they would earn daily vs total
               const dailyEarning = (Number(subscription.amount_invested) * Number(subscription.daily_roi_percentage)) / 100;
+              const totalEarning = dailyEarning * subscription.duration_days;
 
               return (
                 <div key={subscription.id} className="bg-gradient-to-br from-gray-800/50 to-gray-900/50 rounded-3xl border border-gray-700/30 p-6">
@@ -215,8 +221,12 @@ export default async function ActivePlansPage() {
                       <div className="text-lg font-semibold text-white">${Number(subscription.amount_invested).toFixed(2)}</div>
                     </div>
                     <div>
-                      <div className="text-sm text-gray-400">Daily Earning</div>
-                      <div className="text-lg font-semibold text-green-400">${dailyEarning.toFixed(2)}</div>
+                      <div className="text-sm text-gray-400">
+                        {isEndPayoutPlan ? "Total Earning" : "Daily Earning"}
+                      </div>
+                      <div className="text-lg font-semibold text-green-400">
+                        ${isEndPayoutPlan ? totalEarning.toFixed(2) : dailyEarning.toFixed(2)}
+                      </div>
                     </div>
                     <div>
                       <div className="text-sm text-gray-400">Status</div>
@@ -227,8 +237,15 @@ export default async function ActivePlansPage() {
                       }`}>{investmentStatus.status}</div>
                     </div>
                     <div>
-                      <div className="text-sm text-gray-400">Daily Rate</div>
-                      <div className="text-lg font-semibold text-blue-400">{Number(subscription.daily_roi_percentage || 0).toFixed(1)}%</div>
+                      <div className="text-sm text-gray-400">
+                        {isEndPayoutPlan ? "Total Rate" : "Daily Rate"}
+                      </div>
+                      <div className="text-lg font-semibold text-blue-400">
+                        {isEndPayoutPlan 
+                          ? `${(Number(subscription.daily_roi_percentage) * subscription.duration_days).toFixed(1)}%`
+                          : `${Number(subscription.daily_roi_percentage).toFixed(1)}%`
+                        }
+                      </div>
                     </div>
                   </div>
                 </div>

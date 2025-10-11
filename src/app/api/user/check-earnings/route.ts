@@ -120,8 +120,23 @@ export async function POST() {
           continue; // Already processed today
         }
 
-        // Calculate daily earning
-        const dailyEarning = Number(((investment.amount_invested * investment.daily_roi_percentage) / 100).toFixed(2));
+        // Determine payout type based on duration
+        const isEndPayoutPlan = investment.duration_days >= 30; // Monthly and Bi-Monthly plans
+        
+        let earningAmount;
+        let earningDescription;
+        
+        if (isEndPayoutPlan) {
+          // For end payout plans, calculate total earnings (not daily)
+          const totalDays = investment.duration_days;
+          const totalROI = investment.daily_roi_percentage * totalDays; // Total ROI over entire period
+          earningAmount = Number(((investment.amount_invested * totalROI) / 100).toFixed(2));
+          earningDescription = `Investment completed - Total earnings from ${totalDays}-day plan`;
+        } else {
+          // For daily payout plans, calculate daily earning
+          earningAmount = Number(((investment.amount_invested * investment.daily_roi_percentage) / 100).toFixed(2));
+          earningDescription = `Daily earning from investment`;
+        }
 
         // Create earning record
         const { data: earning, error: earningError } = await admin
@@ -129,7 +144,7 @@ export async function POST() {
           .insert({
             user_id: user.id,
             investment_id: investment.id,
-            amount_usdt: dailyEarning,
+            amount_usdt: earningAmount,
             earning_date: today
           })
           .select()
@@ -148,8 +163,8 @@ export async function POST() {
           .eq("user_id", user.id)
           .single();
 
-        const newAvailableBalance = (currentBalance?.available_balance || 0) + dailyEarning;
-        const newTotalEarned = (currentBalance?.total_earned || 0) + dailyEarning;
+        const newAvailableBalance = (currentBalance?.available_balance || 0) + earningAmount;
+        const newTotalEarned = (currentBalance?.total_earned || 0) + earningAmount;
 
         await admin
           .from("user_balances")
@@ -160,17 +175,25 @@ export async function POST() {
           })
           .eq("user_id", user.id);
 
-        // Set next earning time to 24 hours from now
-        const nextEarningTime24h = new Date(now);
-        nextEarningTime24h.setHours(nextEarningTime24h.getHours() + 24);
+        // Set next earning time based on payout type
+        let nextEarningTimeUpdate;
+        if (isEndPayoutPlan) {
+          // For end payout plans, no more earnings after this (set to null or far future)
+          nextEarningTimeUpdate = null;
+        } else {
+          // For daily payout plans, set next earning to 24 hours from now
+          const nextEarningTime24h = new Date(now);
+          nextEarningTime24h.setHours(nextEarningTime24h.getHours() + 24);
+          nextEarningTimeUpdate = nextEarningTime24h.toISOString();
+        }
 
         // Update investment
         await admin
           .from("user_investments")
           .update({
-            total_earned: (investment.total_earned || 0) + dailyEarning,
+            total_earned: (investment.total_earned || 0) + earningAmount,
             last_earning_date: today,
-            next_earning_time: nextEarningTime24h.toISOString()
+            next_earning_time: nextEarningTimeUpdate
           })
           .eq("id", investment.id);
 
@@ -180,17 +203,17 @@ export async function POST() {
           .insert({
             user_id: user.id,
             type: "earning",
-            amount_usdt: dailyEarning,
-            description: `Daily earning from investment`,
+            amount_usdt: earningAmount,
+            description: earningDescription,
             reference_id: earning.id,
             balance_before: currentBalance?.available_balance || 0,
             balance_after: newAvailableBalance
           });
 
-        totalEarningsAdded += dailyEarning;
+        totalEarningsAdded += earningAmount;
         processedCount++;
 
-        console.log(`✅ Processed earning for user ${user.id}, investment ${investment.id}: $${dailyEarning}`);
+        console.log(`✅ Processed earning for user ${user.id}, investment ${investment.id}: $${earningAmount} (${isEndPayoutPlan ? 'End payout' : 'Daily payout'})`);
 
       } catch (error: any) {
         console.error(`Error processing investment ${investment.id}:`, error);
