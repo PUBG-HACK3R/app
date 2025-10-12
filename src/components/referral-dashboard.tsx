@@ -35,6 +35,7 @@ interface ReferralData {
   referrals: any[];
   commissions: any[];
   referralLink: string;
+  _lastUpdated?: number;
 }
 
 export function ReferralDashboard() {
