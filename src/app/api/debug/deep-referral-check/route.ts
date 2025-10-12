@@ -44,7 +44,7 @@ export async function GET() {
     console.log('Users referred by current user:', shouldBeReferred);
 
     // Step 4: Check if there are users with referral codes that match current user's code
-    let usersWithCurrentUserCode = [];
+    let usersWithCurrentUserCode: any[] = [];
     if (currentProfile?.referral_code) {
       const { data: usersWithCode } = await admin
         .from("user_profiles")
