@@ -72,12 +72,14 @@ export function ReferralDashboard() {
       if (response.ok) {
         const data = await response.json();
         
-        // Force correct calculation if API data is inconsistent
+        // Force correct calculation - always use array length as source of truth
         const actualReferrals = data.referrals?.length || 0;
         const correctedData = {
           ...data,
-          totalReferrals: actualReferrals, // Use array length as source of truth
-          referrals: data.referrals || []
+          totalReferrals: actualReferrals, // Always use array length
+          referrals: data.referrals || [],
+          // Force re-render by adding timestamp
+          _lastUpdated: Date.now()
         };
         
         console.log('✅ Referral data loaded:', {
@@ -201,11 +203,14 @@ export function ReferralDashboard() {
             <Users className="h-4 w-4 text-blue-600 dark:text-blue-400" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-blue-900 dark:text-blue-100">
-              {referralData?.referrals?.length || referralData?.totalReferrals || 0}
+            <div 
+              key={referralData?._lastUpdated} 
+              className="text-2xl font-bold text-blue-900 dark:text-blue-100"
+            >
+              {referralData?.referrals?.length || 0}
             </div>
             <p className="text-xs text-blue-600 dark:text-blue-400 mt-1">
-              Active referrals
+              Active referrals ({referralData?.referrals?.length || 0} users)
             </p>
           </CardContent>
         </Card>
