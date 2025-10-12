@@ -51,11 +51,15 @@ export function ReferralDashboard() {
       const response = await fetch('/api/referrals');
       if (response.ok) {
         const data = await response.json();
+        console.log('🔍 Referral Dashboard - API Response:', data);
+        console.log('🔍 Total Referrals:', data.totalReferrals);
+        console.log('🔍 Referrals Array:', data.referrals);
         setReferralData(data);
       } else {
         toast.error('Failed to load referral data');
       }
     } catch (error) {
+      console.error('🔍 Referral Dashboard - Fetch Error:', error);
       toast.error('Error loading referral data');
     } finally {
       setLoading(false);
@@ -160,7 +164,13 @@ export function ReferralDashboard() {
             <Users className="h-4 w-4 text-blue-600 dark:text-blue-400" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-blue-900 dark:text-blue-100">{referralData.totalReferrals}</div>
+            <div className="text-2xl font-bold text-blue-900 dark:text-blue-100">
+              {referralData.totalReferrals}
+              {/* Debug info - remove after fixing */}
+              <span className="text-xs text-red-500 block">
+                Debug: {JSON.stringify({total: referralData.totalReferrals, arrayLength: referralData.referrals?.length})}
+              </span>
+            </div>
             <p className="text-xs text-blue-600 dark:text-blue-400 mt-1">
               Active referrals
             </p>
