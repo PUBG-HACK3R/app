@@ -92,10 +92,10 @@ export async function POST(request: NextRequest) {
               .single();
 
             if (referrer && !referrerError) {
-              // Update the new user's profile with referrer info
+              // Update the new user's profile with referrer USER_ID (not referral_code)
               await admin
                 .from("user_profiles")
-                .update({ referred_by: referrer.referral_code })
+                .update({ referred_by: referrer.user_id })
                 .eq("user_id", data.user.id);
 
               // Create referral record
@@ -104,14 +104,14 @@ export async function POST(request: NextRequest) {
                 .insert({
                   referrer_user_id: referrer.user_id,
                   referred_user_id: data.user.id,
-                  source_type: 'deposit',
+                  source_type: 'signup',
                   source_amount: 0,
                   commission_percentage: 5.00,
                   commission_amount: 0,
-                  status: 'pending'
+                  status: 'active'
                 });
 
-              console.log(`Referral created: ${referrer.email} referred ${data.user.email}`);
+              console.log(`Referral created: ${referrer.email} (${referrer.user_id}) referred ${data.user.email} (${data.user.id})`);
             } else {
               console.warn("Invalid referral code:", referralCode);
             }

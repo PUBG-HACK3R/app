@@ -215,6 +215,73 @@ export async function POST() {
 
         console.log(`✅ Processed earning for user ${user.id}, investment ${investment.id}: $${earningAmount} (${isEndPayoutPlan ? 'End payout' : 'Daily payout'})`);
 
+        // Process referral commission (5% of earnings)
+        try {
+          const { data: userProfile } = await admin
+            .from("user_profiles")
+            .select("referred_by")
+            .eq("user_id", user.id)
+            .single();
+
+          if (userProfile?.referred_by) {
+            const commissionAmount = Number((earningAmount * 0.05).toFixed(2)); // 5% commission
+            
+            if (commissionAmount > 0) {
+              // Update referrer's balance
+              const { data: referrerBalance } = await admin
+                .from("user_balances")
+                .select("available_balance, total_earned")
+                .eq("user_id", userProfile.referred_by)
+                .single();
+
+              if (referrerBalance) {
+                const newReferrerBalance = (referrerBalance.available_balance || 0) + commissionAmount;
+                const newReferrerTotalEarned = (referrerBalance.total_earned || 0) + commissionAmount;
+
+                await admin
+                  .from("user_balances")
+                  .update({
+                    available_balance: newReferrerBalance,
+                    total_earned: newReferrerTotalEarned,
+                    updated_at: now.toISOString()
+                  })
+                  .eq("user_id", userProfile.referred_by);
+
+                // Create referral commission record
+                await admin
+                  .from("referral_commissions")
+                  .insert({
+                    referrer_user_id: userProfile.referred_by,
+                    referred_user_id: user.id,
+                    source_type: 'earning',
+                    source_amount: earningAmount,
+                    commission_percentage: 5.00,
+                    commission_amount: commissionAmount,
+                    status: 'paid'
+                  });
+
+                // Create transaction log for referrer
+                await admin
+                  .from("transaction_logs")
+                  .insert({
+                    user_id: userProfile.referred_by,
+                    type: "referral_commission",
+                    amount_usdt: commissionAmount,
+                    description: `Referral commission (5% of $${earningAmount})`,
+                    reference_id: earning.id,
+                    balance_before: referrerBalance.available_balance || 0,
+                    balance_after: newReferrerBalance
+                  });
+
+                console.log(`✅ Paid referral commission: $${commissionAmount} to referrer ${userProfile.referred_by}`);
+              }
+            }
+          }
+        } catch (referralError: any) {
+          console.warn(`Referral commission failed for user ${user.id}:`, referralError.message);
+          // Non-fatal error - don't stop earnings processing
+        }
+
       } catch (error: any) {
         console.error(`Error processing investment ${investment.id}:`, error);
         errors.push(`Error processing investment ${investment.id}: ${error.message}`);
