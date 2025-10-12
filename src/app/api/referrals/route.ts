@@ -38,32 +38,44 @@ export async function GET(request: Request) {
         .eq("user_id", user.id);
     }
 
-    // Get referrals made by this user (people who used this user's referral code)
-    const { data: referrals, error: referralsError } = await admin
+    // Get referrals made by this user (people who have referred_by = this user's ID)
+    const { data: referredUsers, error: referredError } = await admin
+      .from("user_profiles")
+      .select(`
+        user_id,
+        email,
+        created_at
+      `)
+      .eq("referred_by", user.id)
+      .order("created_at", { ascending: false });
+
+    // Get commission records for this user
+    const { data: commissions, error: commissionsError } = await admin
       .from("referral_commissions")
       .select(`
         id,
         referred_user_id,
         commission_percentage,
         commission_amount,
+        source_type,
         created_at
       `)
       .eq("referrer_user_id", user.id)
       .order("created_at", { ascending: false });
 
     // Calculate totals
-    const totalReferrals = referrals?.length || 0;
-    const totalEarnings = referrals?.reduce((sum, ref) => sum + Number(ref.commission_amount || 0), 0) || 0;
+    const totalReferrals = referredUsers?.length || 0;
+    const totalEarnings = commissions?.reduce((sum, ref) => sum + Number(ref.commission_amount || 0), 0) || 0;
 
     return NextResponse.json({
       referralCode: referralCode,
       totalReferrals: totalReferrals,
       totalEarnings: totalEarnings,
-      pendingCommissions: 0, // We'll implement this later
+      pendingCommissions: 0,
       paidCommissions: totalEarnings,
       referredBy: profile.referred_by,
-      referrals: referrals || [],
-      commissions: [], // We'll implement commission tracking later
+      referrals: referredUsers || [],
+      commissions: commissions || [],
       referralLink: `${process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000'}/signup?ref=${referralCode}`
     });
   } catch (err: any) {
