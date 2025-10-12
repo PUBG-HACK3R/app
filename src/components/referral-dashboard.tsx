@@ -151,9 +151,14 @@ export function ReferralDashboard() {
             Earn 10% commission on every deposit your referrals make
           </p>
         </div>
-        <SupportButton variant="outline">
-          Need Help?
-        </SupportButton>
+        <div className="flex gap-2">
+          <Button onClick={fetchReferralData} variant="outline" size="sm">
+            Refresh Data
+          </Button>
+          <SupportButton variant="outline">
+            Need Help?
+          </SupportButton>
+        </div>
       </div>
 
       {/* Stats Cards */}
@@ -165,14 +170,10 @@ export function ReferralDashboard() {
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold text-blue-900 dark:text-blue-100">
-              {referralData.totalReferrals}
-              {/* Debug info - remove after fixing */}
-              <span className="text-xs text-red-500 block">
-                Debug: {JSON.stringify({total: referralData.totalReferrals, arrayLength: referralData.referrals?.length})}
-              </span>
+              {referralData?.totalReferrals || 0}
             </div>
             <p className="text-xs text-blue-600 dark:text-blue-400 mt-1">
-              Active referrals
+              Active referrals ({referralData?.referrals?.length || 0})
             </p>
           </CardContent>
         </Card>
