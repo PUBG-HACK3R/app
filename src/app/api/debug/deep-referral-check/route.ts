@@ -65,16 +65,8 @@ export async function GET() {
     // Step 6: Test the actual API call that the frontend uses
     let apiTestResult = null;
     try {
-      // Simulate the API call
-      const testResponse = await fetch(`${process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000'}/api/referrals`, {
-        headers: {
-          'Cookie': `sb-access-token=${user.access_token}` // This won't work in server context, but we'll try
-        }
-      });
-      
-      if (testResponse.ok) {
-        apiTestResult = await testResponse.json();
-      }
+      // Note: Cannot test API call from server context due to authentication
+      apiTestResult = { note: "API test skipped - server context authentication limitation" };
     } catch (apiError) {
       console.log('API test failed (expected in server context):', apiError);
     }
