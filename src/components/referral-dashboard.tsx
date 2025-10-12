@@ -44,22 +44,54 @@ export function ReferralDashboard() {
 
   useEffect(() => {
     fetchReferralData();
+    
+    // Also refresh data when user comes back to the page
+    const handleVisibilityChange = () => {
+      if (!document.hidden) {
+        fetchReferralData();
+      }
+    };
+    
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+    
+    return () => {
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
+    };
   }, []);
 
   const fetchReferralData = async () => {
     try {
-      const response = await fetch('/api/referrals');
+      const response = await fetch('/api/referrals', {
+        method: 'GET',
+        headers: {
+          'Cache-Control': 'no-cache',
+          'Pragma': 'no-cache'
+        }
+      });
+      
       if (response.ok) {
         const data = await response.json();
-        console.log('🔍 Referral Dashboard - API Response:', data);
-        console.log('🔍 Total Referrals:', data.totalReferrals);
-        console.log('🔍 Referrals Array:', data.referrals);
-        setReferralData(data);
+        
+        // Force correct calculation if API data is inconsistent
+        const actualReferrals = data.referrals?.length || 0;
+        const correctedData = {
+          ...data,
+          totalReferrals: actualReferrals, // Use array length as source of truth
+          referrals: data.referrals || []
+        };
+        
+        console.log('✅ Referral data loaded:', {
+          apiTotal: data.totalReferrals,
+          arrayLength: actualReferrals,
+          usingValue: correctedData.totalReferrals
+        });
+        
+        setReferralData(correctedData);
       } else {
         toast.error('Failed to load referral data');
       }
     } catch (error) {
-      console.error('🔍 Referral Dashboard - Fetch Error:', error);
+      console.error('Referral fetch error:', error);
       toast.error('Error loading referral data');
     } finally {
       setLoading(false);
@@ -170,10 +202,10 @@ export function ReferralDashboard() {
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold text-blue-900 dark:text-blue-100">
-              {referralData?.totalReferrals || 0}
+              {referralData?.referrals?.length || referralData?.totalReferrals || 0}
             </div>
             <p className="text-xs text-blue-600 dark:text-blue-400 mt-1">
-              Active referrals ({referralData?.referrals?.length || 0})
+              Active referrals
             </p>
           </CardContent>
         </Card>
