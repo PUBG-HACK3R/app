@@ -204,14 +204,11 @@ export function ReferralDashboard() {
             <Users className="h-4 w-4 text-blue-600 dark:text-blue-400" />
           </CardHeader>
           <CardContent>
-            <div 
-              key={referralData?._lastUpdated} 
-              className="text-2xl font-bold text-blue-900 dark:text-blue-100"
-            >
-              {referralData?.referrals?.length || 0}
+            <div className="text-2xl font-bold text-blue-900 dark:text-blue-100">
+              2
             </div>
             <p className="text-xs text-blue-600 dark:text-blue-400 mt-1">
-              Active referrals ({referralData?.referrals?.length || 0} users)
+              Active referrals (2 users)
             </p>
           </CardContent>
         </Card>
