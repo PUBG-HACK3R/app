@@ -62,23 +62,20 @@ export function AdminDashboard() {
     setLoading(true);
     try {
       // Fetch dashboard stats
-      const statsResponse = await fetch('/api/admin/dashboard/stats');
+      const statsResponse = await fetch('/api/admin-v2/dashboard/stats');
       if (statsResponse.ok) {
         const statsData = await statsResponse.json();
-        if (statsData.success && statsData.stats) {
-          // Map the API response to the expected format
-          const apiStats = statsData.stats;
-          setStats({
-            totalUsers: apiStats.users?.total || 0,
-            totalDeposits: apiStats.deposits?.total_amount || 0,
-            totalWithdrawals: apiStats.withdrawals?.total_requested || 0,
-            totalEarnings: apiStats.earnings?.total_distributed || 0,
-            pendingWithdrawals: apiStats.withdrawals?.pending_count || 0,
-            activePlans: apiStats.plans?.active_count || 0,
-            totalInvestments: apiStats.investments?.locked_balance || 0,
-            platformBalance: apiStats.finances?.platform_balance || 0
-          });
-        }
+        // Map the API response to the expected format
+        setStats({
+          totalUsers: statsData.totalUsers || 0,
+          totalDeposits: statsData.totalDeposits || 0,
+          totalWithdrawals: statsData.totalWithdrawals || 0,
+          totalEarnings: statsData.totalEarnings || 0,
+          pendingWithdrawals: statsData.pendingWithdrawals || 0,
+          activePlans: statsData.activePlans || 0,
+          totalInvestments: statsData.totalInvestments || 0,
+          platformBalance: statsData.platformBalance || 0
+        });
       } else {
         console.error('Stats API failed:', statsResponse.status, await statsResponse.text());
       }

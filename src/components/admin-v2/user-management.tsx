@@ -77,7 +77,7 @@ export function UserManagement() {
   const fetchUsers = async () => {
     setLoading(true);
     try {
-      const response = await fetch('/api/admin/users');
+      const response = await fetch('/api/admin-v2/users');
       if (response.ok) {
         const data = await response.json();
         if (data.success) {
@@ -99,7 +99,7 @@ export function UserManagement() {
     if (!selectedUser || !topupAmount) return;
     
     try {
-      const response = await fetch('/api/admin/topup', {
+      const response = await fetch('/api/admin-v2/users/topup', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -122,7 +122,7 @@ export function UserManagement() {
 
   const handleRoleChange = async (userId: string, newRole: 'user' | 'admin') => {
     try {
-      const response = await fetch('/api/admin/set-role', {
+      const response = await fetch('/api/admin-v2/users/role', {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ userId, role: newRole })

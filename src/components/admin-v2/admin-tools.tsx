@@ -41,17 +41,15 @@ export function AdminTools() {
 
   const fetchSystemStats = async () => {
     try {
-      const response = await fetch('/api/admin/dashboard/stats');
+      const response = await fetch('/api/admin-v2/dashboard/stats');
       if (response.ok) {
         const data = await response.json();
-        if (data.success && data.stats) {
-          setSystemStats({
-            totalUsers: data.stats.users?.total || 0,
-            totalBalance: data.stats.finances?.platform_balance || 0,
-            totalInvestments: data.stats.investments?.locked_balance || 0,
-            pendingWithdrawals: data.stats.withdrawals?.pending_count || 0
-          });
-        }
+        setSystemStats({
+          totalUsers: data.totalUsers || 0,
+          totalBalance: data.platformBalance || 0,
+          totalInvestments: data.totalInvestments || 0,
+          pendingWithdrawals: data.pendingWithdrawals || 0
+        });
       }
     } catch (error) {
       console.error('Error fetching system stats:', error);
@@ -65,7 +63,7 @@ export function AdminTools() {
     try {
       const emails = bulkTopupData.userEmails.split('\n').map(email => email.trim()).filter(email => email);
       
-      const response = await fetch('/api/admin/topup', {
+      const response = await fetch('/api/admin-v2/tools/bulk-topup', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -94,7 +92,7 @@ export function AdminTools() {
   const handleProcessDailyReturns = async () => {
     setLoading(true);
     try {
-      const response = await fetch('/api/admin/process-daily-returns', {
+      const response = await fetch('/api/admin-v2/tools/process-daily-returns', {
         method: 'POST'
       });
 
@@ -113,7 +111,7 @@ export function AdminTools() {
   const handleBackupDatabase = async () => {
     setLoading(true);
     try {
-      const response = await fetch('/api/admin/backup-database', {
+      const response = await fetch('/api/admin-v2/tools/backup-database', {
         method: 'POST'
       });
 

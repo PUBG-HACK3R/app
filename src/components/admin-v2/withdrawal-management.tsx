@@ -48,7 +48,7 @@ export function WithdrawalManagement() {
   const fetchWithdrawals = async () => {
     setLoading(true);
     try {
-      const response = await fetch('/api/admin/withdrawals');
+      const response = await fetch('/api/admin-v2/withdrawals');
       if (response.ok) {
         const data = await response.json();
         if (data.success) {
@@ -69,7 +69,7 @@ export function WithdrawalManagement() {
   const handleApprove = async (withdrawalId: string) => {
     setProcessing(withdrawalId);
     try {
-      const response = await fetch('/api/admin/withdrawals/approve', {
+      const response = await fetch('/api/admin-v2/withdrawals/approve', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ withdrawalId })
@@ -90,7 +90,7 @@ export function WithdrawalManagement() {
     
     setProcessing(withdrawalId);
     try {
-      const response = await fetch('/api/admin/withdrawals/reject', {
+      const response = await fetch('/api/admin-v2/withdrawals/reject', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ withdrawalId, reason })

@@ -91,7 +91,7 @@ export function PlanManagement() {
   const fetchPlans = async () => {
     setLoading(true);
     try {
-      const response = await fetch('/api/admin/plans');
+      const response = await fetch('/api/admin-v2/plans');
       if (response.ok) {
         const data = await response.json();
         setPlans(data.plans || []);
@@ -116,7 +116,7 @@ export function PlanManagement() {
         duration_days: parseInt(formData.duration_days)
       };
 
-      const url = editingPlan ? `/api/admin/plans/${editingPlan.id}` : '/api/admin/plans';
+      const url = editingPlan ? `/api/admin-v2/plans/${editingPlan.id}` : '/api/admin-v2/plans';
       const method = editingPlan ? 'PUT' : 'POST';
 
       const response = await fetch(url, {
@@ -154,7 +154,7 @@ export function PlanManagement() {
     if (!confirm('Are you sure you want to delete this plan?')) return;
 
     try {
-      const response = await fetch(`/api/admin/plans/${planId}`, {
+      const response = await fetch(`/api/admin-v2/plans/${planId}`, {
         method: 'DELETE'
       });
 
@@ -168,7 +168,7 @@ export function PlanManagement() {
 
   const handleToggleStatus = async (planId: string, currentStatus: boolean) => {
     try {
-      const response = await fetch(`/api/admin/plans/${planId}/toggle`, {
+      const response = await fetch(`/api/admin-v2/plans/${planId}/toggle`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ is_active: !currentStatus })
