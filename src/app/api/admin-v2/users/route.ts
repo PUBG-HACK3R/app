@@ -4,25 +4,38 @@ import { getSupabaseAdminClient } from "@/lib/supabase/admin";
 
 export async function GET() {
   try {
+    console.log('🔍 Admin-v2 Users API called...');
+    
     // Check authentication
     const supabase = await getSupabaseServerClient();
     const { data: { user }, error: authError } = await supabase.auth.getUser();
     
     if (authError || !user) {
-      return NextResponse.json({ error: "Not authenticated" }, { status: 401 });
+      console.log('❌ Authentication failed:', authError?.message);
+      return NextResponse.json({ error: "Not authenticated", details: authError?.message }, { status: 401 });
     }
+
+    console.log('✅ User authenticated:', user.id);
 
     // Check admin role
     const adminClient = getSupabaseAdminClient();
-    const { data: profile } = await adminClient
+    const { data: profile, error: profileError } = await adminClient
       .from("user_profiles")
       .select("role, email")
       .eq("user_id", user.id)
       .single();
 
-    if (!profile || profile.role !== 'admin') {
-      return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+    if (profileError) {
+      console.log('❌ Profile fetch failed:', profileError.message);
+      return NextResponse.json({ error: "Profile fetch failed", details: profileError.message }, { status: 500 });
     }
+
+    if (!profile || profile.role !== 'admin') {
+      console.log('❌ Not admin:', profile?.role);
+      return NextResponse.json({ error: "Forbidden", role: profile?.role }, { status: 403 });
+    }
+
+    console.log('✅ Admin role confirmed:', profile.email);
 
     // Get all users with their data
     const admin = getSupabaseAdminClient();
@@ -74,12 +87,19 @@ export async function GET() {
       };
     });
 
+    console.log(`✅ Returning ${processedUsers.length} users`);
+
     return NextResponse.json({
-      users: processedUsers
+      users: processedUsers,
+      count: processedUsers.length
     });
 
-  } catch (error) {
-    console.error("Users API error:", error);
-    return NextResponse.json({ error: "Internal server error" }, { status: 500 });
+  } catch (error: any) {
+    console.error("❌ Users API error:", error);
+    return NextResponse.json({ 
+      error: "Internal server error", 
+      details: error.message,
+      stack: error.stack 
+    }, { status: 500 });
   }
 }
