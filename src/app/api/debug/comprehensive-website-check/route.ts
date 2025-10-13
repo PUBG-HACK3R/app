@@ -20,44 +20,56 @@ export async function GET(request: NextRequest) {
     
     console.log('🔍 Starting comprehensive website debugging...');
     
-    // 1. CHECK FOR AUTOMATIC PLAN CREATION ISSUES
-    console.log('📋 Checking for automatic plan creation...');
+    // 1. CHECK FOR AUTOMATIC USER INVESTMENT CREATION ISSUES
+    console.log('📋 Checking for automatic user investment creation...');
     try {
-      // Check for plans created without user action
-      const { data: suspiciousPlans, error: plansError } = await supabase
-        .from('investment_plans')
+      // Check for USER INVESTMENTS (not plan templates) created suspiciously
+      const { data: suspiciousInvestments, error: investError } = await supabase
+        .from('user_investments')
         .select('*')
         .gte('created_at', new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString())
         .order('created_at', { ascending: false });
 
-      if (plansError) throw plansError;
+      if (investError) throw investError;
 
-      // Check for multiple plans created in short time spans
-      if (suspiciousPlans && suspiciousPlans.length > 0) {
-        const plansByUser: { [key: string]: any[] } = {};
-        suspiciousPlans.forEach(plan => {
-          if (!plansByUser[plan.user_id]) plansByUser[plan.user_id] = [];
-          plansByUser[plan.user_id].push(plan);
+      // Check for multiple investments created in short time spans by same user
+      if (suspiciousInvestments && suspiciousInvestments.length > 0) {
+        const investmentsByUser: { [key: string]: any[] } = {};
+        suspiciousInvestments.forEach(investment => {
+          const userId = investment.user_id;
+          if (!investmentsByUser[userId]) investmentsByUser[userId] = [];
+          investmentsByUser[userId].push(investment);
         });
 
-        Object.entries(plansByUser).forEach(([userId, userPlans]) => {
-          // Check for multiple plans created within 1 hour
-          for (let i = 0; i < userPlans.length - 1; i++) {
-            const timeDiff = new Date(userPlans[i].created_at).getTime() - new Date(userPlans[i + 1].created_at).getTime();
-            if (Math.abs(timeDiff) < 60 * 60 * 1000) { // 1 hour
-              results.push({
-                category: 'AUTOMATIC_PLANS',
-                issue: 'Multiple plans created in short timespan',
-                severity: 'HIGH',
-                details: {
-                  userId,
-                  plans: userPlans.slice(i, i + 2),
-                  timeDifferenceMinutes: Math.abs(timeDiff) / (1000 * 60)
-                },
-                recommendation: 'Investigate if these plans were created automatically or by user action'
-              });
-            }
+        Object.keys(investmentsByUser).forEach(userId => {
+          const userInvestments = investmentsByUser[userId];
+          if (userInvestments.length > 3) { // More than 3 investments in a week is suspicious
+            results.push({
+              category: 'AUTOMATIC_PLANS',
+              issue: 'Multiple user investments created rapidly',
+              severity: 'HIGH',
+              details: {
+                userId,
+                investmentCount: userInvestments.length,
+                investments: userInvestments.slice(0, 3), // Show first 3
+                timespan: '7 days'
+              },
+              recommendation: 'Investigate if these investments were created automatically or by legitimate user action'
+            });
           }
+        });
+      }
+      
+      console.log(`✅ User investment check completed. Found ${suspiciousInvestments?.length || 0} recent investments.`);
+      
+      // If no suspicious patterns found, add a success result
+      if (!suspiciousInvestments || suspiciousInvestments.length === 0) {
+        results.push({
+          category: 'AUTOMATIC_PLANS',
+          issue: 'No suspicious user investment patterns detected',
+          severity: 'INFO',
+          details: { message: 'All user investments appear to be legitimate' },
+          recommendation: 'Continue monitoring for unusual patterns'
         });
       }
     } catch (error) {
