@@ -4,7 +4,7 @@ import { useState } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import { Alert, AlertDescription } from "@/components/ui/alert";
 import { toast } from "sonner";
 import { 
   AlertTriangle, 
@@ -169,7 +169,7 @@ export function DebugDashboard() {
                            'border-green-500'}>
             <div className="flex items-center gap-2">
               {getStatusIcon(report.websiteStatus)}
-              <AlertTitle className="text-lg">Website Status</AlertTitle>
+              <div className="text-lg font-medium">Website Status</div>
             </div>
             <AlertDescription className="mt-2">
               <div className="text-base font-medium mb-2">{report.websiteStatus}</div>
