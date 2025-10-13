@@ -73,7 +73,7 @@ export async function GET(request: NextRequest) {
       results.push({
         type: 'FILE_SYSTEM_CHECK_FAILED',
         severity: 'MEDIUM',
-        error: error.message,
+        error: error instanceof Error ? error.message : String(error),
         recommendation: 'Manually check for suspicious API endpoints'
       });
     }
@@ -143,7 +143,7 @@ export async function GET(request: NextRequest) {
       results.push({
         type: 'DATABASE_AUTOMATION_CHECK_FAILED',
         severity: 'MEDIUM',
-        error: error.message,
+        error: error instanceof Error ? error.message : String(error),
         recommendation: 'Manually check database for automation patterns'
       });
     }
@@ -186,7 +186,7 @@ export async function GET(request: NextRequest) {
       results.push({
         type: 'TRANSACTION_AUTOMATION_CHECK_FAILED',
         severity: 'LOW',
-        error: error.message,
+        error: error instanceof Error ? error.message : String(error),
         recommendation: 'Manually check transactions for automation patterns'
       });
     }
@@ -194,7 +194,7 @@ export async function GET(request: NextRequest) {
     // 4. CHECK ENVIRONMENT FOR AUTOMATION TOOLS
     console.log('🔧 Checking environment for automation tools...');
     
-    const automationIndicators = [];
+    const automationIndicators: any[] = [];
     
     // Check for common automation environment variables
     const automationEnvVars = [
@@ -287,7 +287,7 @@ export async function GET(request: NextRequest) {
       results.push({
         type: 'SPECIFIC_PATTERN_CHECK_FAILED',
         severity: 'LOW',
-        error: error.message,
+        error: error instanceof Error ? error.message : String(error),
         recommendation: 'Manually check for specific automation patterns'
       });
     }
@@ -329,7 +329,7 @@ export async function GET(request: NextRequest) {
     console.error('❌ Automation source check failed:', error);
     return NextResponse.json({
       success: false,
-      error: error.message
+      error: error instanceof Error ? error.message : String(error)
     }, { status: 500 });
   }
 }

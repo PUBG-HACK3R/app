@@ -55,7 +55,7 @@ export async function GET(request: NextRequest) {
     } catch (error) {
       results.checks.comprehensiveCheck = {
         status: 'ERROR',
-        error: error.message
+        error: error instanceof Error ? error.message : String(error)
       };
     }
 
@@ -94,7 +94,7 @@ export async function GET(request: NextRequest) {
     } catch (error) {
       results.checks.autoPlansCheck = {
         status: 'ERROR',
-        error: error.message
+        error: error instanceof Error ? error.message : String(error)
       };
     }
 
@@ -124,7 +124,7 @@ export async function GET(request: NextRequest) {
     } catch (error) {
       results.checks.earningsCheck = {
         status: 'ERROR',
-        error: error.message
+        error: error instanceof Error ? error.message : String(error)
       };
     }
 
@@ -157,7 +157,7 @@ export async function GET(request: NextRequest) {
     } catch (error) {
       results.checks.referralCheck = {
         status: 'ERROR',
-        error: error.message
+        error: error instanceof Error ? error.message : String(error)
       };
     }
 
@@ -190,7 +190,7 @@ export async function GET(request: NextRequest) {
     } catch (error) {
       results.checks.transactionCheck = {
         status: 'ERROR',
-        error: error.message
+        error: error instanceof Error ? error.message : String(error)
       };
     }
 
@@ -252,7 +252,7 @@ export async function GET(request: NextRequest) {
     console.error('❌ Master Debug Dashboard failed:', error);
     return NextResponse.json({
       success: false,
-      error: error.message,
+      error: error instanceof Error ? error.message : String(error),
       report: {
         websiteStatus: '❌ UNKNOWN - DEBUG SYSTEM FAILED',
         message: 'The debug system itself has issues and needs to be fixed first'

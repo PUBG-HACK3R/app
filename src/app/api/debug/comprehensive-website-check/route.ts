@@ -65,7 +65,7 @@ export async function GET(request: NextRequest) {
         category: 'AUTOMATIC_PLANS',
         issue: 'Failed to check automatic plan creation',
         severity: 'MEDIUM',
-        details: { error: error.message },
+        details: { error: error instanceof Error ? error.message : String(error) },
         recommendation: 'Fix database access for plan checking'
       });
     }
@@ -134,7 +134,7 @@ export async function GET(request: NextRequest) {
         category: 'EARNINGS_PROCESSING',
         issue: 'Failed to check earnings processing',
         severity: 'HIGH',
-        details: { error: error.message },
+        details: { error: error instanceof Error ? error.message : String(error) },
         recommendation: 'Fix database access for earnings checking'
       });
     }
@@ -191,7 +191,7 @@ export async function GET(request: NextRequest) {
         category: 'TRANSACTIONS',
         issue: 'Failed to check transactions',
         severity: 'MEDIUM',
-        details: { error: error.message },
+        details: { error: error instanceof Error ? error.message : String(error) },
         recommendation: 'Fix database access for transaction checking'
       });
     }
@@ -245,7 +245,7 @@ export async function GET(request: NextRequest) {
         category: 'BALANCE_INTEGRITY',
         issue: 'Failed to check balance integrity',
         severity: 'MEDIUM',
-        details: { error: error.message },
+        details: { error: error instanceof Error ? error.message : String(error) },
         recommendation: 'Fix database access for balance checking'
       });
     }
@@ -290,7 +290,7 @@ export async function GET(request: NextRequest) {
         category: 'REFERRAL_SYSTEM',
         issue: 'Failed to check referral system',
         severity: 'MEDIUM',
-        details: { error: error.message },
+        details: { error: error instanceof Error ? error.message : String(error) },
         recommendation: 'Fix database access for referral checking'
       });
     }
@@ -340,7 +340,7 @@ export async function GET(request: NextRequest) {
         category: 'DATA_INTEGRITY',
         issue: 'Failed to check for orphaned records',
         severity: 'LOW',
-        details: { error: error.message },
+        details: { error: error instanceof Error ? error.message : String(error) },
         recommendation: 'Fix database access for orphaned record checking'
       });
     }
@@ -385,7 +385,7 @@ export async function GET(request: NextRequest) {
     console.error('❌ Comprehensive website check failed:', error);
     return NextResponse.json({
       success: false,
-      error: error.message,
+      error: error instanceof Error ? error.message : String(error),
       summary: {
         websiteStatus: 'UNKNOWN - DEBUG SYSTEM FAILED',
         recommendations: ['Fix the debugging system first', 'Manual review required']

@@ -259,7 +259,7 @@ export async function POST(request: NextRequest) {
     console.error('❌ Earnings fix failed:', error);
     return NextResponse.json({
       success: false,
-      error: error.message
+      error: error instanceof Error ? error.message : String(error)
     }, { status: 500 });
   }
 }
