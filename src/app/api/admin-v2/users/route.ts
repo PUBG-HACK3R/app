@@ -40,19 +40,23 @@ export async function GET() {
     // Get all users with their data
     const admin = getSupabaseAdminClient();
 
-    const { data: users } = await admin
+    // Get users first
+    const { data: users, error: usersError } = await admin
       .from("user_profiles")
-      .select(`
-        *,
-        user_balances (
-          available_balance,
-          locked_balance,
-          total_deposited,
-          total_withdrawn,
-          total_earned
-        )
-      `)
+      .select("*")
       .order("created_at", { ascending: false });
+
+    if (usersError) {
+      console.log('❌ Users fetch failed:', usersError.message);
+      return NextResponse.json({ error: "Users fetch failed", details: usersError.message }, { status: 500 });
+    }
+
+    console.log(`✅ Fetched ${users?.length || 0} users`);
+
+    // Get balances separately to avoid relationship issues
+    const { data: balances } = await admin
+      .from("user_balances")
+      .select("*");
 
     // Get investment data for each user
     const { data: investments } = await admin
@@ -72,7 +76,7 @@ export async function GET() {
         referral_code: user.referral_code,
         referred_by: user.referred_by,
         created_at: user.created_at,
-        balance: user.user_balances?.[0] || {
+        balance: (balances || []).find((b: any) => b.user_id === user.user_id) || {
           available_balance: 0,
           locked_balance: 0,
           total_deposited: 0,

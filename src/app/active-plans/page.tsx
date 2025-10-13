@@ -7,7 +7,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
 import { Separator } from "@/components/ui/separator";
-import { EarningsChecker } from "@/components/earnings-checker";
+import { DashboardEarningsProvider } from "@/components/dashboard/dashboard-earnings-provider";
 import { 
   TrendingUp, 
   DollarSign, 
@@ -107,17 +107,15 @@ export default async function ActivePlansPage() {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-900 via-blue-900/20 to-gray-900 pt-16 pb-20">
+      {/* Background Earnings Provider - handles automatic earnings checking */}
+      <DashboardEarningsProvider />
+      
       <div className="px-4 py-6 space-y-6">
 
         {/* Welcome Message */}
         <div className="text-center mb-6">
           <h1 className="text-2xl font-bold text-white mb-2">My Investments</h1>
           <p className="text-gray-400">Track your active investment plans</p>
-          
-          {/* Earnings Checker - Auto-check on page load */}
-          <div className="mt-4 flex justify-center">
-            <EarningsChecker autoCheck={true} showButton={true} />
-          </div>
         </div>
 
         {subscriptionsWithEarnings.length === 0 ? (

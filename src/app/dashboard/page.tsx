@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { HorizontalPlans } from "@/components/auto-scroll-plans";
 import { BalanceSection } from "@/components/dashboard/balance-section";
-import { EarningsChecker } from "@/components/dashboard/earnings-checker";
+import { DashboardEarningsProvider } from "@/components/dashboard/dashboard-earnings-provider";
 import { 
   Wallet, 
   ArrowUpRight, 
@@ -75,12 +75,12 @@ export default async function DashboardPage() {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-100 via-orange-50 to-gray-100 dark:from-gray-900 dark:via-orange-900/10 dark:to-gray-900 text-gray-900 dark:text-white">
+      {/* Background Earnings Provider - handles automatic earnings checking */}
+      <DashboardEarningsProvider />
+      
       <div className="mx-auto max-w-md px-4 py-6 space-y-6">
         {/* Balance Section */}
         <BalanceSection walletBalance={walletBalance} />
-
-        {/* Earnings Auto-Check */}
-        <EarningsChecker />
 
         {/* Action Buttons */}
         <div className="grid grid-cols-4 gap-4">
