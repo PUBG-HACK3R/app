@@ -67,7 +67,7 @@ export async function GET(request: NextRequest) {
         results.push({
           category: 'AUTOMATIC_PLANS',
           issue: 'No suspicious user investment patterns detected',
-          severity: 'INFO',
+          severity: 'LOW',
           details: { message: 'All user investments appear to be legitimate' },
           recommendation: 'Continue monitoring for unusual patterns'
         });
