@@ -136,20 +136,6 @@ export function AdminTools() {
     }
   };
 
-  const fetchSystemStats = async () => {
-    setLoading(true);
-    try {
-      const response = await fetch('/api/admin-v2/tools/system-stats');
-      if (response.ok) {
-        const data = await response.json();
-        setSystemStats(data);
-      }
-    } catch (error) {
-      console.error('Error fetching system stats:', error);
-    } finally {
-      setLoading(false);
-    }
-  };
 
   const formatCurrency = (amount: number) => {
     return new Intl.NumberFormat('en-US', {
