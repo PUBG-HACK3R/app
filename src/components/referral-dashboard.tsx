@@ -92,7 +92,7 @@ export function ReferralDashboard() {
         });
         
         // Force state update
-        setReferralData({});  // Clear first
+        setReferralData(null);  // Clear first
         setTimeout(() => {
           setReferralData(finalData);  // Then set new data
         }, 10);
