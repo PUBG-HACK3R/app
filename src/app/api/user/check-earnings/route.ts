@@ -80,12 +80,13 @@ export async function POST() {
 
             balanceAfterPrincipal = newAvailableBalance;
 
-            // For end-payout plans (Monthly/Bi-Monthly), process final earnings if not already processed
-            const isEndPayoutPlan = investment.duration_days >= 30;
+            // Process final earnings for ALL completed investments (not just end-payout plans)
             let finalEarningsAmount = 0;
 
-            if (isEndPayoutPlan && (investment.total_earned || 0) === 0) {
-              // Calculate total earnings for the entire investment period
+            // Check if earnings haven't been processed yet
+            if ((investment.total_earned || 0) === 0) {
+              // For short-term plans (1-10 days): Calculate total earnings for entire period
+              // For long-term plans (30+ days): Also calculate total earnings
               const totalROI = investment.daily_roi_percentage * investment.duration_days;
               finalEarningsAmount = Number(((investment.amount_invested * totalROI) / 100).toFixed(2));
 
@@ -129,7 +130,7 @@ export async function POST() {
                 balanceAfterPrincipal = balanceAfterEarnings;
                 totalEarningsAdded += finalEarningsAmount;
 
-                console.log(`✅ Processed final earnings for completed investment ${investment.id}: $${finalEarningsAmount}`);
+                console.log(`✅ Processed final earnings for completed investment ${investment.id}: $${finalEarningsAmount} (${investment.duration_days}-day plan)`);
               }
             }
 
