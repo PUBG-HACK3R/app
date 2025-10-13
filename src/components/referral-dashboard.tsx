@@ -62,7 +62,7 @@ export function ReferralDashboard() {
 
   const fetchReferralData = async () => {
     try {
-      const response = await fetch('/api/referrals', {
+      const response = await fetch('/api/referrals-v2', {
         method: 'GET',
         headers: {
           'Cache-Control': 'no-cache',

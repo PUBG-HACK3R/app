@@ -10,16 +10,30 @@ export const revalidate = 0;
 export async function GET(request: Request) {
   try {
     console.log('🔍 Referrals API called...');
+    console.log('Request headers:', Object.fromEntries(request.headers.entries()));
     
     const supabase = await getSupabaseServerClient();
-    const {
-      data: { user },
-      error: authError
-    } = await supabase.auth.getUser();
+    
+    // More robust authentication check
+    let user;
+    let authError;
+    
+    try {
+      const authResult = await supabase.auth.getUser();
+      user = authResult.data?.user;
+      authError = authResult.error;
+    } catch (err: any) {
+      console.log('❌ Auth check failed:', err.message);
+      authError = err;
+    }
     
     if (authError || !user) {
       console.log('❌ Authentication failed:', authError?.message);
-      return NextResponse.json({ error: "Unauthorized", details: authError?.message }, { status: 401 });
+      return NextResponse.json({ 
+        error: "Unauthorized", 
+        details: authError?.message,
+        authError: true 
+      }, { status: 401 });
     }
 
     console.log('✅ User authenticated:', user.id);
