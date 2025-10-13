@@ -135,7 +135,7 @@ export function DebugDashboard() {
             <RefreshCw className={`h-4 w-4 ${loading ? 'animate-spin' : ''}`} />
             {loading ? 'Scanning...' : 'Run Full Debug'}
           </Button>
-          {report && (report.issueBreakdown.critical > 0 || report.issueBreakdown.high > 0) && (
+          {report && report.issueBreakdown.critical > 0 && (
             <Button 
               onClick={fixEarningsIssues} 
               disabled={fixing}
