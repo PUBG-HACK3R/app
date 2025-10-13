@@ -51,10 +51,10 @@ export function WithdrawalManagement() {
       const response = await fetch('/api/admin-v2/withdrawals');
       if (response.ok) {
         const data = await response.json();
-        if (data.success) {
-          setWithdrawals(data.withdrawals || []);
-        } else {
+        if (data.error) {
           console.error('Withdrawals API failed:', data.error);
+        } else {
+          setWithdrawals(data.withdrawals || []);
         }
       } else {
         console.error('Withdrawals API failed:', response.status, await response.text());

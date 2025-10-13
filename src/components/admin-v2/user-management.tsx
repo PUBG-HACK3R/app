@@ -80,10 +80,10 @@ export function UserManagement() {
       const response = await fetch('/api/admin-v2/users');
       if (response.ok) {
         const data = await response.json();
-        if (data.success) {
-          setUsers(data.users || []);
-        } else {
+        if (data.error) {
           console.error('Users API failed:', data.error);
+        } else {
+          setUsers(data.users || []);
         }
       } else {
         console.error('Users API failed:', response.status, await response.text());
