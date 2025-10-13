@@ -62,35 +62,43 @@ export function ReferralDashboard() {
 
   const fetchReferralData = async () => {
     try {
-      const response = await fetch('/api/referrals-v2', {
+      // Add timestamp to prevent caching
+      const timestamp = Date.now();
+      const response = await fetch(`/api/referrals-v2?t=${timestamp}`, {
         method: 'GET',
         headers: {
-          'Cache-Control': 'no-cache',
-          'Pragma': 'no-cache'
+          'Cache-Control': 'no-cache, no-store, must-revalidate',
+          'Pragma': 'no-cache',
+          'Expires': '0'
         }
       });
       
       if (response.ok) {
         const data = await response.json();
         
-        // Force correct calculation - always use array length as source of truth
-        const actualReferrals = data.referrals?.length || 0;
-        const correctedData = {
+        console.log('🔍 Raw API response:', data);
+        
+        // Use API response directly - it's now working correctly
+        const finalData = {
           ...data,
-          totalReferrals: actualReferrals, // Always use array length
-          referrals: data.referrals || [],
           // Force re-render by adding timestamp
-          _lastUpdated: Date.now()
+          _lastUpdated: timestamp
         };
         
-        console.log('✅ Referral data loaded:', {
-          apiTotal: data.totalReferrals,
-          arrayLength: actualReferrals,
-          usingValue: correctedData.totalReferrals
+        console.log('✅ Setting referral data:', {
+          totalReferrals: finalData.totalReferrals,
+          referralsArray: finalData.referrals,
+          arrayLength: finalData.referrals?.length || 0
         });
         
-        setReferralData(correctedData);
+        // Force state update
+        setReferralData({});  // Clear first
+        setTimeout(() => {
+          setReferralData(finalData);  // Then set new data
+        }, 10);
+        
       } else {
+        console.error('API response not ok:', response.status, response.statusText);
         toast.error('Failed to load referral data');
       }
     } catch (error) {
@@ -209,6 +217,10 @@ export function ReferralDashboard() {
             </div>
             <p className="text-xs text-blue-600 dark:text-blue-400 mt-1">
               Active referrals ({referralData.totalReferrals} users)
+            </p>
+            {/* Debug info */}
+            <p className="text-xs text-gray-500 mt-1">
+              Debug: API={referralData.totalReferrals}, Array={referralData.referrals?.length || 0}
             </p>
           </CardContent>
         </Card>
