@@ -17,7 +17,7 @@ export async function GET(request: NextRequest) {
       .from('investment_plans')
       .select(`
         *,
-        profiles!inner(email, created_at as user_created_at)
+        profiles!inner(email)
       `)
       .gte('created_at', new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString())
       .order('created_at', { ascending: false });
