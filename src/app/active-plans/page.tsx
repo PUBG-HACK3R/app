@@ -8,6 +8,7 @@ import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
 import { Separator } from "@/components/ui/separator";
 import { DashboardEarningsProvider } from "@/components/dashboard/dashboard-earnings-provider";
+import { ManualEarningsRefresh } from "@/components/manual-earnings-refresh";
 import { 
   TrendingUp, 
   DollarSign, 
@@ -116,6 +117,15 @@ export default async function ActivePlansPage() {
         <div className="text-center mb-6">
           <h1 className="text-2xl font-bold text-white mb-2">My Investments</h1>
           <p className="text-gray-400">Track your active investment plans</p>
+          
+          {/* Manual Earnings Refresh Button */}
+          <div className="mt-4 flex justify-center">
+            <ManualEarningsRefresh 
+              size="sm" 
+              variant="outline" 
+              className="bg-gray-800/50 border-gray-700/50 hover:bg-gray-700/50 text-gray-300 hover:text-white"
+            />
+          </div>
         </div>
 
         {subscriptionsWithEarnings.length === 0 ? (
