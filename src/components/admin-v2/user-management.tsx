@@ -77,10 +77,16 @@ export function UserManagement() {
   const fetchUsers = async () => {
     setLoading(true);
     try {
-      const response = await fetch('/api/admin-v2/users');
+      const response = await fetch('/api/admin/users');
       if (response.ok) {
         const data = await response.json();
-        setUsers(data.users || []);
+        if (data.success) {
+          setUsers(data.users || []);
+        } else {
+          console.error('Users API failed:', data.error);
+        }
+      } else {
+        console.error('Users API failed:', response.status, await response.text());
       }
     } catch (error) {
       console.error('Error fetching users:', error);
@@ -93,7 +99,7 @@ export function UserManagement() {
     if (!selectedUser || !topupAmount) return;
     
     try {
-      const response = await fetch('/api/admin-v2/users/topup', {
+      const response = await fetch('/api/admin/topup', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -116,7 +122,7 @@ export function UserManagement() {
 
   const handleRoleChange = async (userId: string, newRole: 'user' | 'admin') => {
     try {
-      const response = await fetch('/api/admin-v2/users/role', {
+      const response = await fetch('/api/admin/set-role', {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ userId, role: newRole })

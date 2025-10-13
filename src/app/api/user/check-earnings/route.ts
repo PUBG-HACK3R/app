@@ -53,23 +53,17 @@ export async function POST() {
           // Get current user balance
           const { data: currentBalance } = await admin
             .from("user_balances")
-            .select("available_balance, locked_balance")
+            .select("available_balance, locked_balance, total_earned")
             .eq("user_id", user.id)
             .single();
 
           if (currentBalance) {
-            // Return locked amount to available balance
-            const newAvailableBalance = (currentBalance.available_balance || 0) + investment.amount_invested;
-            const newLockedBalance = Math.max(0, (currentBalance.locked_balance || 0) - investment.amount_invested);
+            let balanceAfterPrincipal = currentBalance.available_balance || 0;
+            let totalEarnedUpdate = currentBalance.total_earned || 0;
 
-            await admin
-              .from("user_balances")
-              .update({
-                available_balance: newAvailableBalance,
-                locked_balance: newLockedBalance,
-                updated_at: now.toISOString()
-              })
-              .eq("user_id", user.id);
+            // Return locked amount to available balance
+            const newAvailableBalance = balanceAfterPrincipal + investment.amount_invested;
+            const newLockedBalance = Math.max(0, (currentBalance.locked_balance || 0) - investment.amount_invested);
 
             // Log the principal return transaction
             await admin
@@ -78,11 +72,77 @@ export async function POST() {
                 user_id: user.id,
                 type: "investment_return",
                 amount_usdt: investment.amount_invested,
-                description: `Investment completed - Principal returned`,
+                description: `Investment completed - Principal unlocked`,
                 reference_id: investment.id,
-                balance_before: currentBalance.available_balance,
+                balance_before: balanceAfterPrincipal,
                 balance_after: newAvailableBalance
               });
+
+            balanceAfterPrincipal = newAvailableBalance;
+
+            // For end-payout plans (Monthly/Bi-Monthly), process final earnings if not already processed
+            const isEndPayoutPlan = investment.duration_days >= 30;
+            let finalEarningsAmount = 0;
+
+            if (isEndPayoutPlan && (investment.total_earned || 0) === 0) {
+              // Calculate total earnings for the entire investment period
+              const totalROI = investment.daily_roi_percentage * investment.duration_days;
+              finalEarningsAmount = Number(((investment.amount_invested * totalROI) / 100).toFixed(2));
+
+              if (finalEarningsAmount > 0) {
+                // Add earnings to balance
+                const balanceAfterEarnings = balanceAfterPrincipal + finalEarningsAmount;
+                totalEarnedUpdate += finalEarningsAmount;
+
+                // Create earning record
+                await admin
+                  .from("daily_earnings")
+                  .insert({
+                    user_id: user.id,
+                    investment_id: investment.id,
+                    amount_usdt: finalEarningsAmount,
+                    earning_date: today
+                  });
+
+                // Log the earnings transaction
+                await admin
+                  .from("transaction_logs")
+                  .insert({
+                    user_id: user.id,
+                    type: "earning",
+                    amount_usdt: finalEarningsAmount,
+                    description: `Investment completed - Total earnings from ${investment.duration_days}-day plan`,
+                    reference_id: investment.id,
+                    balance_before: balanceAfterPrincipal,
+                    balance_after: balanceAfterEarnings
+                  });
+
+                // Update investment with total earnings
+                await admin
+                  .from("user_investments")
+                  .update({
+                    total_earned: finalEarningsAmount,
+                    last_earning_date: today
+                  })
+                  .eq("id", investment.id);
+
+                balanceAfterPrincipal = balanceAfterEarnings;
+                totalEarningsAdded += finalEarningsAmount;
+
+                console.log(`✅ Processed final earnings for completed investment ${investment.id}: $${finalEarningsAmount}`);
+              }
+            }
+
+            // Update user balance with both principal return and earnings (if any)
+            await admin
+              .from("user_balances")
+              .update({
+                available_balance: balanceAfterPrincipal,
+                locked_balance: newLockedBalance,
+                total_earned: totalEarnedUpdate,
+                updated_at: now.toISOString()
+              })
+              .eq("user_id", user.id);
 
             totalPrincipalReturned += investment.amount_invested;
             completedCount++;

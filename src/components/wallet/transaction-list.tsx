@@ -74,6 +74,8 @@ export function TransactionList({ limit = 10, showTitle = true }: TransactionLis
         return PiggyBank;
       case 'investment_return':
         return ArrowDownRight;
+      case 'referral_commission':
+        return TrendingUp;
       case 'refund':
         return RefreshCw;
       default:
@@ -90,6 +92,7 @@ export function TransactionList({ limit = 10, showTitle = true }: TransactionLis
       case 'deposit':
       case 'earning':
       case 'investment_return':
+      case 'referral_commission':
       case 'refund':
         return 'text-green-400 bg-green-500/20';
       case 'withdrawal':
@@ -105,10 +108,11 @@ export function TransactionList({ limit = 10, showTitle = true }: TransactionLis
     const labels = {
       deposit: 'Deposit',
       withdrawal: 'Withdrawal',
-      earning: 'Daily Earning',
+      earning: 'Earning',
       investment: 'Plan Purchase',
       plan_purchase: 'Plan Purchase',
-      investment_return: 'Plan Completed',
+      investment_return: 'Principal Unlocked',
+      referral_commission: 'Referral Commission',
       refund: 'Refund'
     };
     
@@ -122,7 +126,7 @@ export function TransactionList({ limit = 10, showTitle = true }: TransactionLis
   };
 
   const isPositiveTransaction = (type: string) => {
-    return ['deposit', 'earning', 'investment_return', 'refund'].includes(type);
+    return ['deposit', 'earning', 'investment_return', 'referral_commission', 'refund'].includes(type);
   };
 
   if (loading) {

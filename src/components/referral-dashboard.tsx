@@ -205,10 +205,10 @@ export function ReferralDashboard() {
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold text-blue-900 dark:text-blue-100">
-              2
+              {referralData.totalReferrals}
             </div>
             <p className="text-xs text-blue-600 dark:text-blue-400 mt-1">
-              Active referrals (2 users)
+              Active referrals ({referralData.totalReferrals} users)
             </p>
           </CardContent>
         </Card>

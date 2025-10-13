@@ -62,18 +62,30 @@ export function AdminDashboard() {
     setLoading(true);
     try {
       // Fetch dashboard stats
-      const statsResponse = await fetch('/api/admin-v2/dashboard/stats');
+      const statsResponse = await fetch('/api/admin/dashboard/stats');
       if (statsResponse.ok) {
         const statsData = await statsResponse.json();
-        setStats(statsData);
+        if (statsData.success && statsData.stats) {
+          // Map the API response to the expected format
+          const apiStats = statsData.stats;
+          setStats({
+            totalUsers: apiStats.users?.total || 0,
+            totalDeposits: apiStats.deposits?.total_amount || 0,
+            totalWithdrawals: apiStats.withdrawals?.total_requested || 0,
+            totalEarnings: apiStats.earnings?.total_distributed || 0,
+            pendingWithdrawals: apiStats.withdrawals?.pending_count || 0,
+            activePlans: apiStats.plans?.active_count || 0,
+            totalInvestments: apiStats.investments?.locked_balance || 0,
+            platformBalance: apiStats.finances?.platform_balance || 0
+          });
+        }
+      } else {
+        console.error('Stats API failed:', statsResponse.status, await statsResponse.text());
       }
 
-      // Fetch recent activity
-      const activityResponse = await fetch('/api/admin-v2/dashboard/activity');
-      if (activityResponse.ok) {
-        const activityData = await activityResponse.json();
-        setRecentActivity(activityData.activities || []);
-      }
+      // Fetch recent activity (create a simple activity endpoint or use existing data)
+      // For now, we'll skip this since the main issue is the stats
+      setRecentActivity([]);
     } catch (error) {
       console.error('Error fetching dashboard data:', error);
     } finally {
@@ -122,19 +134,19 @@ export function AdminDashboard() {
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <h2 className="text-3xl font-bold text-white">Dashboard Overview</h2>
+          <h2 className="text-2xl sm:text-3xl font-bold text-white">Dashboard Overview</h2>
           <p className="text-gray-400 mt-1">Real-time platform metrics and activity</p>
         </div>
-        <Button onClick={fetchDashboardData} variant="outline" className="border-slate-600 text-white hover:bg-slate-700">
+        <Button onClick={fetchDashboardData} variant="outline" className="border-slate-600 text-white hover:bg-slate-700 w-full sm:w-auto">
           <RefreshCw className="h-4 w-4 mr-2" />
           Refresh
         </Button>
       </div>
 
       {/* Stats Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6">
         <Card className="bg-slate-800/50 border-slate-700">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium text-gray-300">Total Users</CardTitle>
@@ -181,7 +193,7 @@ export function AdminDashboard() {
       </div>
 
       {/* Secondary Stats */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 md:gap-6">
         <Card className="bg-slate-800/50 border-slate-700">
           <CardHeader>
             <CardTitle className="text-lg text-white flex items-center">

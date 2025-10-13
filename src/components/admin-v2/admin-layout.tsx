@@ -140,12 +140,12 @@ export function AdminLayout({ children, activeTab, onTabChange }: AdminLayoutPro
               </h1>
             </div>
 
-            <div className="flex items-center space-x-4">
-              <div className="relative">
+            <div className="flex items-center space-x-2 sm:space-x-4">
+              <div className="relative hidden sm:block">
                 <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
                 <Input
                   placeholder="Search..."
-                  className="pl-10 w-64 bg-slate-700 border-slate-600 text-white placeholder-gray-400"
+                  className="pl-10 w-48 lg:w-64 bg-slate-700 border-slate-600 text-white placeholder-gray-400"
                 />
               </div>
               
@@ -165,7 +165,7 @@ export function AdminLayout({ children, activeTab, onTabChange }: AdminLayoutPro
         </header>
 
         {/* Content Area */}
-        <main className="p-6">
+        <main className="p-4 sm:p-6">
           {children}
         </main>
       </div>

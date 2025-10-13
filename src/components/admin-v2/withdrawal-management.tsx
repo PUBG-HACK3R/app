@@ -48,10 +48,16 @@ export function WithdrawalManagement() {
   const fetchWithdrawals = async () => {
     setLoading(true);
     try {
-      const response = await fetch('/api/admin-v2/withdrawals');
+      const response = await fetch('/api/admin/withdrawals');
       if (response.ok) {
         const data = await response.json();
-        setWithdrawals(data.withdrawals || []);
+        if (data.success) {
+          setWithdrawals(data.withdrawals || []);
+        } else {
+          console.error('Withdrawals API failed:', data.error);
+        }
+      } else {
+        console.error('Withdrawals API failed:', response.status, await response.text());
       }
     } catch (error) {
       console.error('Error fetching withdrawals:', error);
@@ -63,7 +69,7 @@ export function WithdrawalManagement() {
   const handleApprove = async (withdrawalId: string) => {
     setProcessing(withdrawalId);
     try {
-      const response = await fetch('/api/admin-v2/withdrawals/approve', {
+      const response = await fetch('/api/admin/withdrawals/approve', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ withdrawalId })
@@ -84,7 +90,7 @@ export function WithdrawalManagement() {
     
     setProcessing(withdrawalId);
     try {
-      const response = await fetch('/api/admin-v2/withdrawals/reject', {
+      const response = await fetch('/api/admin/withdrawals/reject', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ withdrawalId, reason })
