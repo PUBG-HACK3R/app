@@ -8,12 +8,20 @@ export const dynamic = "force-dynamic";
 // Get user's referral information
 export async function GET(request: Request) {
   try {
+    console.log('🔍 Referrals API called...');
+    
     const supabase = await getSupabaseServerClient();
     const {
       data: { user },
+      error: authError
     } = await supabase.auth.getUser();
     
-    if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    if (authError || !user) {
+      console.log('❌ Authentication failed:', authError?.message);
+      return NextResponse.json({ error: "Unauthorized", details: authError?.message }, { status: 401 });
+    }
+
+    console.log('✅ User authenticated:', user.id);
 
     const admin = getSupabaseAdminClient();
 
@@ -25,8 +33,11 @@ export async function GET(request: Request) {
       .single();
 
     if (profileError) {
-      return NextResponse.json({ error: profileError.message }, { status: 400 });
+      console.log('❌ Profile fetch failed:', profileError.message);
+      return NextResponse.json({ error: "Profile fetch failed", details: profileError.message }, { status: 500 });
     }
+
+    console.log('✅ Profile fetched:', profile.email, 'Referral code:', profile.referral_code);
 
     // Generate referral code if it doesn't exist
     let referralCode = profile.referral_code;
@@ -49,6 +60,13 @@ export async function GET(request: Request) {
       .eq("referred_by", user.id)
       .order("created_at", { ascending: false });
 
+    if (referredError) {
+      console.log('❌ Referred users fetch failed:', referredError.message);
+      return NextResponse.json({ error: "Referred users fetch failed", details: referredError.message }, { status: 500 });
+    }
+
+    console.log(`✅ Found ${referredUsers?.length || 0} referred users`);
+
     // Get commission records for this user
     const { data: commissions, error: commissionsError } = await admin
       .from("referral_commissions")
@@ -63,9 +81,18 @@ export async function GET(request: Request) {
       .eq("referrer_user_id", user.id)
       .order("created_at", { ascending: false });
 
+    if (commissionsError) {
+      console.log('❌ Commissions fetch failed:', commissionsError.message);
+      // Don't fail the whole API for commissions error, just log it
+    }
+
+    console.log(`✅ Found ${commissions?.length || 0} commission records`);
+
     // Calculate totals
     const totalReferrals = referredUsers?.length || 0;
     const totalEarnings = commissions?.reduce((sum, ref) => sum + Number(ref.commission_amount || 0), 0) || 0;
+
+    console.log(`✅ Calculated totals - Referrals: ${totalReferrals}, Earnings: $${totalEarnings}`);
 
     return NextResponse.json({
       referralCode: referralCode,
@@ -79,7 +106,11 @@ export async function GET(request: Request) {
       referralLink: `${process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000'}/signup?ref=${referralCode}`
     });
   } catch (err: any) {
-    return NextResponse.json({ error: err.message || "Unexpected error" }, { status: 500 });
+    console.error('❌ Referrals API error:', err);
+    return NextResponse.json({ 
+      error: err.message || "Unexpected error",
+      details: err.stack 
+    }, { status: 500 });
   }
 }
 
