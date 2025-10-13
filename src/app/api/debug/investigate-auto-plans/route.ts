@@ -191,12 +191,12 @@ export async function GET(request: NextRequest) {
     console.log('🤖 Checking for automated processes...');
     
     // Look for patterns that suggest automation
-    const automationIndicators = [];
+    const automationIndicators: any[] = [];
     
     // Check if plans are being created at exact intervals
     if (recentPlans && recentPlans.length > 2) {
       const timestamps = recentPlans.map(p => new Date(p.created_at).getTime()).sort();
-      const intervals = [];
+      const intervals: number[] = [];
       
       for (let i = 1; i < timestamps.length; i++) {
         intervals.push(timestamps[i] - timestamps[i - 1]);
@@ -257,7 +257,7 @@ export async function GET(request: NextRequest) {
     console.error('❌ Auto-plan investigation failed:', error);
     return NextResponse.json({
       success: false,
-      error: error.message
+      error: error instanceof Error ? error.message : String(error)
     }, { status: 500 });
   }
 }
