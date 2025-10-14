@@ -106,7 +106,7 @@ export async function POST(request: NextRequest) {
       'daily_earnings', 'withdrawals', 'referral_commissions', 'transaction_logs'
     ];
 
-    const finalCounts = {};
+    const finalCounts: Record<string, number | string> = {};
     for (const table of verificationTables) {
       try {
         const { count, error } = await supabase
@@ -176,7 +176,7 @@ export async function GET() {
       'investment_plans', 'admin_users'
     ];
 
-    const currentState = {};
+    const currentState: Record<string, number | string> = {};
     for (const table of tables) {
       try {
         const { count, error } = await supabase
