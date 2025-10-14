@@ -22,7 +22,7 @@ export async function GET() {
       }
     ],
     commissions: [],
-    referralLink: "https://weearn-web3.vercel.app/signup?ref=REF9848880B"
+    referralLink: "https://weearn.sbs/signup?ref=REF9848880B"
   };
 
   console.log('🧪 Mock referrals API returning:', mockResponse);

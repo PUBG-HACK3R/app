@@ -6,7 +6,7 @@ export const dynamic = "force-dynamic";
 export async function GET() {
   try {
     // Test if the webhook endpoint is accessible
-    const webhookUrl = `${process.env.NEXT_PUBLIC_SITE_URL || 'https://weearn-web3.vercel.app'}/api/nowpayments/webhook`;
+    const webhookUrl = `${process.env.NEXT_PUBLIC_SITE_URL || 'https://weearn.sbs'}/api/nowpayments/webhook`;
     
     return NextResponse.json({
       success: true,
@@ -21,7 +21,7 @@ export async function GET() {
         "Environment variables needed:",
         `NOWPAYMENTS_IPN_SECRET: ${process.env.NOWPAYMENTS_IPN_SECRET ? 'Configured ✅' : 'Missing ❌'}`,
         `NOWPAYMENTS_API_KEY: ${process.env.NOWPAYMENTS_API_KEY ? 'Configured ✅' : 'Missing ❌'}`,
-        `NEXT_PUBLIC_SITE_URL: ${process.env.NEXT_PUBLIC_SITE_URL || 'Missing - should be https://weearn-web3.vercel.app'}`
+        `NEXT_PUBLIC_SITE_URL: ${process.env.NEXT_PUBLIC_SITE_URL || 'Missing - should be https://weearn.sbs'}`
       ]
     });
   } catch (error: any) {

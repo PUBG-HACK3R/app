@@ -6,6 +6,7 @@ import { ConditionalBottomNav } from "@/components/conditional-bottom-nav";
 import { ConditionalHeader } from "@/components/conditional-header";
 import { ErrorBoundary } from "@/components/error-boundary";
 import { Toaster } from "sonner";
+import AddToHomePopup from "@/components/AddToHomePopup";
 
 export const metadata: Metadata = {
   title: "WeEarn - Smart Investment Platform",
@@ -15,12 +16,12 @@ export const metadata: Metadata = {
   icons: {
     icon: "/logo.png",
     shortcut: "/logo.png",
-    apple: "/logo.png",
+    apple: "/icons/icon-192x192.png",
   },
   openGraph: {
     title: "WeEarn - Smart Investment Platform",
     description: "Join thousands of investors earning consistent daily returns through our secure, automated platform.",
-    url: "https://weearn.vercel.app",
+    url: "https://weearn.sbs",
     siteName: "WeEarn",
     images: [
       {
@@ -50,6 +51,16 @@ export const metadata: Metadata = {
       "max-snippet": -1,
     },
   },
+  manifest: "/manifest.json",
+  appleWebApp: {
+    capable: true,
+    statusBarStyle: "black-translucent",
+    title: "WeEarn",
+  },
+  other: {
+    "apple-mobile-web-app-capable": "yes",
+    "apple-mobile-web-app-status-bar-style": "black-translucent",
+  },
 };
 
 export default function RootLayout({
@@ -69,6 +80,7 @@ export default function RootLayout({
             </main>
             <ConditionalBottomNav />
             <Toaster />
+            <AddToHomePopup />
           </ThemeProvider>
         </ErrorBoundary>
       </body>

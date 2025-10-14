@@ -21,7 +21,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Trigger the daily earnings cron job
-    const cronUrl = `${process.env.NEXT_PUBLIC_SITE_URL || 'https://weearn-web3.vercel.app'}/api/cron/daily-returns?token=${secret}`;
+    const cronUrl = `${process.env.NEXT_PUBLIC_SITE_URL || 'https://weearn.sbs'}/api/cron/daily-returns?token=${secret}`;
     
     console.log("Triggering daily earnings cron job:", cronUrl);
     
