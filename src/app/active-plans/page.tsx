@@ -134,15 +134,9 @@ export default async function ActivePlansPage() {
               <PiggyBank className="h-8 w-8 text-blue-400" />
             </div>
             <h3 className="text-xl font-bold text-white mb-2">No Active Plans</h3>
-            <p className="text-gray-400 mb-6">
-              You don't have any investments yet. Start investing to earn daily returns!
+            <p className="text-gray-400">
+              You don't have any investments yet.
             </p>
-            <Link href="/plans">
-              <Button className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white px-6 py-3 rounded-2xl">
-                <TrendingUp className="h-4 w-4 mr-2" />
-                Start Investing
-              </Button>
-            </Link>
           </div>
         ) : (
           <div>
