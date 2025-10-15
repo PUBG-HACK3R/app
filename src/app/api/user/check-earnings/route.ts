@@ -85,9 +85,20 @@ export async function POST() {
 
             // Check if earnings haven't been processed yet
             if ((investment.total_earned || 0) === 0) {
-              // For short-term plans (1-10 days): Calculate total earnings for entire period
-              // For long-term plans (30+ days): Also calculate total earnings
-              const totalROI = investment.daily_roi_percentage * investment.duration_days;
+              // Calculate total earnings based on plan type
+              let totalROI;
+              
+              if (investment.duration_days >= 60) {
+                // Bi-Monthly plan: 150% total ROI
+                totalROI = 150;
+              } else if (investment.duration_days >= 30) {
+                // Monthly plan: 120% total ROI
+                totalROI = 120;
+              } else {
+                // Daily plans: Use daily ROI * duration
+                totalROI = investment.daily_roi_percentage * investment.duration_days;
+              }
+              
               finalEarningsAmount = Number(((investment.amount_invested * totalROI) / 100).toFixed(2));
 
               if (finalEarningsAmount > 0) {

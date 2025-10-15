@@ -169,8 +169,21 @@ export default async function ActivePlansPage() {
               const isEndPayoutPlan = subscription.duration_days >= 30;
               
               // For display purposes, show what they would earn daily vs total
-              const dailyEarning = (Number(subscription.amount_invested) * Number(subscription.daily_roi_percentage)) / 100;
-              const totalEarning = dailyEarning * subscription.duration_days;
+              let dailyEarning, totalEarning;
+              
+              if (subscription.duration_days >= 60) {
+                // Bi-Monthly plan: 150% total ROI
+                dailyEarning = 0; // No daily earnings
+                totalEarning = (Number(subscription.amount_invested) * 150) / 100;
+              } else if (subscription.duration_days >= 30) {
+                // Monthly plan: 120% total ROI
+                dailyEarning = 0; // No daily earnings
+                totalEarning = (Number(subscription.amount_invested) * 120) / 100;
+              } else {
+                // Daily plans: Use daily ROI calculation
+                dailyEarning = (Number(subscription.amount_invested) * Number(subscription.daily_roi_percentage)) / 100;
+                totalEarning = dailyEarning * subscription.duration_days;
+              }
 
               return (
                 <div key={subscription.id} className="bg-gradient-to-br from-gray-800/50 to-gray-900/50 rounded-3xl border border-gray-700/30 p-6">
