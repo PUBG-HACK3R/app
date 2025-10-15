@@ -4,6 +4,7 @@ import { getSupabaseServerClient } from "@/lib/supabase/server";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { ProfileLogoutButton } from "@/components/profile-logout-button";
+import { NeedHelpButton } from "@/components/need-help-button";
 import { 
   User, 
   Settings,
@@ -98,6 +99,14 @@ export default async function ModernSettingsPage() {
             </div>
             <ChevronRight className="w-5 h-5 text-gray-400" />
           </Link>
+        </div>
+
+        {/* Need Help Button */}
+        <div className="pt-4">
+          <NeedHelpButton 
+            variant="outline" 
+            className="w-full border-blue-600/50 text-blue-300 hover:bg-blue-600/20"
+          />
         </div>
 
         {/* Logout Button */}

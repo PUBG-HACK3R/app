@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { SupportButton } from "@/components/support-button";
+import { NeedHelpButton } from "@/components/need-help-button";
 import { toast } from "sonner";
 import { 
   Users, 
@@ -227,6 +228,14 @@ export function ReferralDashboardV2() {
           </CardContent>
         </Card>
       )}
+
+      {/* Need Help Button */}
+      <div className="text-center py-6">
+        <NeedHelpButton 
+          variant="outline" 
+          className="border-purple-600/50 text-purple-300 hover:bg-purple-600/20"
+        />
+      </div>
     </main>
   );
 }

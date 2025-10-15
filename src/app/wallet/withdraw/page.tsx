@@ -4,6 +4,7 @@ import * as React from "react";
 import Link from "next/link";
 import { getSupabaseBrowserClient } from "@/lib/supabase/client";
 import SimpleWithdrawal from "@/components/wallet/simple-withdrawal";
+import { NeedHelpButton } from "@/components/need-help-button";
 import { 
   ArrowLeft,
   CheckCircle,
@@ -90,6 +91,14 @@ export default function WithdrawPage() {
                 <p className="text-gray-400">Loading your balance...</p>
               </div>
             )}
+
+            {/* Need Help Button */}
+            <div className="text-center pt-4">
+              <NeedHelpButton 
+                variant="outline" 
+                className="border-blue-600/50 text-blue-300 hover:bg-blue-600/20"
+              />
+            </div>
           </div>
         </div>
       </div>

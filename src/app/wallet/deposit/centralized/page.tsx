@@ -8,6 +8,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { ArrowLeft, Shield } from "lucide-react";
 import NowPaymentsDeposit from "@/components/wallet/nowpayments-deposit";
+import { NeedHelpButton } from "@/components/need-help-button";
 
 function CentralizedDepositContent() {
   const search = useSearchParams();
@@ -36,6 +37,14 @@ function CentralizedDepositContent() {
               onSuccess={handleSuccess}
               onError={handleError}
             />
+
+            {/* Need Help Button */}
+            <div className="text-center pt-6">
+              <NeedHelpButton 
+                variant="outline" 
+                className="border-blue-600/50 text-blue-300 hover:bg-blue-600/20"
+              />
+            </div>
           </div>
         </div>
       </div>
