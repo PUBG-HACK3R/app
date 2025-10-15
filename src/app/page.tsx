@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { CurrentPlansDisplay } from "@/components/current-plans-display";
+import { WhatsAppGroupPopup } from "@/components/whatsapp-group-popup";
 import { 
   ArrowRight, 
   Shield, 
@@ -183,6 +184,9 @@ export default function MiningLandingPage() {
           </div>
         </div>
       </footer>
+
+      {/* WhatsApp Group Popup */}
+      <WhatsAppGroupPopup />
     </div>
   );
 }
