@@ -3,6 +3,7 @@ import Image from "next/image";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { CurrentPlansDisplay } from "@/components/current-plans-display";
 import { 
   ArrowRight, 
   Shield, 
@@ -147,6 +148,16 @@ export default function MiningLandingPage() {
         </div>
       </section>
 
+      {/* Current Investment Plans */}
+      <section className="py-16 px-4">
+        <div className="max-w-7xl mx-auto">
+          <div className="text-center mb-12">
+            <h2 className="text-3xl font-bold text-white mb-4">Current Investment Plans</h2>
+            <p className="text-gray-400">Choose the perfect plan for your investment goals</p>
+          </div>
+          <CurrentPlansDisplay />
+        </div>
+      </section>
 
       {/* CTA Section */}
       <section className="py-16 px-4">
