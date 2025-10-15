@@ -19,7 +19,7 @@ export function NeedHelpButton({
   text = "Need Help?"
 }: NeedHelpButtonProps) {
   const handleWhatsAppRedirect = () => {
-    const phoneNumber = "8484280186"; // +84 84 280 1867 formatted for WhatsApp
+    const phoneNumber = "84842801867"; // +84 84 280 1867 formatted for WhatsApp
     const message = encodeURIComponent("Hello! I need help with my WeEarn account.");
     const whatsappUrl = `https://wa.me/${phoneNumber}?text=${message}`;
     
@@ -43,7 +43,7 @@ export function NeedHelpButton({
 // Alternative compact version for floating button
 export function NeedHelpFloatingButton({ className = "" }: { className?: string }) {
   const handleWhatsAppRedirect = () => {
-    const phoneNumber = "8484280186";
+    const phoneNumber = "84842801867";
     const message = encodeURIComponent("Hello! I need help with my WeEarn account.");
     const whatsappUrl = `https://wa.me/${phoneNumber}?text=${message}`;
     window.open(whatsappUrl, '_blank');
