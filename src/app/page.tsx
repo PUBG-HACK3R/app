@@ -234,44 +234,9 @@ export default function MiningLandingPage() {
       </section>
 
       {/* Footer */}
-      <footer className="py-12 px-4 border-t border-gray-700/50">
+      <footer className="py-6 px-4 border-t border-gray-700/50">
         <div className="max-w-7xl mx-auto">
-          <div className="grid md:grid-cols-4 gap-8">
-            <div>
-              <div className="flex items-center gap-2 mb-4">
-                <Image src="/logoC.png" alt="WeEarn Mining" width={24} height={24} />
-                <span className="text-lg font-bold text-white">WeEarn Mining</span>
-              </div>
-              <p className="text-gray-400 text-sm">
-                Professional Bitcoin mining platform with enterprise-grade equipment and renewable energy.
-              </p>
-            </div>
-            <div>
-              <h3 className="text-white font-semibold mb-4">Platform</h3>
-              <div className="space-y-2 text-sm text-gray-400">
-                <div><Link href="/plans">Mining Plans</Link></div>
-                <div><Link href="/dashboard">Dashboard</Link></div>
-                <div><Link href="/wallet">Wallet</Link></div>
-              </div>
-            </div>
-            <div>
-              <h3 className="text-white font-semibold mb-4">Support</h3>
-              <div className="space-y-2 text-sm text-gray-400">
-                <div><Link href="/help">Help Center</Link></div>
-                <div><Link href="/contact">Contact Us</Link></div>
-                <div><Link href="/faq">FAQ</Link></div>
-              </div>
-            </div>
-            <div>
-              <h3 className="text-white font-semibold mb-4">Legal</h3>
-              <div className="space-y-2 text-sm text-gray-400">
-                <div><Link href="/terms">Terms of Service</Link></div>
-                <div><Link href="/privacy">Privacy Policy</Link></div>
-                <div><Link href="/risk">Risk Disclosure</Link></div>
-              </div>
-            </div>
-          </div>
-          <div className="border-t border-gray-700/50 mt-8 pt-8 text-center text-gray-400 text-sm">
+          <div className="text-center text-gray-400 text-sm">
             © 2024 WeEarn Mining. All rights reserved.
           </div>
         </div>
