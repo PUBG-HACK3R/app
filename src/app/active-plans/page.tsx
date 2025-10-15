@@ -172,15 +172,15 @@ export default async function ActivePlansPage() {
               let dailyEarning, totalEarning;
               
               if (subscription.duration_days >= 60) {
-                // Bi-Monthly plan: 150% total ROI
+                // Bi-Monthly plan: 150% profit ROI (on top of principal)
                 dailyEarning = 0; // No daily earnings
                 totalEarning = (Number(subscription.amount_invested) * 150) / 100;
               } else if (subscription.duration_days >= 30) {
-                // Monthly plan: 120% total ROI
+                // Monthly plan: 120% profit ROI (on top of principal)
                 dailyEarning = 0; // No daily earnings
                 totalEarning = (Number(subscription.amount_invested) * 120) / 100;
               } else {
-                // Daily plans: Use daily ROI calculation
+                // Daily plans: Use daily ROI calculation (profit only)
                 dailyEarning = (Number(subscription.amount_invested) * Number(subscription.daily_roi_percentage)) / 100;
                 totalEarning = dailyEarning * subscription.duration_days;
               }

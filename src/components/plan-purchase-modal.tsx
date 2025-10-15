@@ -160,17 +160,17 @@ export function PlanPurchaseModal({
     let dailyEarning, totalReturn, totalProfit, totalROI;
     
     if (isEndPayoutPlan) {
-      // End payout plans: Fixed total ROI based on duration
+      // End payout plans: Fixed profit ROI based on duration
       if (duration >= 60) {
-        // Bi-Monthly plan: 150% total ROI
+        // Bi-Monthly plan: 150% profit ROI (150% profit + 100% principal = 250% total)
         totalROI = 150;
       } else {
-        // Monthly plan: 120% total ROI  
+        // Monthly plan: 120% profit ROI (120% profit + 100% principal = 220% total)
         totalROI = 120;
       }
       
-      totalReturn = (amount * totalROI) / 100;
-      totalProfit = totalReturn - amount;
+      totalProfit = (amount * totalROI) / 100; // This is the profit amount
+      totalReturn = amount + totalProfit; // Principal + Profit = Total payout
       dailyEarning = 0; // No daily earnings, only at end
     } else {
       // Daily payout plans: traditional daily ROI calculation

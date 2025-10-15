@@ -86,20 +86,20 @@ export async function POST() {
             // Check if earnings haven't been processed yet
             if ((investment.total_earned || 0) === 0) {
               // Calculate total earnings based on plan type
-              let totalROI;
+              let profitROI;
               
               if (investment.duration_days >= 60) {
-                // Bi-Monthly plan: 150% total ROI
-                totalROI = 150;
+                // Bi-Monthly plan: 150% profit ROI (on top of principal)
+                profitROI = 150;
               } else if (investment.duration_days >= 30) {
-                // Monthly plan: 120% total ROI
-                totalROI = 120;
+                // Monthly plan: 120% profit ROI (on top of principal)
+                profitROI = 120;
               } else {
-                // Daily plans: Use daily ROI * duration
-                totalROI = investment.daily_roi_percentage * investment.duration_days;
+                // Daily plans: Use daily ROI * duration (this is profit only)
+                profitROI = investment.daily_roi_percentage * investment.duration_days;
               }
               
-              finalEarningsAmount = Number(((investment.amount_invested * totalROI) / 100).toFixed(2));
+              finalEarningsAmount = Number(((investment.amount_invested * profitROI) / 100).toFixed(2));
 
               if (finalEarningsAmount > 0) {
                 // Add earnings to balance
