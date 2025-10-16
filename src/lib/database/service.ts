@@ -131,17 +131,34 @@ export class DatabaseService {
   }
 
   async addToBalance(userId: string, amount: number, type: 'available' | 'locked'): Promise<boolean> {
-    const balance = await this.getUserBalance(userId);
-    if (!balance) return false;
+    try {
+      console.log(`🔄 Adding ${amount} USDT to ${type} balance for user ${userId}`);
+      
+      const balance = await this.getUserBalance(userId);
+      if (!balance) {
+        console.error(`❌ No balance record found for user ${userId}`);
+        return false;
+      }
 
-    const updates: Partial<UserBalance> = {};
-    if (type === 'available') {
-      updates.available_balance = balance.available_balance + amount;
-    } else {
-      updates.locked_balance = balance.locked_balance + amount;
+      console.log(`📊 Current balance: available=${balance.available_balance}, locked=${balance.locked_balance}`);
+
+      const updates: Partial<UserBalance> = {};
+      if (type === 'available') {
+        updates.available_balance = balance.available_balance + amount;
+      } else {
+        updates.locked_balance = balance.locked_balance + amount;
+      }
+
+      console.log(`📊 New balance will be: ${JSON.stringify(updates)}`);
+      
+      const result = await this.updateUserBalance(userId, updates);
+      console.log(`✅ Balance update result: ${result}`);
+      
+      return result;
+    } catch (error) {
+      console.error(`❌ Exception in addToBalance for user ${userId}:`, error);
+      return false;
     }
-
-    return this.updateUserBalance(userId, updates);
   }
 
   // ==================== DEPOSITS ====================
@@ -192,44 +209,81 @@ export class DatabaseService {
   }
 
   async confirmDeposit(orderId: string, paymentId?: string, txHash?: string): Promise<boolean> {
-    const deposit = await this.getDepositByOrderId(orderId);
-    if (!deposit || deposit.status === 'confirmed') return false;
+    try {
+      console.log(`🔄 Starting confirmDeposit for order: ${orderId}`);
+      
+      const deposit = await this.getDepositByOrderId(orderId);
+      if (!deposit) {
+        console.error(`❌ Deposit not found for order: ${orderId}`);
+        return false;
+      }
+      
+      if (deposit.status === 'confirmed') {
+        console.log(`⚠️ Deposit ${orderId} already confirmed, skipping`);
+        return false;
+      }
 
-    // Update deposit status
-    const depositUpdated = await this.updateDeposit(orderId, {
-      status: 'confirmed',
-      payment_id: paymentId,
-      tx_hash: txHash,
-      confirmed_at: new Date().toISOString()
-    });
+      console.log(`📝 Deposit found: ${deposit.id}, User: ${deposit.user_id}, Amount: ${deposit.amount_usdt}`);
 
-    if (!depositUpdated) return false;
-
-    // Add to user balance
-    const balanceUpdated = await this.addToBalance(deposit.user_id, deposit.amount_usdt, 'available');
-    if (!balanceUpdated) return false;
-
-    // Update total deposited
-    const balance = await this.getUserBalance(deposit.user_id);
-    if (balance) {
-      await this.updateUserBalance(deposit.user_id, {
-        total_deposited: balance.total_deposited + deposit.amount_usdt
+      // Update deposit status
+      console.log(`🔄 Updating deposit status for ${orderId}...`);
+      const depositUpdated = await this.updateDeposit(orderId, {
+        status: 'confirmed',
+        payment_id: paymentId,
+        tx_hash: txHash,
+        confirmed_at: new Date().toISOString()
       });
+
+      if (!depositUpdated) {
+        console.error(`❌ Failed to update deposit status for ${orderId}`);
+        return false;
+      }
+      console.log(`✅ Deposit status updated for ${orderId}`);
+
+      // Add to user balance
+      console.log(`💰 Adding ${deposit.amount_usdt} USDT to user ${deposit.user_id} balance...`);
+      const balanceUpdated = await this.addToBalance(deposit.user_id, deposit.amount_usdt, 'available');
+      if (!balanceUpdated) {
+        console.error(`❌ Failed to update user balance for ${deposit.user_id}`);
+        return false;
+      }
+      console.log(`✅ User balance updated for ${deposit.user_id}`);
+
+      // Update total deposited
+      console.log(`📊 Updating total deposited for user ${deposit.user_id}...`);
+      const balance = await this.getUserBalance(deposit.user_id);
+      if (balance) {
+        await this.updateUserBalance(deposit.user_id, {
+          total_deposited: balance.total_deposited + deposit.amount_usdt
+        });
+        console.log(`✅ Total deposited updated: ${balance.total_deposited + deposit.amount_usdt}`);
+      } else {
+        console.error(`❌ Could not get balance for user ${deposit.user_id}`);
+      }
+
+      // Log transaction
+      console.log(`📝 Creating transaction log for ${orderId}...`);
+      await this.logTransaction(
+        deposit.user_id,
+        'deposit',
+        deposit.amount_usdt,
+        `Deposit confirmed - Order ${orderId}`,
+        deposit.id
+      );
+      console.log(`✅ Transaction log created for ${orderId}`);
+
+      // Process referral commission
+      console.log(`🎁 Processing referral commission for ${deposit.user_id}...`);
+      await this.processReferralCommission(deposit.user_id, deposit.amount_usdt, 'deposit');
+      console.log(`✅ Referral commission processed for ${orderId}`);
+
+      console.log(`🎉 Successfully confirmed deposit ${orderId}`);
+      return true;
+      
+    } catch (error) {
+      console.error(`❌ Exception in confirmDeposit for ${orderId}:`, error);
+      return false;
     }
-
-    // Log transaction
-    await this.logTransaction(
-      deposit.user_id,
-      'deposit',
-      deposit.amount_usdt,
-      `Deposit confirmed - Order ${orderId}`,
-      deposit.id
-    );
-
-    // Process referral commission
-    await this.processReferralCommission(deposit.user_id, deposit.amount_usdt, 'deposit');
-
-    return true;
   }
 
   // ==================== INVESTMENTS ====================

@@ -88,14 +88,31 @@ export async function POST(request: Request) {
     // If payment is confirmed, process the deposit
     const successStatuses = ["finished", "confirmed", "completed", "succeeded"];
     if (paymentStatus && successStatuses.includes(paymentStatus.toLowerCase())) {
-      // Confirm deposit (this handles balance updates, referral commissions, etc.)
-      const confirmed = await db.confirmDeposit(orderId, paymentId, txHash);
+      console.log(`🔄 Processing deposit confirmation for ${orderId} with status: ${paymentStatus}`);
       
-      if (confirmed) {
-        console.log(`✅ Deposit ${orderId} confirmed successfully`);
-      } else {
-        console.warn(`⚠️ Failed to confirm deposit ${orderId}`);
+      try {
+        // Confirm deposit (this handles balance updates, referral commissions, etc.)
+        const confirmed = await db.confirmDeposit(orderId, paymentId, txHash);
+        
+        if (confirmed) {
+          console.log(`✅ Deposit ${orderId} confirmed successfully`);
+        } else {
+          console.error(`❌ Failed to confirm deposit ${orderId} - confirmDeposit returned false`);
+          
+          // Get deposit details for debugging
+          const deposit = await db.getDepositByOrderId(orderId);
+          console.error(`🔍 Deposit details:`, {
+            found: !!deposit,
+            status: deposit?.status,
+            user_id: deposit?.user_id,
+            amount: deposit?.amount_usdt
+          });
+        }
+      } catch (error) {
+        console.error(`❌ Exception in confirmDeposit for ${orderId}:`, error);
       }
+    } else {
+      console.log(`⏳ Deposit ${orderId} status: ${paymentStatus} (not processing)`);
     }
 
     return NextResponse.json({ 
