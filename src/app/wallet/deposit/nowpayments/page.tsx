@@ -25,7 +25,7 @@ import { Suspense } from "react";
 
 function NOWPaymentsDepositContent() {
   const search = useSearchParams();
-  const [amount, setAmount] = React.useState<string>("");
+  const [amount, setAmount] = React.useState<string>("20");
   const [loading, setLoading] = React.useState(false);
   const [error, setError] = React.useState<string | null>(null);
   const [minAmount, setMinAmount] = React.useState<number>(12);
@@ -42,7 +42,7 @@ function NOWPaymentsDepositContent() {
   async function fetchMinAmount() {
     try {
       setLoadingMinAmount(true);
-      const res = await fetch("/api/nowpayments/min-amount?currency_from=usd&currency_to=usdttrc20");
+      const res = await fetch("/api/nowpayments/min-amount?currency_from=usd&currency_to=usdtbsc");
       const data = await res.json();
       
       if (res.ok && data.min_amount) {
@@ -65,7 +65,7 @@ function NOWPaymentsDepositContent() {
       const plan = search.get("plan") ?? undefined;
       const payload = {
         amount: parseFloat(amount),
-        payCurrency: process.env.NEXT_PUBLIC_NOWPAYMENTS_CURRENCY || "usdttrc20",
+        payCurrency: process.env.NEXT_PUBLIC_NOWPAYMENTS_CURRENCY || "usdtbsc",
         priceCurrency: "usd",
         planId: plan,
       };
@@ -111,7 +111,7 @@ function NOWPaymentsDepositContent() {
 
   const planName = search.get("plan");
   const suggestedAmounts = React.useMemo(() => {
-    const baseAmounts = [25, 50, 100, 200, 500, 1000];
+    const baseAmounts = [20, 50, 100, 200, 500, 1000];
     return [minAmount, ...baseAmounts.filter(amt => amt > minAmount)];
   }, [minAmount]);
 
@@ -215,7 +215,7 @@ function NOWPaymentsDepositContent() {
                         Minimum Deposit: ${loadingMinAmount ? "Loading..." : `$${minAmount} USDT`}
                       </div>
                       <div className="text-xs text-blue-300 mt-1">
-                        This minimum is set by NOWPayments to cover TRC20 network fees and ensure efficient blockchain processing.
+                        This minimum is set by NOWPayments to cover BEP20 network fees and ensure efficient blockchain processing.
                       </div>
                     </div>
                   </div>
@@ -228,7 +228,7 @@ function NOWPaymentsDepositContent() {
                         {parseFloat(amount || "0") < minAmount && (
                           <div className="mt-2">
                             <p className="text-xs text-red-400">
-                              USDT TRC20 has a minimum deposit of ${minAmount} due to network fees and processing costs.
+                              USDT BEP20 has a minimum deposit of ${minAmount} due to network fees and processing costs.
                             </p>
                             <button
                               type="button"
@@ -279,7 +279,7 @@ function NOWPaymentsDepositContent() {
                     <CheckCircle className="h-5 w-5 text-green-400" />
                     <div>
                       <div className="font-medium text-white">Supported Currency</div>
-                      <div className="text-sm text-gray-400">USDT (TRC20)</div>
+                      <div className="text-sm text-gray-400">USDT (BEP20)</div>
                     </div>
                   </div>
                   <div className="flex items-center space-x-3">

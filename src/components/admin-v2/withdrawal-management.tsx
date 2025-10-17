@@ -11,7 +11,8 @@ import {
   Clock,
   RefreshCw,
   DollarSign,
-  AlertTriangle
+  AlertTriangle,
+  Copy
 } from "lucide-react";
 import {
   Table,
@@ -40,6 +41,7 @@ export function WithdrawalManagement() {
   const [loading, setLoading] = useState(true);
   const [processing, setProcessing] = useState<string | null>(null);
   const [refunding, setRefunding] = useState(false);
+  const [toast, setToast] = useState<{ message: string; type: 'success' | 'error' } | null>(null);
 
   useEffect(() => {
     fetchWithdrawals();
@@ -139,6 +141,32 @@ export function WithdrawalManagement() {
       style: 'currency',
       currency: 'USD'
     }).format(amount);
+  };
+
+  const showToast = (message: string, type: 'success' | 'error' = 'success') => {
+    setToast({ message, type });
+    setTimeout(() => setToast(null), 3000); // Hide after 3 seconds
+  };
+
+  const copyToClipboard = async (text: string) => {
+    try {
+      await navigator.clipboard.writeText(text);
+      showToast('Address copied to clipboard!', 'success');
+    } catch (err) {
+      console.error('Failed to copy: ', err);
+      // Fallback for older browsers
+      try {
+        const textArea = document.createElement('textarea');
+        textArea.value = text;
+        document.body.appendChild(textArea);
+        textArea.select();
+        document.execCommand('copy');
+        document.body.removeChild(textArea);
+        showToast('Address copied to clipboard!', 'success');
+      } catch (fallbackErr) {
+        showToast('Failed to copy address', 'error');
+      }
+    }
   };
 
   const getStatusBadge = (status: string) => {
@@ -396,9 +424,16 @@ export function WithdrawalManagement() {
                       </div>
                     </TableCell>
                     <TableCell>
-                      <code className="text-xs bg-slate-700 px-2 py-1 rounded text-blue-400">
-                        {withdrawal.wallet_address.slice(0, 20)}...
-                      </code>
+                      <div 
+                        className="flex items-center space-x-2 cursor-pointer group"
+                        onClick={() => copyToClipboard(withdrawal.wallet_address)}
+                        title="Click to copy address"
+                      >
+                        <code className="text-xs bg-slate-700 px-2 py-1 rounded text-blue-400 font-mono break-all group-hover:bg-slate-600 transition-colors">
+                          {withdrawal.wallet_address}
+                        </code>
+                        <Copy className="h-3 w-3 text-gray-400 group-hover:text-blue-400 transition-colors flex-shrink-0" />
+                      </div>
                     </TableCell>
                     <TableCell>
                       {getStatusBadge(withdrawal.status)}
@@ -458,6 +493,26 @@ export function WithdrawalManagement() {
           </div>
         </CardContent>
       </Card>
+
+      {/* Toast Notification */}
+      {toast && (
+        <div className="fixed top-4 right-4 z-50 animate-in slide-in-from-top-2 duration-300">
+          <div className={`px-4 py-3 rounded-lg shadow-lg border ${
+            toast.type === 'success' 
+              ? 'bg-green-500/20 border-green-500/30 text-green-400' 
+              : 'bg-red-500/20 border-red-500/30 text-red-400'
+          }`}>
+            <div className="flex items-center space-x-2">
+              {toast.type === 'success' ? (
+                <CheckCircle className="h-4 w-4" />
+              ) : (
+                <XCircle className="h-4 w-4" />
+              )}
+              <span className="text-sm font-medium">{toast.message}</span>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

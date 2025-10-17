@@ -27,15 +27,15 @@ interface TraditionalWithdrawalProps {
 export default function TraditionalWithdrawal({ balance, onSuccess, onError }: TraditionalWithdrawalProps) {
   const [amount, setAmount] = useState("");
   const [address, setAddress] = useState("");
-  const [network, setNetwork] = useState("TRC20");
+  const [network, setNetwork] = useState("BEP20");
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const networks = [
-    { value: "TRC20", label: "TRON (TRC20)", fee: 0 }
+    { value: "BEP20", label: "BSC (BEP20)", fee: 0 }
   ];
 
   const platformFee = 0.05; // 5%
-  const networkFee = 0; // No network fee for TRC20
+  const networkFee = 0; // No network fee for BEP20
 
   const submitWithdrawal = async () => {
     if (!amount || !address) {

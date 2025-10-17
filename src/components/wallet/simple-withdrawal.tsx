@@ -11,7 +11,10 @@ import {
   CheckCircle, 
   Loader2,
   TrendingDown,
-  DollarSign
+  DollarSign,
+  Search,
+  X,
+  AlertTriangle
 } from "lucide-react";
 
 interface SimpleWithdrawalProps {
@@ -35,6 +38,8 @@ export default function SimpleWithdrawal({ balance, onSuccess, onError }: Simple
   const [pendingWithdrawal, setPendingWithdrawal] = useState<WithdrawalRequest | null>(null);
   const [timeRemaining, setTimeRemaining] = useState(900); // 15 minutes in seconds
   const [processingMessages, setProcessingMessages] = useState<string[]>([]);
+  const [isCheckingStatus, setIsCheckingStatus] = useState(false);
+  const [currentUserId, setCurrentUserId] = useState<string | null>(null);
   // Removed unused state variables
 
   useEffect(() => {
@@ -43,6 +48,9 @@ export default function SimpleWithdrawal({ balance, onSuccess, onError }: Simple
         const supabase = getSupabaseBrowserClient();
         const { data: { user } } = await supabase.auth.getUser();
         if (!user) return;
+
+        // Store user ID for API calls
+        setCurrentUserId(user.id);
 
         const { data: pending } = await supabase
           .from("withdrawals")
@@ -187,8 +195,8 @@ export default function SimpleWithdrawal({ balance, onSuccess, onError }: Simple
       return;
     }
 
-    if (!address.startsWith("T") || address.length !== 34) {
-      onError("Please enter a valid TRC20 address");
+    if (!address.startsWith("0x") || address.length !== 42) {
+      onError("Please enter a valid BEP20 address");
       return;
     }
 
@@ -202,7 +210,7 @@ export default function SimpleWithdrawal({ balance, onSuccess, onError }: Simple
         body: JSON.stringify({
           amount: numericAmount,
           address: address,
-          network: "TRC20",
+          network: "BEP20",
         }),
       });
 
@@ -244,6 +252,72 @@ export default function SimpleWithdrawal({ balance, onSuccess, onError }: Simple
 
   const calculateNetAmount = (amount: number) => {
     return Math.round((amount - calculateFee(amount)) * 100) / 100;
+  };
+
+  const checkWithdrawalStatus = async () => {
+    if (!pendingWithdrawal) {
+      onError("No pending withdrawal found");
+      return;
+    }
+
+    if (!currentUserId) {
+      onError("User not authenticated");
+      return;
+    }
+
+    setIsCheckingStatus(true);
+    try {
+      console.log("Checking withdrawal status for:", pendingWithdrawal.id);
+
+      // Use API endpoint to check withdrawal status
+      const response = await fetch(`/api/withdrawal-status?id=${pendingWithdrawal.id}&user_id=${currentUserId}`);
+      const data = await response.json();
+
+      if (!response.ok) {
+        console.error("API error checking withdrawal status:", data.error);
+        onError(data.error || "Failed to check withdrawal status");
+        return;
+      }
+
+      if (!data.success || !data.withdrawal) {
+        console.error("Invalid response from API");
+        onError("Invalid response from server");
+        return;
+      }
+
+      const withdrawal = data.withdrawal;
+      console.log("Withdrawal status:", withdrawal.status);
+
+      if (withdrawal.status === "approved") {
+        // Show approval success message
+        alert("✅ Withdrawal Approved!");
+        setPendingWithdrawal(null);
+        
+        // Redirect to wallet page immediately
+        window.location.href = "/wallet";
+        
+      } else if (withdrawal.status === "rejected") {
+        // Show rejection message and redirect
+        const reason = withdrawal.admin_notes || "No reason provided";
+        onError(`Withdrawal rejected: ${reason}`);
+        setPendingWithdrawal(null);
+        
+        // Redirect to wallet page after showing error
+        setTimeout(() => {
+          window.location.href = "/wallet";
+        }, 3000);
+        
+      } else {
+        // Still pending
+        onError("Withdrawal is still pending approval");
+      }
+
+    } catch (error: any) {
+      console.error("Error checking withdrawal status:", error);
+      onError("Failed to check withdrawal status");
+    } finally {
+      setIsCheckingStatus(false);
+    }
   };
 
   const quickAmounts = [
@@ -302,10 +376,29 @@ export default function SimpleWithdrawal({ balance, onSuccess, onError }: Simple
                 ))}
               </div>
             </div>
+
+            {/* Check Status Button */}
+            <Button
+              onClick={checkWithdrawalStatus}
+              disabled={isCheckingStatus}
+              className="w-full bg-gradient-to-r from-blue-500 to-purple-500 hover:from-blue-600 hover:to-purple-600 text-white font-semibold"
+            >
+              {isCheckingStatus ? (
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  Checking Status...
+                </>
+              ) : (
+                <>
+                  <Search className="mr-2 h-4 w-4" />
+                  Check Status
+                </>
+              )}
+            </Button>
             
             <div className="text-xs text-gray-400 text-center">
-              Please wait while we process your withdrawal through the blockchain network.
-              Do not close this page or refresh your browser.
+              Click "Check Status" to see if your withdrawal has been approved or rejected.
+              Processing will complete automatically within 15 minutes.
             </div>
           </div>
         </CardContent>
@@ -365,9 +458,9 @@ export default function SimpleWithdrawal({ balance, onSuccess, onError }: Simple
 
         {/* Wallet Address */}
         <div>
-          <div className="text-sm text-gray-400 mb-2">Your TRON wallet address</div>
+          <div className="text-sm text-gray-400 mb-2">Your BSC BEP20 wallet address</div>
           <Input
-            placeholder="TRX address (starts with T...)"
+            placeholder="BSC BEP20 address (starts with 0x...)"
             value={address}
             onChange={(e) => setAddress(e.target.value)}
             className="bg-gray-700/50 border-gray-600 text-white rounded-2xl py-3"

@@ -80,9 +80,18 @@ export function AdminDashboard() {
         console.error('Stats API failed:', statsResponse.status, await statsResponse.text());
       }
 
-      // Fetch recent activity (create a simple activity endpoint or use existing data)
-      // For now, we'll skip this since the main issue is the stats
-      setRecentActivity([]);
+      // Fetch recent activity using simple API
+      const activityResponse = await fetch('/api/admin-v2/dashboard/activity-simple');
+      if (activityResponse.ok) {
+        const activityData = await activityResponse.json();
+        console.log('📊 Dashboard received activity data:', activityData);
+        console.log('📊 Activities count:', activityData.activities?.length || 0);
+        console.log('📊 Activity types:', [...new Set((activityData.activities || []).map((a: any) => a.type))]);
+        setRecentActivity(activityData.activities || []);
+      } else {
+        console.error('Activity API failed:', activityResponse.status, await activityResponse.text());
+        setRecentActivity([]);
+      }
     } catch (error) {
       console.error('Error fetching dashboard data:', error);
     } finally {

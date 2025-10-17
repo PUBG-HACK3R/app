@@ -37,8 +37,8 @@ interface CurrencyOption {
 }
 
 const SUPPORTED_CURRENCIES: CurrencyOption[] = [
-  { code: 'usdttrc20', name: 'USDT TRC20', network: 'TRON', minAmount: 20, icon: '₮' },
   { code: 'usdtbsc', name: 'USDT BEP20', network: 'BSC', minAmount: 20, icon: '₮' },
+  { code: 'usdttrc20', name: 'USDT TRC20', network: 'TRON', minAmount: 20, icon: '₮' },
 ];
 
 export default function NowPaymentsDeposit({ 
@@ -47,8 +47,8 @@ export default function NowPaymentsDeposit({
   onSuccess, 
   onError 
 }: NowPaymentsDepositProps) {
-  const [amount, setAmount] = useState<string>(initialAmount?.toString() || '100');
-  const [selectedCurrency, setSelectedCurrency] = useState<string>('usdttrc20');
+  const [amount, setAmount] = useState<string>(initialAmount?.toString() || '20');
+  const [selectedCurrency, setSelectedCurrency] = useState<string>('usdtbsc');
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [pendingDeposit, setPendingDeposit] = useState<any>(null);

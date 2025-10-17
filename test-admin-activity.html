@@ -1,0 +1,31 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Test Admin Activity API</title>
+</head>
+<body>
+    <h1>Admin Activity API Test</h1>
+    <button onclick="testAPI()">Test Activity API</button>
+    <div id="result"></div>
+
+    <script>
+        async function testAPI() {
+            const resultDiv = document.getElementById('result');
+            resultDiv.innerHTML = 'Testing...';
+            
+            try {
+                const response = await fetch('/api/admin-v2/dashboard/activity');
+                const data = await response.json();
+                
+                resultDiv.innerHTML = `
+                    <h3>Status: ${response.status}</h3>
+                    <h4>Activities Count: ${data.activities?.length || 0}</h4>
+                    <pre>${JSON.stringify(data, null, 2)}</pre>
+                `;
+            } catch (error) {
+                resultDiv.innerHTML = `<h3>Error: ${error.message}</h3>`;
+            }
+        }
+    </script>
+</body>
+</html>

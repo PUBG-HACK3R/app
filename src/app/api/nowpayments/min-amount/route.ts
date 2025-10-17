@@ -7,7 +7,7 @@ export async function GET(request: Request) {
   try {
     const { searchParams } = new URL(request.url);
     const currencyFrom = searchParams.get("currency_from") || "usd";
-    const currencyTo = searchParams.get("currency_to") || "usdttrc20";
+    const currencyTo = searchParams.get("currency_to") || "usdtbsc";
     
     const baseUrl = process.env.NOWPAYMENTS_BASE_URL || "https://api.nowpayments.io/v1";
     const apiKey = process.env.NOWPAYMENTS_API_KEY;
@@ -28,9 +28,9 @@ export async function GET(request: Request) {
         statusText: res.statusText,
       });
       
-      // Return fallback minimum for USDT TRC20
+      // Return fallback minimum for USDT BEP20
       return NextResponse.json({
-        min_amount: "12.00",
+        min_amount: "20.00",
         currency_from: currencyFrom,
         currency_to: currencyTo,
         fallback: true,
@@ -42,7 +42,7 @@ export async function GET(request: Request) {
     console.log("NOWPayments min-amount response:", data);
 
     return NextResponse.json({
-      min_amount: data.min_amount || "12.00",
+      min_amount: data.min_amount || "20.00",
       currency_from: currencyFrom,
       currency_to: currencyTo,
       fallback: false
@@ -52,9 +52,9 @@ export async function GET(request: Request) {
     
     // Return fallback minimum
     return NextResponse.json({
-      min_amount: "12.00",
+      min_amount: "20.00",
       currency_from: "usd",
-      currency_to: "usdttrc20",
+      currency_to: "usdtbsc",
       fallback: true,
       error: err.message
     });

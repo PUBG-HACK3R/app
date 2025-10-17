@@ -9,7 +9,7 @@ export const dynamic = "force-dynamic";
 const CreateInvoiceSchema = z.object({
   amount: z.number().positive().min(20, "Minimum amount is $20 USDT for USDT TRC20"),
   priceCurrency: z.string().default("usd"),
-  payCurrency: z.string().default("usdttrc20"),
+  payCurrency: z.string().default("usdtbsc"),
   planId: z.string().optional(),
 });
 
@@ -41,12 +41,15 @@ export async function POST(request: Request) {
     // Find the best available currency (case-insensitive)
     let finalPayCurrency = payCurrency;
     const currencyPriority = [
-      'usdttrc20',    // Lowercase - this is what your account has!
+      'usdtbsc',      // Binance Smart Chain USDT (BEP20) - NOW FIRST!
+      'USDTBSC',      // Uppercase fallback
+      'usdt.bsc',     // Alternative format
+      'usdt_bsc',     // Alternative format
+      'usdttrc20',    // TRON USDT (TRC20) - NOW SECOND
       'USDTTRC20',    // Uppercase fallback
       'usdt.trc20',   // Alternative format
       'usdt_trc20',   // Alternative format
       'usdterc20',    // Ethereum USDT
-      'usdtbsc',      // Binance Smart Chain USDT
       'usdtmatic',    // Polygon USDT
       'tusdtrc20',    // TrueUSD on TRC20
       'usdt',         // Plain USDT
