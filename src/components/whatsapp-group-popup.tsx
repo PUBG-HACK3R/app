@@ -27,7 +27,7 @@ export function WhatsAppGroupPopup() {
     localStorage.setItem('whatsapp-group-popup-seen', 'true');
     
     // Open WhatsApp group link
-    window.open('https://chat.whatsapp.com/HrMv0nvAMAc4uChdtcT9qp?mode=wwt', '_blank');
+    window.open('https://chat.whatsapp.com/FLSXsnDuvQzEHkDcpq1QRx?mode=wwt', '_blank');
     
     // Close popup
     setIsOpen(false);
