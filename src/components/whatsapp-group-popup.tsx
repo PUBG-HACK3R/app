@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { MessageCircle, Users, X, TrendingUp } from "lucide-react";
+import { MessageCircle, Users, X, TrendingUp, Send } from "lucide-react";
 
 export function WhatsAppGroupPopup() {
   const [isOpen, setIsOpen] = useState(false);
@@ -22,12 +22,23 @@ export function WhatsAppGroupPopup() {
     }
   }, []);
 
-  const handleJoinGroup = () => {
+  const handleJoinWhatsApp = () => {
     // Mark as seen
     localStorage.setItem('whatsapp-group-popup-seen', 'true');
     
     // Open WhatsApp group link
-    window.open('https://chat.whatsapp.com/FLSXsnDuvQzEHkDcpq1QRx?mode=wwt', '_blank');
+    window.open('https://chat.whatsapp.com/CdXWfsyhylxA9hTXfgtmRo?mode=wwt', '_blank');
+    
+    // Close popup
+    setIsOpen(false);
+  };
+
+  const handleJoinTelegram = () => {
+    // Mark as seen
+    localStorage.setItem('whatsapp-group-popup-seen', 'true');
+    
+    // Open Telegram channel link
+    window.open('https://t.me/weearnsbs', '_blank');
     
     // Close popup
     setIsOpen(false);
@@ -45,8 +56,8 @@ export function WhatsAppGroupPopup() {
         <DialogHeader>
           <div className="flex items-center justify-between">
             <DialogTitle className="text-white flex items-center gap-2">
-              <MessageCircle className="h-6 w-6 text-green-400" />
-              Join Our WhatsApp Community
+              <Users className="h-6 w-6 text-green-400" />
+              Join Our Community
             </DialogTitle>
             <Button
               variant="ghost"
@@ -58,7 +69,7 @@ export function WhatsAppGroupPopup() {
             </Button>
           </div>
           <DialogDescription className="text-gray-300">
-            Connect with other investors and get exclusive updates, tips, and support from our community!
+            Connect with other investors and get exclusive updates, tips, and support from our community on WhatsApp and Telegram!
           </DialogDescription>
         </DialogHeader>
         
@@ -80,18 +91,27 @@ export function WhatsAppGroupPopup() {
           </div>
 
           {/* Action Buttons */}
-          <div className="flex gap-3">
-            <Button
-              onClick={handleJoinGroup}
-              className="flex-1 bg-green-600 hover:bg-green-700 text-white"
-            >
-              <MessageCircle className="w-4 h-4 mr-2" />
-              Join WhatsApp Group
-            </Button>
+          <div className="space-y-3">
+            <div className="flex gap-3">
+              <Button
+                onClick={handleJoinWhatsApp}
+                className="flex-1 bg-green-600 hover:bg-green-700 text-white"
+              >
+                <MessageCircle className="w-4 h-4 mr-2" />
+                Join WhatsApp
+              </Button>
+              <Button
+                onClick={handleJoinTelegram}
+                className="flex-1 bg-blue-600 hover:bg-blue-700 text-white"
+              >
+                <Send className="w-4 h-4 mr-2" />
+                Join Telegram
+              </Button>
+            </div>
             <Button
               onClick={handleClose}
               variant="outline"
-              className="border-gray-600 text-gray-300 hover:bg-gray-800"
+              className="w-full border-gray-600 text-gray-300 hover:bg-gray-800"
             >
               Maybe Later
             </Button>
