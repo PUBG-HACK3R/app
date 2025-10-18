@@ -78,7 +78,7 @@ export class DatabaseService {
       .from(TABLES.INVESTMENT_PLANS)
       .select('*')
       .eq('is_active', true)
-      .order('min_amount', { ascending: true });
+      .order('duration_days', { ascending: true });
     
     if (error) {
       console.error('Error fetching plans:', error);

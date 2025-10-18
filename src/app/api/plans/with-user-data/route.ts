@@ -30,7 +30,7 @@ export async function GET() {
       .from("investment_plans")
       .select("*")
       .eq("is_active", true)
-      .order("min_amount", { ascending: true });
+      .order("duration_days", { ascending: true });
     
     if (error) {
       console.error('Database error fetching plans:', error);
