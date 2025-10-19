@@ -7,7 +7,7 @@ export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
 const WithdrawSchema = z.object({
-  amount: z.number().positive().min(30, "Minimum withdrawal amount is $30"),
+  amount: z.number().positive().min(5, "Minimum withdrawal amount is $5"),
   wallet_address: z.string().min(10, "Invalid wallet address"),
 });
 
@@ -17,10 +17,10 @@ export async function POST(request: Request) {
     const { amount, wallet_address } = WithdrawSchema.parse(json);
     
     // Validate minimum amount
-    if (amount < 30) {
+    if (amount < 5) {
       return NextResponse.json({ 
         success: false,
-        error: "Minimum withdrawal amount is $30" 
+        error: "Minimum withdrawal amount is $5" 
       }, { status: 400 });
     }
 

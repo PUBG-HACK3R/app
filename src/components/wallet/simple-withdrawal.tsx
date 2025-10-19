@@ -414,7 +414,7 @@ export default function SimpleWithdrawal({ balance, onSuccess, onError }: Simple
             <TrendingDown className="w-6 h-6 text-orange-400" />
           </div>
           <div className="text-lg font-semibold text-white">Withdraw USDT</div>
-          <div className="text-xs text-gray-400 mt-1">Available: ${balance.toFixed(2)} • Min: $30 • Fee: 5%</div>
+          <div className="text-xs text-gray-400 mt-1">Available: ${balance.toFixed(2)} • Min: $5 • Fee: 5%</div>
         </div>
         {/* Amount Input */}
         <div>

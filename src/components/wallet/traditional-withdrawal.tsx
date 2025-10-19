@@ -49,8 +49,8 @@ export default function TraditionalWithdrawal({ balance, onSuccess, onError }: T
       return;
     }
 
-    if (numericAmount < 30) {
-      onError("Minimum withdrawal amount is $30 USDT");
+    if (numericAmount < 5) {
+      onError("Minimum withdrawal amount is $5 USDT");
       return;
     }
 
@@ -165,12 +165,12 @@ export default function TraditionalWithdrawal({ balance, onSuccess, onError }: T
         {/* Amount Input */}
         <div className="space-y-3">
           <Label htmlFor="amount" className="text-white font-medium">
-            Withdrawal Amount (USDT) - Minimum $30
+            Withdrawal Amount (USDT) - Minimum $5
           </Label>
           <Input
             id="amount"
             type="number"
-            min="30"
+            min="5"
             max={balance}
             step="0.01"
             value={amount}
