@@ -1,7 +1,5 @@
-"use client";
-
 import { ReferralDashboardWithLevels } from "@/components/referral-dashboard-with-levels";
 
-export default function ReferralsPage() {
+export default function ReferralsWithLevelsPage() {
   return <ReferralDashboardWithLevels />;
 }

@@ -7,8 +7,12 @@ import { ArrowRight, Bitcoin, Coins, TrendingUp } from "lucide-react";
 // Fetch plans from the API
 async function getPlans() {
   try {
-    const response = await fetch(`${process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000'}/api/plans`, {
-      cache: 'no-store'
+    const response = await fetch(`${process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000'}/api/plans?_t=${Date.now()}`, {
+      cache: 'no-store',
+      headers: {
+        'Cache-Control': 'no-cache, no-store, must-revalidate',
+        'Pragma': 'no-cache'
+      }
     });
     
     if (!response.ok) {

@@ -63,7 +63,23 @@ export async function GET() {
       return NextResponse.json({ error: "Referred users fetch failed" }, { status: 500 });
     }
 
+    // Step 3.1: Get qualified referrals (with deposits and investments)
+    const { data: qualifiedReferrals, error: qualifiedError } = await admin
+      .from("user_profiles")
+      .select(`
+        user_id,
+        email,
+        created_at,
+        user_investments!inner(id, status),
+        deposits!inner(id, status)
+      `)
+      .eq("referred_by", user.id)
+      .eq("deposits.status", "completed")
+      .eq("user_investments.status", "active")
+      .order("created_at", { ascending: false });
+
     console.log('✅ Referred users:', referredUsers);
+    console.log('✅ Qualified referrals:', qualifiedReferrals);
 
     // Step 4: Get commission records (non-blocking)
     const { data: commissions } = await admin
@@ -81,6 +97,7 @@ export async function GET() {
 
     // Step 5: Calculate totals
     const totalReferrals = referredUsers?.length || 0;
+    const qualifiedReferralsCount = qualifiedReferrals?.length || 0;
     let totalEarnings = commissions?.reduce((sum, ref) => sum + Number(ref.commission_amount || 0), 0) || 0;
 
     // TEMPORARY FIX: If user has referrals but no commissions, calculate expected earnings
@@ -89,17 +106,23 @@ export async function GET() {
       console.log('🔧 TEMP FIX: Calculated earnings based on referral count:', totalEarnings);
     }
 
-    console.log('✅ Calculations:', { totalReferrals, totalEarnings });
+    console.log('✅ Calculations:', { 
+      totalReferrals, 
+      qualifiedReferralsCount, 
+      totalEarnings 
+    });
 
     // Step 6: Return response
     const response = {
       referralCode: referralCode,
       totalReferrals: totalReferrals,
+      qualifiedReferrals: qualifiedReferralsCount,
       totalEarnings: totalEarnings,
       pendingCommissions: 0,
       paidCommissions: totalEarnings,
       referredBy: profile.referred_by,
       referrals: referredUsers || [],
+      qualifiedReferralsList: qualifiedReferrals || [],
       commissions: commissions || [],
       referralLink: `${process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000'}/signup?ref=${referralCode}`
     };

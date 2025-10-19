@@ -5,6 +5,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Badge } from "@/components/ui/badge";
 import { CurrentPlansDisplay } from "@/components/current-plans-display";
 import { WhatsAppGroupPopup } from "@/components/whatsapp-group-popup";
+import { ReferralLevelsShowcase } from "@/components/referral-levels-showcase";
 import { 
   ArrowRight, 
   Shield, 
@@ -155,6 +156,13 @@ export default function MiningLandingPage() {
             <p className="text-gray-400">Choose the perfect plan for your investment goals</p>
           </div>
           <CurrentPlansDisplay />
+        </div>
+      </section>
+
+      {/* Referral Levels System */}
+      <section className="py-16 px-4">
+        <div className="max-w-7xl mx-auto">
+          <ReferralLevelsShowcase className="text-white" />
         </div>
       </section>
 

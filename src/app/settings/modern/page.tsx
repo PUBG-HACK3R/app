@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { ProfileLogoutButton } from "@/components/profile-logout-button";
 import { NeedHelpButton } from "@/components/need-help-button";
+import { UserReferralLevelBadge } from "@/components/user-referral-level-badge";
 import { 
   User, 
   Settings,
@@ -58,12 +59,18 @@ export default async function ModernSettingsPage() {
               {profile?.email?.split('@')[0] || 'User'}
             </div>
             <div className="text-blue-200 text-sm mb-3">{user.email}</div>
-            <Badge className="bg-green-500/20 text-green-300 border-green-500/30">
-              <div className="w-2 h-2 bg-green-400 rounded-full mr-1"></div>
-              Active Member
-            </Badge>
+            <div className="flex items-center justify-center gap-3 mb-2">
+              <Badge className="bg-green-500/20 text-green-300 border-green-500/30">
+                <div className="w-2 h-2 bg-green-400 rounded-full mr-1"></div>
+                Active Member
+              </Badge>
+              <UserReferralLevelBadge compact={true} />
+            </div>
           </div>
         </div>
+
+        {/* Referral Level Card */}
+        <UserReferralLevelBadge showDetails={true} className="mb-6" />
 
         {/* Settings Menu */}
         <div className="space-y-3">
@@ -95,7 +102,7 @@ export default async function ModernSettingsPage() {
             </div>
             <div className="flex-1">
               <div className="font-medium text-white">Invite Friends</div>
-              <div className="text-sm text-gray-400">Earn 5% commission</div>
+              <div className="text-sm text-gray-400">Earn rewards & level up</div>
             </div>
             <ChevronRight className="w-5 h-5 text-gray-400" />
           </Link>
