@@ -28,7 +28,7 @@ function NOWPaymentsDepositContent() {
   const [amount, setAmount] = React.useState<string>("20");
   const [loading, setLoading] = React.useState(false);
   const [error, setError] = React.useState<string | null>(null);
-  const [minAmount, setMinAmount] = React.useState<number>(12);
+  const [minAmount, setMinAmount] = React.useState<number>(10);
   const [loadingMinAmount, setLoadingMinAmount] = React.useState(true);
 
   React.useEffect(() => {

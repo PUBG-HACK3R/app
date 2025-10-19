@@ -185,8 +185,8 @@ export default function SimpleWithdrawal({ balance, onSuccess, onError }: Simple
       return;
     }
 
-    if (numericAmount < 30) {
-      onError("Minimum withdrawal amount is $30 USDT");
+    if (numericAmount < 5) {
+      onError("Minimum withdrawal amount is $5 USDT");
       return;
     }
 

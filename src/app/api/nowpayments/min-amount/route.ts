@@ -30,7 +30,7 @@ export async function GET(request: Request) {
       
       // Return fallback minimum for USDT BEP20
       return NextResponse.json({
-        min_amount: "20.00",
+        min_amount: "10.00",
         currency_from: currencyFrom,
         currency_to: currencyTo,
         fallback: true,
@@ -42,7 +42,7 @@ export async function GET(request: Request) {
     console.log("NOWPayments min-amount response:", data);
 
     return NextResponse.json({
-      min_amount: data.min_amount || "20.00",
+      min_amount: data.min_amount || "10.00",
       currency_from: currencyFrom,
       currency_to: currencyTo,
       fallback: false
@@ -52,7 +52,7 @@ export async function GET(request: Request) {
     
     // Return fallback minimum
     return NextResponse.json({
-      min_amount: "20.00",
+      min_amount: "10.00",
       currency_from: "usd",
       currency_to: "usdtbsc",
       fallback: true,

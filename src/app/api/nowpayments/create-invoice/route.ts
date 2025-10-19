@@ -7,7 +7,7 @@ export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
 const CreateInvoiceSchema = z.object({
-  amount: z.number().positive().min(20, "Minimum amount is $20 USDT for USDT TRC20"),
+  amount: z.number().positive().min(5, "Minimum amount is $5 USDT"),
   priceCurrency: z.string().default("usd"),
   payCurrency: z.string().default("usdtbsc"),
   planId: z.string().optional(),
@@ -90,7 +90,7 @@ export async function POST(request: Request) {
       
       if (minAmountRes.ok) {
         const minAmountData = await minAmountRes.json();
-        const minAmount = Math.max(parseFloat(minAmountData.min_amount || "20"), 20);
+        const minAmount = Math.max(parseFloat(minAmountData.min_amount || "10"), 5);
         console.log(`Minimum amount for ${priceCurrency} to ${finalPayCurrency}:`, minAmount);
         
         if (amount < minAmount) {
@@ -103,10 +103,10 @@ export async function POST(request: Request) {
       } else {
         console.warn("Failed to fetch minimum amount, using default validation");
         // Fallback to our hardcoded minimum
-        if (amount < 20) {
+        if (amount < 10) {
           return NextResponse.json({ 
-            error: "Minimum amount is $20 USDT for USDT TRC20",
-            min_amount: 20,
+            error: "Minimum amount is $10 USDT",
+            min_amount: 10,
             requested_amount: amount
           }, { status: 400 });
         }
@@ -114,10 +114,10 @@ export async function POST(request: Request) {
     } catch (minAmountError) {
       console.warn("Error checking minimum amount:", minAmountError);
       // Fallback validation
-      if (amount < 20) {
+      if (amount < 10) {
         return NextResponse.json({ 
-          error: "Minimum amount is $20 USDT for USDT TRC20",
-          min_amount: 20,
+          error: "Minimum amount is $10 USDT",
+          min_amount: 10,
           requested_amount: amount
         }, { status: 400 });
       }

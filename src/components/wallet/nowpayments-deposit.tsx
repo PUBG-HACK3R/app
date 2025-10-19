@@ -52,17 +52,41 @@ export default function NowPaymentsDeposit({
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [pendingDeposit, setPendingDeposit] = useState<any>(null);
-  const [minAmount, setMinAmount] = useState<number>(20);
+  const [minAmount, setMinAmount] = useState<number>(10);
   const [availableCurrencies, setAvailableCurrencies] = useState<string[]>([]);
+  const [loadingMinAmount, setLoadingMinAmount] = useState(true);
 
   // Get selected currency info
   const currentCurrency = SUPPORTED_CURRENCIES.find(c => c.code === selectedCurrency) || SUPPORTED_CURRENCIES[0];
 
+  // Fetch dynamic minimum amount from NowPayments API
+  const fetchMinAmount = async (currency: string = selectedCurrency) => {
+    try {
+      setLoadingMinAmount(true);
+      const response = await fetch(`/api/nowpayments/min-amount?currency_from=usd&currency_to=${currency}`);
+      const data = await response.json();
+      
+      if (response.ok && data.min_amount) {
+        const fetchedMinAmount = Math.ceil(parseFloat(data.min_amount));
+        setMinAmount(Math.max(fetchedMinAmount, 5)); // Ensure minimum is at least $5
+        console.log(`Updated minimum amount for ${currency}:`, fetchedMinAmount);
+      } else {
+        // Fallback to currency default or $10
+        setMinAmount(currentCurrency.minAmount || 10);
+      }
+    } catch (error) {
+      console.warn('Failed to fetch minimum amount, using fallback:', error);
+      setMinAmount(currentCurrency.minAmount || 10);
+    } finally {
+      setLoadingMinAmount(false);
+    }
+  };
+
   // Update minimum amount when currency changes
   useEffect(() => {
-    setMinAmount(currentCurrency.minAmount || 20);
+    fetchMinAmount(selectedCurrency);
     setError(null);
-  }, [selectedCurrency, currentCurrency]);
+  }, [selectedCurrency]);
 
   // Check for pending deposits on mount
   useEffect(() => {
