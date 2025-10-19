@@ -466,8 +466,12 @@ export class DatabaseService {
           earning.id
         );
 
-        // Check if investment is completed
-        if (today >= investment.end_date) {
+        // Check if investment is completed (use investment_time + duration instead of date comparison)
+        const investmentTime = new Date(investment.investment_time);
+        const completionTime = new Date(investmentTime);
+        completionTime.setDate(completionTime.getDate() + investment.duration_days);
+        
+        if (now >= completionTime) {
           await this.admin
             .from(TABLES.USER_INVESTMENTS)
             .update({ status: 'completed' })
@@ -481,6 +485,8 @@ export class DatabaseService {
               locked_balance: currentBalance.locked_balance - investment.amount_invested
             });
           }
+          
+          console.log(`✅ Investment ${investment.id} completed after ${investment.duration_days} days`);
         }
 
         console.log(`✅ Processed earning for investment ${investment.id}: $${dailyEarning}`);
