@@ -1,5 +1,8 @@
 import { redirect } from "next/navigation";
 import { getSupabaseServerClient } from "@/lib/supabase/server";
+
+// Force dynamic rendering
+export const dynamic = 'force-dynamic';
 import ClientPlansPage from "./client-page";
 
 export default async function PlansPage() {

@@ -1,6 +1,9 @@
 import { getSupabaseServerClient } from "@/lib/supabase/server";
 import { getSupabaseAdminClient } from "@/lib/supabase/admin";
 
+// Force dynamic rendering
+export const dynamic = 'force-dynamic';
+
 export default async function TestDebugPage() {
   const supabase = await getSupabaseServerClient();
   const admin = getSupabaseAdminClient();

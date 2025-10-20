@@ -16,6 +16,9 @@ import {
   Activity
 } from "lucide-react";
 
+// Force dynamic rendering due to dynamic API calls
+export const dynamic = 'force-dynamic';
+
 export default function MiningLandingPage() {
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-900 via-orange-900/10 to-gray-900">

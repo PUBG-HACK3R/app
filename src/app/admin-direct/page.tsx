@@ -3,6 +3,9 @@ import { getSupabaseServerClient } from "@/lib/supabase/server";
 import { getSupabaseAdminClient } from "@/lib/supabase/admin";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 
+// Force dynamic rendering
+export const dynamic = 'force-dynamic';
+
 export default async function AdminDirectPage() {
   try {
     // Direct auth check without helper

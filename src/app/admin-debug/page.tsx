@@ -1,6 +1,9 @@
 import { redirect } from "next/navigation";
 import { getSupabaseServerClient } from "@/lib/supabase/server";
 
+// Force dynamic rendering
+export const dynamic = 'force-dynamic';
+
 export default async function AdminDebugPage() {
   const supabase = await getSupabaseServerClient();
   const {

@@ -1,6 +1,9 @@
 import { getSupabaseServerClient } from "@/lib/supabase/server";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 
+// Force dynamic rendering
+export const dynamic = 'force-dynamic';
+
 export default async function DebugUserPage() {
   const supabase = await getSupabaseServerClient();
   const {

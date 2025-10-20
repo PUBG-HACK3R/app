@@ -1,6 +1,9 @@
 import { getSupabaseServerClient } from "@/lib/supabase/server";
 import { getSupabaseAdminClient } from "@/lib/supabase/admin";
 import { redirect } from "next/navigation";
+
+// Force dynamic rendering
+export const dynamic = 'force-dynamic';
 import { AdminMain } from "@/components/admin-v2/admin-main";
 
 export default async function AdminPage() {
