@@ -185,8 +185,8 @@ export default function SimpleWithdrawal({ balance, onSuccess, onError }: Simple
       return;
     }
 
-    if (numericAmount < 5) {
-      onError("Minimum withdrawal amount is $5 USDT");
+    if (numericAmount < 10) {
+      onError("Minimum withdrawal amount is $10 USDT");
       return;
     }
 
@@ -414,7 +414,7 @@ export default function SimpleWithdrawal({ balance, onSuccess, onError }: Simple
             <TrendingDown className="w-6 h-6 text-orange-400" />
           </div>
           <div className="text-lg font-semibold text-white">Withdraw USDT</div>
-          <div className="text-xs text-gray-400 mt-1">Available: ${balance.toFixed(2)} • Min: $5 • Fee: 5%</div>
+          <div className="text-xs text-gray-400 mt-1">Available: ${balance.toFixed(2)} • Min: $10 • Fee: 5%</div>
         </div>
         {/* Amount Input */}
         <div>
@@ -426,7 +426,7 @@ export default function SimpleWithdrawal({ balance, onSuccess, onError }: Simple
               value={amount}
               onChange={(e) => setAmount(e.target.value)}
               className="pl-12 pr-4 py-4 text-xl font-semibold text-white bg-gray-700/50 border-gray-600 rounded-2xl text-center"
-              min="30"
+              min="10"
               max={balance}
               step="0.01"
               disabled={isSubmitting}

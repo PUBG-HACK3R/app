@@ -47,16 +47,21 @@ export default function MiningLandingPage() {
       <section className="py-20 px-4">
         <div className="max-w-7xl mx-auto text-center">
           <div className="mb-8">
-            <Badge className="bg-orange-500/20 text-orange-300 border-orange-500/30 mb-4">
-              🚀 New Bitcoin Mining Platform
+            <Badge className="bg-green-500/20 text-green-300 border-green-500/30 mb-4">
+              💰 Get $5 FREE Welcome Bonus!
             </Badge>
             <h1 className="text-4xl md:text-6xl font-bold text-white mb-6 leading-tight">
               Start Your <span className="bg-clip-text text-transparent text-orange-400">Bitcoin Mining</span> Journey Today!
             </h1>
-            <p className="text-xl text-gray-300 mb-8 max-w-3xl mx-auto">
+            <p className="text-xl text-gray-300 mb-4 max-w-3xl mx-auto">
               Join thousands of miners earning daily returns through our professional Bitcoin mining operations. 
               No hardware, no maintenance, just pure mining profits.
             </p>
+            <div className="bg-green-900/20 border border-green-700/50 rounded-lg p-4 mb-8 max-w-2xl mx-auto">
+              <p className="text-green-300 font-semibold text-lg">
+                🎉 <strong>New User Bonus:</strong> Sign up now and get $5 FREE in your wallet to start mining immediately!
+              </p>
+            </div>
             <div className="flex flex-col sm:flex-row gap-4 justify-center">
               <Link href="/signup">
                 <Button size="lg" className="bg-gradient-to-r from-orange-500 to-red-500 hover:from-orange-600 hover:to-red-600 text-white px-8 py-4 text-lg">
@@ -171,9 +176,14 @@ export default function MiningLandingPage() {
         <div className="max-w-4xl mx-auto text-center">
           <div className="bg-gradient-to-r from-orange-900/50 to-red-900/50 rounded-3xl p-8 border border-orange-700/50">
             <h2 className="text-3xl font-bold text-white mb-4">Ready to Start Mining Bitcoin?</h2>
-            <p className="text-gray-300 mb-6">
+            <p className="text-gray-300 mb-4">
               Join our mining community and start earning daily returns from professional Bitcoin mining operations.
             </p>
+            <div className="bg-green-900/30 border border-green-600/50 rounded-lg p-4 mb-6">
+              <p className="text-green-300 font-semibold">
+                💰 <strong>Limited Time:</strong> New users get $5 FREE bonus to start mining immediately!
+              </p>
+            </div>
             <Link href="/signup">
               <Button size="lg" className="bg-gradient-to-r from-orange-500 to-red-500 hover:from-orange-600 hover:to-red-600 text-white px-8 py-4 text-lg">
                 <Bitcoin className="w-5 h-5 mr-2" />

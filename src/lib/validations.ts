@@ -21,7 +21,7 @@ export const depositSchema = z.object({
 
 // Withdrawal validation
 export const withdrawalSchema = z.object({
-  amount: z.number().min(1, "Amount must be at least $1").max(100000, "Amount cannot exceed $100,000"),
+  amount: z.number().min(10, "Amount must be at least $10").max(100000, "Amount cannot exceed $100,000"),
   address: z.string().min(10, "Address must be at least 10 characters").max(100, "Address is too long"),
 });
 

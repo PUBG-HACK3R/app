@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import { useAdminNotifications } from "@/hooks/useAdminNotifications";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -41,10 +42,24 @@ export function WithdrawalManagement() {
   const [loading, setLoading] = useState(true);
   const [processing, setProcessing] = useState<string | null>(null);
   const [refunding, setRefunding] = useState(false);
+  const [hasNewWithdrawals, setHasNewWithdrawals] = useState(false);
+  
+  // Initialize real-time notifications
+  const { startPolling, stopPolling } = useAdminNotifications();
   const [toast, setToast] = useState<{ message: string; type: 'success' | 'error' } | null>(null);
 
   useEffect(() => {
     fetchWithdrawals();
+    
+    // Auto-refresh every 10 seconds for withdrawal management
+    const refreshInterval = setInterval(() => {
+      fetchWithdrawals();
+    }, 10000);
+    
+    return () => {
+      clearInterval(refreshInterval);
+      stopPolling();
+    };
   }, []);
 
   const fetchWithdrawals = async () => {
@@ -56,7 +71,17 @@ export function WithdrawalManagement() {
         if (data.error) {
           console.error('Withdrawals API failed:', data.error);
         } else {
-          setWithdrawals(data.withdrawals || []);
+          const newWithdrawals = data.withdrawals || [];
+          const newPendingCount = newWithdrawals.filter((w: any) => w.status === 'pending').length;
+          const oldPendingCount = withdrawals.filter(w => w.status === 'pending').length;
+          
+          // Check for new withdrawals
+          if (oldPendingCount > 0 && newPendingCount > oldPendingCount) {
+            setHasNewWithdrawals(true);
+            setTimeout(() => setHasNewWithdrawals(false), 15000);
+          }
+          
+          setWithdrawals(newWithdrawals);
         }
       } else {
         console.error('Withdrawals API failed:', response.status, await response.text());

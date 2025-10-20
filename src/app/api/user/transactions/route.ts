@@ -101,6 +101,10 @@ export async function GET() {
       .slice(0, 50);
 
     console.log(`Found ${uniqueTransactions.length} transactions for user ${user.id}`);
+    console.log('Transaction logs:', transactions?.length || 0);
+    console.log('Withdrawals:', withdrawals?.length || 0);
+    console.log('Deposits:', deposits?.length || 0);
+    console.log('Sample transactions:', uniqueTransactions.slice(0, 3));
 
     return NextResponse.json({
       success: true,

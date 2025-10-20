@@ -1,6 +1,8 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import { useAdminNotifications } from "@/hooks/useAdminNotifications";
+import { NotificationBadge } from "./notification-badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -53,9 +55,21 @@ export function AdminDashboard() {
   
   const [recentActivity, setRecentActivity] = useState<RecentActivity[]>([]);
   const [loading, setLoading] = useState(true);
+  const [hasNewNotifications, setHasNewNotifications] = useState(false);
+  
+  // Initialize real-time notifications
+  const { startPolling, stopPolling } = useAdminNotifications();
 
   useEffect(() => {
     fetchDashboardData();
+    
+    // Auto-refresh every 30 seconds
+    const refreshInterval = setInterval(fetchDashboardData, 30000);
+    
+    return () => {
+      clearInterval(refreshInterval);
+      stopPolling();
+    };
   }, []);
 
   const fetchDashboardData = async () => {
@@ -65,13 +79,23 @@ export function AdminDashboard() {
       const statsResponse = await fetch('/api/admin-v2/dashboard/stats');
       if (statsResponse.ok) {
         const statsData = await statsResponse.json();
+        const newPendingCount = statsData.pendingWithdrawals || 0;
+        const oldPendingCount = stats.pendingWithdrawals;
+        
+        // Check if there are new pending withdrawals
+        if (oldPendingCount > 0 && newPendingCount > oldPendingCount) {
+          setHasNewNotifications(true);
+          // Clear the "new" indicator after 10 seconds
+          setTimeout(() => setHasNewNotifications(false), 10000);
+        }
+        
         // Map the API response to the expected format
         setStats({
           totalUsers: statsData.totalUsers || 0,
           totalDeposits: statsData.totalDeposits || 0,
           totalWithdrawals: statsData.totalWithdrawals || 0,
           totalEarnings: statsData.totalEarnings || 0,
-          pendingWithdrawals: statsData.pendingWithdrawals || 0,
+          pendingWithdrawals: newPendingCount,
           activePlans: statsData.activePlans || 0,
           totalInvestments: statsData.totalInvestments || 0,
           platformBalance: statsData.platformBalance || 0
@@ -186,14 +210,21 @@ export function AdminDashboard() {
           </CardContent>
         </Card>
 
-        <Card className="bg-slate-800/50 border-slate-700">
+        <Card className={`bg-slate-800/50 border-slate-700 ${hasNewNotifications ? 'ring-2 ring-red-500 ring-opacity-50' : ''}`}>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium text-gray-300">Pending Withdrawals</CardTitle>
-            <AlertTriangle className="h-4 w-4 text-yellow-500" />
+            <div className="flex items-center gap-2">
+              <NotificationBadge count={stats.pendingWithdrawals} hasNew={hasNewNotifications} />
+              <AlertTriangle className="h-4 w-4 text-yellow-500" />
+            </div>
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-white">{stats.pendingWithdrawals}</div>
-            <p className="text-xs text-gray-400 mt-1">Requires attention</p>
+            <div className={`text-2xl font-bold ${hasNewNotifications ? 'text-red-400 animate-pulse' : 'text-white'}`}>
+              {stats.pendingWithdrawals}
+            </div>
+            <p className="text-xs text-gray-400 mt-1">
+              {hasNewNotifications ? '🚨 New requests!' : 'Requires attention'}
+            </p>
           </CardContent>
         </Card>
       </div>

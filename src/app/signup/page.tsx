@@ -311,6 +311,19 @@ function SignupContent() {
                       Join the crypto earning revolution
                     </CardDescription>
                   </div>
+                  <div className="bg-green-900/20 border border-green-700/50 rounded-lg p-4 mb-4">
+                    <div className="flex items-center justify-center gap-2">
+                      <span className="text-2xl">🎉</span>
+                      <div className="text-center">
+                        <p className="text-green-300 font-semibold text-lg">
+                          Get $5 FREE Welcome Bonus!
+                        </p>
+                        <p className="text-green-400 text-sm">
+                          Start earning immediately upon signup
+                        </p>
+                      </div>
+                    </div>
+                  </div>
                   <Badge className="bg-gradient-to-r from-green-500/20 to-blue-500/20 text-green-300 border-green-500/30 mx-auto">
                     <Bitcoin className="h-4 w-4 mr-2" />
                     USDT Investment Platform

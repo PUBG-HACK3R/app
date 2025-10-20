@@ -10,7 +10,8 @@ import {
   CheckCircle,
   XCircle,
   RefreshCw,
-  PiggyBank
+  PiggyBank,
+  Gift
 } from "lucide-react";
 
 interface Transaction {
@@ -47,8 +48,11 @@ export function TransactionList({ limit = 10, showTitle = true }: TransactionLis
       const data = await response.json();
       
       if (data.success) {
+        console.log('Fetched transactions:', data.transactions);
+        console.log('Transaction counts:', data.counts);
         setTransactions(data.transactions.slice(0, limit));
       } else {
+        console.error('Transaction fetch failed:', data.error);
         setError(data.error || 'Failed to fetch transactions');
       }
     } catch (err) {
@@ -59,8 +63,13 @@ export function TransactionList({ limit = 10, showTitle = true }: TransactionLis
     }
   };
 
-  const getTransactionIcon = (type: string, status: string) => {
+  const getTransactionIcon = (type: string, status?: string, description?: string) => {
     if (status === 'pending') return Clock;
+    
+    // Special case for signup bonus (stored as earning type)
+    if (type === 'earning' && description?.includes('Welcome bonus')) {
+      return Gift;
+    }
     
     switch (type) {
       case 'deposit':
@@ -76,6 +85,8 @@ export function TransactionList({ limit = 10, showTitle = true }: TransactionLis
         return ArrowDownRight;
       case 'referral_commission':
         return TrendingUp;
+      case 'signup_bonus':
+        return Gift;
       case 'refund':
         return RefreshCw;
       default:
@@ -83,10 +94,15 @@ export function TransactionList({ limit = 10, showTitle = true }: TransactionLis
     }
   };
 
-  const getTransactionColor = (type: string, status: string) => {
+  const getTransactionColor = (type: string, status?: string, description?: string) => {
     if (status === 'pending') return 'text-yellow-400 bg-yellow-500/20';
     if (status === 'rejected' || status === 'failed') return 'text-red-400 bg-red-500/20';
     if (status === 'expired') return 'text-orange-400 bg-orange-500/20';
+    
+    // Special case for signup bonus (stored as earning type)
+    if (type === 'earning' && description?.includes('Welcome bonus')) {
+      return 'text-purple-400 bg-purple-500/20';
+    }
     
     switch (type) {
       case 'deposit':
@@ -95,6 +111,8 @@ export function TransactionList({ limit = 10, showTitle = true }: TransactionLis
       case 'referral_commission':
       case 'refund':
         return 'text-green-400 bg-green-500/20';
+      case 'signup_bonus':
+        return 'text-purple-400 bg-purple-500/20';
       case 'withdrawal':
       case 'investment':
       case 'plan_purchase':
@@ -104,7 +122,12 @@ export function TransactionList({ limit = 10, showTitle = true }: TransactionLis
     }
   };
 
-  const getTransactionLabel = (type: string, status: string) => {
+  const getTransactionLabel = (type: string, status?: string, description?: string) => {
+    // Special case for signup bonus (stored as earning type)
+    if (type === 'earning' && description?.includes('Welcome bonus')) {
+      return 'Welcome Bonus';
+    }
+    
     const labels = {
       deposit: 'Deposit',
       withdrawal: 'Withdrawal',
@@ -113,6 +136,7 @@ export function TransactionList({ limit = 10, showTitle = true }: TransactionLis
       plan_purchase: 'Plan Purchase',
       investment_return: 'Principal Unlocked',
       referral_commission: 'Referral Commission',
+      signup_bonus: 'Welcome Bonus',
       refund: 'Refund'
     };
     
@@ -126,7 +150,7 @@ export function TransactionList({ limit = 10, showTitle = true }: TransactionLis
   };
 
   const isPositiveTransaction = (type: string) => {
-    return ['deposit', 'earning', 'investment_return', 'referral_commission', 'refund'].includes(type);
+    return ['deposit', 'earning', 'investment_return', 'referral_commission', 'signup_bonus', 'refund'].includes(type);
   };
 
   if (loading) {
@@ -191,8 +215,8 @@ export function TransactionList({ limit = 10, showTitle = true }: TransactionLis
       )}
       
       {transactions.map((tx) => {
-        const Icon = getTransactionIcon(tx.type, tx.status);
-        const colorClass = getTransactionColor(tx.type, tx.status);
+        const Icon = getTransactionIcon(tx.type, tx.status, tx.description);
+        const colorClass = getTransactionColor(tx.type, tx.status, tx.description);
         const isPositive = isPositiveTransaction(tx.type);
         
         return (
@@ -204,7 +228,7 @@ export function TransactionList({ limit = 10, showTitle = true }: TransactionLis
                 </div>
                 <div>
                   <div className="font-medium text-white">
-                    {getTransactionLabel(tx.type, tx.status)}
+                    {getTransactionLabel(tx.type, tx.status || 'completed', tx.description)}
                   </div>
                   <div className="text-sm text-gray-400">
                     {new Date(tx.created_at).toLocaleDateString()} {new Date(tx.created_at).toLocaleTimeString()}
@@ -218,8 +242,8 @@ export function TransactionList({ limit = 10, showTitle = true }: TransactionLis
               </div>
               <div className="text-right">
                 <div className={`font-bold ${
-                  tx.status === 'pending' ? 'text-yellow-400' :
-                  tx.status === 'rejected' || tx.status === 'failed' ? 'text-red-400' :
+                  (tx.status || 'completed') === 'pending' ? 'text-yellow-400' :
+                  (tx.status || 'completed') === 'rejected' || (tx.status || 'completed') === 'failed' ? 'text-red-400' :
                   isPositive ? 'text-green-400' : 'text-red-400'
                 }`}>
                   {isPositive ? '+' : '-'}${Number(tx.amount_usdt).toFixed(2)}

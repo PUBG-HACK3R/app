@@ -35,9 +35,9 @@ export async function POST(request: NextRequest) {
     }
 
     // Minimum withdrawal amount
-    if (numericAmount < 5) {
+    if (numericAmount < 10) {
       return NextResponse.json(
-        { error: "Minimum withdrawal amount is $5 USDT" },
+        { error: "Minimum withdrawal amount is $10 USDT" },
         { status: 400 }
       );
     }

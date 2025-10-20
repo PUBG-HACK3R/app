@@ -68,17 +68,49 @@ export async function POST(request: NextRequest) {
           
           const { error: manualBalanceError } = await admin.from("user_balances").insert({
             user_id: data.user.id,
-            available_balance: 0,
+            available_balance: 5.00, // $5 sign-up bonus
             locked_balance: 0,
             total_deposited: 0,
             total_withdrawn: 0,
-            total_earned: 0
+            total_earned: 5.00 // Track the bonus as earnings
           });
           
           if (manualBalanceError) {
             console.error("Manual balance creation failed:", manualBalanceError);
             throw new Error(`Balance creation failed: ${manualBalanceError.message}`);
           }
+        } else {
+          // Balance exists, add $5 sign-up bonus
+          const { error: bonusError } = await admin
+            .from("user_balances")
+            .update({
+              available_balance: 5.00,
+              total_earned: 5.00
+            })
+            .eq("user_id", data.user.id);
+            
+          if (bonusError) {
+            console.error("Failed to add sign-up bonus:", bonusError);
+          }
+        }
+
+        // Create transaction log entry for the $5 sign-up bonus
+        const { error: txLogError } = await admin
+          .from("transaction_logs")
+          .insert({
+            user_id: data.user.id,
+            type: "earning",
+            amount_usdt: 5.00,
+            description: "Welcome bonus for new account signup",
+            balance_before: 0,
+            balance_after: 5.00,
+            created_at: new Date().toISOString()
+          });
+
+        if (txLogError) {
+          console.error("Failed to create transaction log for sign-up bonus:", txLogError);
+        } else {
+          console.log("✅ Successfully created signup bonus transaction log for user:", data.user.id);
         }
 
         // Handle referral code if provided
@@ -128,7 +160,7 @@ export async function POST(request: NextRequest) {
 
     return NextResponse.json(
       { 
-        message: "Account created successfully",
+        message: "Account created successfully! You've received a $5 welcome bonus.",
         user: {
           id: data.user?.id,
           email: data.user?.email,
