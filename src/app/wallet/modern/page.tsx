@@ -1,9 +1,6 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import { getSupabaseServerClient } from "@/lib/supabase/server";
-
-// Force dynamic rendering
-export const dynamic = 'force-dynamic';
 import { getSupabaseAdminClient } from "@/lib/supabase/admin";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -20,6 +17,9 @@ import {
   History,
   Settings
 } from "lucide-react";
+
+// Force dynamic rendering
+export const dynamic = 'force-dynamic';
 
 export default async function ModernWalletPage() {
   const supabase = await getSupabaseServerClient();

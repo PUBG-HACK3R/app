@@ -1,10 +1,10 @@
 import { redirect } from "next/navigation";
 import { getSupabaseServerClient } from "@/lib/supabase/server";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { TransactionList } from "@/components/wallet/transaction-list";
 
 // Force dynamic rendering
 export const dynamic = 'force-dynamic';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { TransactionList } from "@/components/wallet/transaction-list";
 
 type Tx = { 
   type: "deposit" | "earning" | "withdrawal" | "investment" | "pending_deposit"; 

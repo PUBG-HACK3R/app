@@ -1,9 +1,6 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import { getSupabaseServerClient } from "@/lib/supabase/server";
-
-// Force dynamic rendering
-export const dynamic = 'force-dynamic';
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { ProfileLogoutButton } from "@/components/profile-logout-button";
@@ -31,6 +28,9 @@ import {
   Sun,
   TrendingUp
 } from "lucide-react";
+
+// Force dynamic rendering
+export const dynamic = 'force-dynamic';
 
 export default async function ModernSettingsPage() {
   const supabase = await getSupabaseServerClient();
