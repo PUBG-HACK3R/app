@@ -51,10 +51,10 @@ export function WithdrawalManagement() {
   useEffect(() => {
     fetchWithdrawals();
     
-    // Auto-refresh every 10 seconds for withdrawal management
+    // Auto-refresh every 1 minute for withdrawal management
     const refreshInterval = setInterval(() => {
       fetchWithdrawals();
-    }, 10000);
+    }, 60000);
     
     return () => {
       clearInterval(refreshInterval);

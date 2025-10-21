@@ -58,7 +58,7 @@ export function useAdminNotifications() {
   const startPolling = () => {
     if (intervalRef.current) return;
     
-    intervalRef.current = setInterval(checkForNewWithdrawals, 5000); // Check every 5 seconds
+    intervalRef.current = setInterval(checkForNewWithdrawals, 30000); // Check every 30 seconds
   };
 
   const stopPolling = () => {
