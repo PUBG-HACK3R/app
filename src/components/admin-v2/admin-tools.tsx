@@ -8,17 +8,11 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import { 
-  Settings, 
-  Database, 
   RefreshCw, 
   DollarSign,
   Users,
   TrendingUp,
-  AlertTriangle,
-  CheckCircle,
-  Play,
-  Pause,
-  BarChart3
+  AlertTriangle
 } from "lucide-react";
 
 export function AdminTools() {
@@ -88,52 +82,6 @@ export function AdminTools() {
       setLoading(false);
     }
   };
-
-  const handleProcessDailyReturns = async () => {
-    setLoading(true);
-    try {
-      const response = await fetch('/api/admin-v2/tools/process-daily-returns', {
-        method: 'POST'
-      });
-
-      if (response.ok) {
-        const data = await response.json();
-        alert(`Daily returns processed: ${data.processed} investments updated`);
-      }
-    } catch (error) {
-      console.error('Error processing daily returns:', error);
-      alert('Error processing daily returns');
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const handleBackupDatabase = async () => {
-    setLoading(true);
-    try {
-      const response = await fetch('/api/admin-v2/tools/backup-database', {
-        method: 'POST'
-      });
-
-      if (response.ok) {
-        const blob = await response.blob();
-        const url = window.URL.createObjectURL(blob);
-        const a = document.createElement('a');
-        a.href = url;
-        a.download = `weearn-backup-${new Date().toISOString().split('T')[0]}.sql`;
-        document.body.appendChild(a);
-        a.click();
-        window.URL.revokeObjectURL(url);
-        document.body.removeChild(a);
-      }
-    } catch (error) {
-      console.error('Error creating backup:', error);
-      alert('Error creating database backup');
-    } finally {
-      setLoading(false);
-    }
-  };
-
 
   const formatCurrency = (amount: number) => {
     return new Intl.NumberFormat('en-US', {
@@ -263,126 +211,6 @@ export function AdminTools() {
           </CardContent>
         </Card>
 
-        {/* System Operations */}
-        <Card className="bg-slate-800/50 border-slate-700">
-          <CardHeader>
-            <CardTitle className="text-white flex items-center">
-              <Settings className="h-5 w-5 mr-2" />
-              System Operations
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <div className="space-y-3">
-              <Button 
-                onClick={handleProcessDailyReturns} 
-                disabled={loading}
-                className="w-full bg-green-600 hover:bg-green-700"
-              >
-                {loading ? <RefreshCw className="h-4 w-4 mr-2 animate-spin" /> : <Play className="h-4 w-4 mr-2" />}
-                Process Daily Returns
-              </Button>
-              
-              <Button 
-                onClick={handleBackupDatabase} 
-                disabled={loading}
-                variant="outline"
-                className="w-full border-slate-600 text-white hover:bg-slate-700"
-              >
-                {loading ? <RefreshCw className="h-4 w-4 mr-2 animate-spin" /> : <Database className="h-4 w-4 mr-2" />}
-                Backup Database
-              </Button>
-              
-              <Button 
-                onClick={() => window.open('/api/admin-v2/tools/export-users', '_blank')} 
-                variant="outline"
-                className="w-full border-slate-600 text-white hover:bg-slate-700"
-              >
-                <BarChart3 className="h-4 w-4 mr-2" />
-                Export User Data
-              </Button>
-            </div>
-          </CardContent>
-        </Card>
-
-        {/* Database Health */}
-        <Card className="bg-slate-800/50 border-slate-700">
-          <CardHeader>
-            <CardTitle className="text-white flex items-center">
-              <Database className="h-5 w-5 mr-2" />
-              Database Health
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <div className="space-y-3">
-              <div className="flex items-center justify-between p-3 bg-slate-700/30 rounded-lg">
-                <span className="text-white">Connection Status</span>
-                <Badge className="bg-green-500/20 text-green-400 border-green-500/30">
-                  <CheckCircle className="h-3 w-3 mr-1" />
-                  Connected
-                </Badge>
-              </div>
-              
-              <div className="flex items-center justify-between p-3 bg-slate-700/30 rounded-lg">
-                <span className="text-white">Last Backup</span>
-                <span className="text-gray-400 text-sm">2 hours ago</span>
-              </div>
-              
-              <div className="flex items-center justify-between p-3 bg-slate-700/30 rounded-lg">
-                <span className="text-white">Storage Used</span>
-                <span className="text-gray-400 text-sm">2.4 GB</span>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-
-        {/* Quick Actions */}
-        <Card className="bg-slate-800/50 border-slate-700">
-          <CardHeader>
-            <CardTitle className="text-white flex items-center">
-              <RefreshCw className="h-5 w-5 mr-2" />
-              Quick Actions
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <div className="grid grid-cols-2 gap-3">
-              <Button 
-                variant="outline"
-                className="border-slate-600 text-white hover:bg-slate-700"
-                onClick={() => window.location.reload()}
-              >
-                <RefreshCw className="h-4 w-4 mr-2" />
-                Refresh
-              </Button>
-              
-              <Button 
-                variant="outline"
-                className="border-slate-600 text-white hover:bg-slate-700"
-                onClick={() => window.open('/api/debug/check-balance-tables', '_blank')}
-              >
-                <Database className="h-4 w-4 mr-2" />
-                Debug DB
-              </Button>
-              
-              <Button 
-                variant="outline"
-                className="border-slate-600 text-white hover:bg-slate-700"
-                onClick={() => window.open('/logs', '_blank')}
-              >
-                <BarChart3 className="h-4 w-4 mr-2" />
-                View Logs
-              </Button>
-              
-              <Button 
-                variant="outline"
-                className="border-slate-600 text-white hover:bg-slate-700"
-                onClick={() => window.open('/api/admin-v2/tools/system-info', '_blank')}
-              >
-                <Settings className="h-4 w-4 mr-2" />
-                System Info
-              </Button>
-            </div>
-          </CardContent>
-        </Card>
       </div>
     </div>
   );
